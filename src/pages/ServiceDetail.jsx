@@ -128,8 +128,13 @@ export const ServiceDetail = () => {
   }
 
   const handleShare = () => {
+    if (!navigator.clipboard) {
+      toast.error('Copy not supported in this browser — please copy the link manually')
+      return
+    }
     navigator.clipboard.writeText(window.location.href)
-    toast.success(t('property.sections.linkCopied'))
+      .then(() => toast.success(t('property.sections.linkCopied')))
+      .catch(() => toast.error('Could not copy link — please copy it manually'))
   }
 
   const handleSubmitReview = async () => {
