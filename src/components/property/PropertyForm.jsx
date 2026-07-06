@@ -211,7 +211,7 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
       })
       if (!orderResp.ok) {
         const errText = await orderResp.text()
-        let errJson = {}; try { errJson = JSON.parse(errText) } catch(e) {}
+        let errJson = {}; try { errJson = JSON.parse(errText) } catch(e) {console.error(e);}
         const msg = [errJson.error, errJson.detail, `HTTP ${orderResp.status}`].filter(Boolean).join(' | ')
         toast.error(msg, { duration: 8000 }); throw new Error(msg)
       }
@@ -230,7 +230,7 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
               headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s2?.access_token}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
               body: JSON.stringify({ ...response, property_data: { ...form, images: uploadedUrls } })
             })
-            if (!verifyResp.ok) { const e = await verifyResp.json().catch(() => ({})); throw new Error(e.error || 'Payment verification failed') }
+            if (!verifyResp.ok) { const e = await verifyResp.json().catch((err) => {console.error(err); return{};}); throw new Error(e.error || 'Payment verification failed') }
             setShowSuccess(true)
             setTimeout(() => navigate('/landlord'), 2800)
           } catch (vErr) { toast.error('Payment verification failed: ' + vErr.message) }
