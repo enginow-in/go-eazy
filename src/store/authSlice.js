@@ -7,6 +7,7 @@ const authSlice = createSlice({
     profile: null,
     role: null, // 'landlord' | 'user' | 'service_provider'
     loading: true,
+    initialized: false,
     authModalOpen: false,
     authModalTab: 'login', // 'login' | 'signup'
   },
@@ -24,6 +25,9 @@ const authSlice = createSlice({
     setLoading: (state, action) => {
       state.loading = action.payload
     },
+    setInitialized: (state) => {
+      state.initialized = true
+    },
     openAuthModal: (state, action) => {
       state.authModalOpen = true
       state.authModalTab = action.payload || 'login'
@@ -40,5 +44,5 @@ const authSlice = createSlice({
   },
 })
 
-export const { setUser, setProfile, setLoading, openAuthModal, closeAuthModal, logout } = authSlice.actions
+export const { setUser, setProfile, setLoading, setInitialized, openAuthModal, closeAuthModal, logout } = authSlice.actions
 export default authSlice.reducer

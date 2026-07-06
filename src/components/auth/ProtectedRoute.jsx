@@ -9,10 +9,13 @@ const Spinner = () => (
 )
 
 export const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { user, profile, role, loading } = useSelector(s => s.auth)
+  const { user, profile, role, loading, initialized } = useSelector(s => s.auth)
 
-  // Show spinner while auth is loading OR while user is logged in but profile hasn't loaded yet
-  if (loading || (user && !profile)) return <Spinner />
+  // Show spinner while auth is loading OR while user is logged in but profile hasn't loaded yet.
+  // `initialized` only becomes true after Supabase's auth listener delivers its first
+  // definitive session check — an independent guard so we never redirect off a `loading`
+  // flag that flipped false prematurely.
+  if (!initialized || loading || (user && !profile)) return <Spinner />
 
   // Not logged in at all
   if (!user) return <Navigate to="/" replace />

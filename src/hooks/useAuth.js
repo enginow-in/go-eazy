@@ -1,27 +1,20 @@
 import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
-import { setUser, setProfile, logout, setLoading } from '../store/authSlice'
+import { setUser, setProfile, logout, setLoading, setInitialized } from '../store/authSlice'
 
 export const useAuth = () => {
   const dispatch = useDispatch()
   const { user, profile, role, loading, authModalOpen, authModalTab } = useSelector(s => s.auth)
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-
-      if (error) console.error('Auth: Session error', error)
-      
-      dispatch(setUser(session?.user ?? null))
-      if (session?.user) fetchProfile(session.user.id)
-      else dispatch(setLoading(false))
-    })
-
-    // Listen for auth changes
+    // Supabase v2's onAuthStateChange fires once immediately with the
+    // already-resolved initial session, so a separate getSession() call
+    // on mount is redundant — and racy: whichever of the two resolved
+    // "no session" first could flip `loading` to false while the other
+    // was still about to report a real logged-in user, causing
+    // ProtectedRoute to redirect an already-authenticated user.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-
-      
       dispatch(setUser(session?.user ?? null))
       if (session?.user) {
         fetchProfile(session.user.id)
@@ -30,6 +23,7 @@ export const useAuth = () => {
       } else {
         dispatch(setLoading(false))
       }
+      dispatch(setInitialized())
     })
 
     return () => subscription.unsubscribe()
