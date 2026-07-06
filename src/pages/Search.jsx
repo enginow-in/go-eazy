@@ -17,13 +17,14 @@ import { RecommendedSection } from '../components/property/RecommendedSection'
 export const Search = () => {
   const { t } = useTranslation()
   const dispatch = useDispatch()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { listings, filters, loading, hasMore, fetchProperties, updateFilters, totalCount } = useProperties()
   
   const [viewMode, setViewMode] = useState('grid')
   const [showFilters, setShowFilters] = useState(false)
   const [localFilters, setLocalFilters] = useState({
-    city: filters.city || '', 
+    type: filters.type || '',
+    city: filters.city || '',
     area: filters.area || '', 
     priceMin: filters.priceMin || 0, 
     priceMax: filters.priceMax || 100000, 
@@ -47,7 +48,8 @@ export const Search = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setLocalFilters({
-      city: filters.city || '', 
+      type: filters.type || '',
+      city: filters.city || '',
       area: filters.area || '', 
       priceMin: filters.priceMin || 0, 
       priceMax: filters.priceMax || 100000, 
@@ -59,6 +61,11 @@ export const Search = () => {
 
   const applyFilters = () => {
     updateFilters(localFilters)
+    // Keep the URL in sync so the ?type= effect doesn't clear the selection
+    const next = new URLSearchParams(searchParams)
+    if (localFilters.type) next.set('type', localFilters.type)
+    else next.delete('type')
+    setSearchParams(next, { replace: true })
     setShowFilters(false)
   }
 
@@ -156,7 +163,7 @@ export const Search = () => {
           {['Room', 'Flat', 'Hostel', 'PG'].map(type => (
             <button
               key={type}
-              onClick={() => setLocalFilters(prev => ({ ...prev, type }))}
+              onClick={() => setLocalFilters(prev => ({ ...prev, type: prev.type === type ? '' : type }))}
               className={`px-5 py-2 rounded-xl text-[13px] font-semibold transition-all border ${localFilters.type === type ? 'bg-[#fdf2f2] text-[#CA3433] border-[#fbe1e1] shadow-sm' : 'border-gray-100 text-gray-600 hover:bg-gray-50'}`}
             >
               {t(`property.types.${type}`)}
