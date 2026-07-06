@@ -163,12 +163,67 @@ Technical Writers
 
 ## Getting Started
 
-1. Fork the repository
-2. Clone it
-3. Install dependencies
-4. Create a new branch
-5. Make changes
-6. Submit a Pull Request
+1. Fork the repository.
+
+2. Clone your fork:
+
+```bash
+git clone https://github.com/<your-github-username>/go-eazy.git
+cd go-eazy
+```
+
+3. Install dependencies:
+
+```bash
+npm install
+```
+
+4. Start the development server:
+
+```bash
+npm run dev
+```
+
+The application will be available at:
+
+```
+http://localhost:5173
+```
+
+5. Create a new branch:
+
+```bash
+git checkout -b feature/your-feature-name
+```
+
+6. Make your changes.
+
+7. Commit and push your branch.
+
+8. Open a Pull Request.
+
+## Local Development Notes
+
+This repository does not include production Supabase credentials.
+
+To enable authentication and backend functionality, configure the required environment variables before running the application.
+
+Example:
+
+```env
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+VITE_RAZORPAY_KEY_ID=
+```
+
+Without these variables:
+
+- Google Sign-In will not work.
+- Backend features requiring Supabase will be unavailable.
+- The application runs in a limited frontend mode.
+- Public pages can still be explored for UI development.
+
+This behavior is expected during local development without backend configuration.
 
 Happy Contributing ❤️
 
