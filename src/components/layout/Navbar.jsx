@@ -23,6 +23,7 @@ export const Navbar = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [cityMenuOpen, setCityMenuOpen] = useState(false)
   const [langMenuOpen, setLangMenuOpen] = useState(false)
+  const [currencyMenuOpen, setCurrencyMenuOpen] = useState(false)
   const [selectedCity, setSelectedCity] = useState(filters.city || 'All Cities')
   const [searchQuery, setSearchQuery] = useState(filters.query || '')
   // Tracks if the user is actively typing in the Navbar's own search bar.
@@ -153,12 +154,31 @@ export const Navbar = () => {
             
             <div className="w-px h-6 bg-gray-200"></div>
 
-            <button className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-              <div className="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center text-xs overflow-hidden border border-brand-100">
-                <img src="/INR.webp" alt="INR" className="w-full h-full object-cover" />
-              </div>
-              INR <ChevronDown size={14} />
-            </button>
+            <div className="relative">
+  <button 
+    onClick={() => setCurrencyMenuOpen(v => !v)}
+    className="flex items-center gap-2 text-sm font-semibold text-gray-700"
+  >
+    <div className="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center text-xs overflow-hidden border border-brand-100">
+      <img src="/INR.webp" alt="INR" className="w-full h-full object-cover" />
+    </div>
+    INR <ChevronDown size={14} className={`transition-transform duration-200 ${currencyMenuOpen ? 'rotate-180' : ''}`} />
+  </button>
+
+  {currencyMenuOpen && (
+    <>
+      <div className="fixed inset-0 z-10" onClick={() => setCurrencyMenuOpen(false)} />
+      <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden py-1">
+        <div className="w-full text-left px-4 py-3 text-sm font-bold text-[#CA3433] bg-[#fff5f5]">
+          INR (₹)
+        </div>
+        <div className="px-4 py-2 text-xs text-gray-400 border-t border-gray-50">
+          More currencies coming soon
+        </div>
+      </div>
+    </>
+  )}
+</div>
 
             {loading ? (
               <Skeleton className="h-10 w-28 rounded-full" />
