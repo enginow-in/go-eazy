@@ -149,6 +149,9 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   const validateStep = (s) => {
     if (s === 1 && (!form.title || !form.price)) { toast.error('Title and Rent are required'); return false }
     if (s === 2 && (!form.city || !form.area))   { toast.error('City and Area are required'); return false }
+    if (s === 3 && (!form.latitude || !form.longitude)) { toast.error('Please pin your property location on the map'); return false }
+    if (s === 4 && (!form.exact_location || !form.contact_phone)) { toast.error('Exact address and contact phone are required'); return false }
+    if (s === 5 && form.amenities.length === 0) { toast.error('Please select at least 1 amenity'); return false }
     if (s === 6 && previewUrls.length < 1)        { toast.error('Please upload at least 1 photo'); return false }
     return true
   }
@@ -159,6 +162,9 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   // ── Final submit ──────────────────────────────────────────────────────────
   const validateForm = () => {
     if (!form.title || !form.price || !form.city || !form.area) { toast.error('Please fill all required fields'); return false }
+    if (!form.latitude || !form.longitude) { toast.error('Location map pin is required'); return false }
+    if (!form.exact_location || !form.contact_phone) { toast.error('Premium contact details are required'); return false }
+    if (form.amenities.length === 0) { toast.error('Please select at least 1 amenity'); return false }
     if (previewUrls.length < 1 || previewUrls.length > 3) { toast.error('Please upload between 1 and 3 images'); return false }
     return true
   }
@@ -315,11 +321,11 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
             <h3 className="text-xl font-black text-gray-900 mb-1">Premium Contact Details</h3>
             <p className="text-sm text-gray-400">These details are only visible to tenants who unlock your listing. Keep them accurate.</p>
           </div>
-          <Input id="property-address" label="Exact Property Address"
+          <Input id="property-address" label="Exact Property Address *"
             placeholder="e.g. Flat 402, Building B, XYZ Apartments, Near Metro"
             value={form.exact_location} onChange={e => set('exact_location', e.target.value)} />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input id="property-phone" label="Contact Phone" placeholder="+91 9876543210"
+            <Input id="property-phone" label="Contact Phone *" placeholder="+91 9876543210"
               value={form.contact_phone} onChange={e => set('contact_phone', e.target.value)} />
             <Input id="property-email" label="Contact Email" type="email" placeholder="owner@email.com"
               value={form.contact_email} onChange={e => set('contact_email', e.target.value)} />
