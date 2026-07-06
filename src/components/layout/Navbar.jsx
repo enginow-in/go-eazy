@@ -21,6 +21,7 @@ export const Navbar = () => {
   const { filters, updateFilters, resetFilters } = useProperties()
   const { mobileMenuOpen } = useSelector(s => s.ui)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [avatarError, setAvatarError] = useState(false)
   const [cityMenuOpen, setCityMenuOpen] = useState(false)
   const [langMenuOpen, setLangMenuOpen] = useState(false)
   const [selectedCity, setSelectedCity] = useState(filters.city || 'All Cities')
@@ -168,8 +169,13 @@ export const Navbar = () => {
                   onClick={() => setUserMenuOpen(v => !v)}
                   className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#0B0F19] text-white text-sm font-semibold hover:bg-[#CA3433] transition-all duration-300 transform hover:scale-105"
                 >
-                  {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt="Avatar" className="w-5 h-5 rounded-full object-cover" />
+                  {profile?.avatar_url && !avatarError ? (
+                    <img
+                      src={profile.avatar_url}
+                      alt="Avatar"
+                      className="w-5 h-5 rounded-full object-cover"
+                      onError={() => setAvatarError(true)}
+                    />
                   ) : (
                     <User size={16} />
                   )}
