@@ -25,6 +25,8 @@ export const Navbar = () => {
   const [langMenuOpen, setLangMenuOpen] = useState(false)
   const [selectedCity, setSelectedCity] = useState(filters.city || 'All Cities')
   const [searchQuery, setSearchQuery] = useState(filters.query || '')
+  const avatarUrl = profile?.avatar_url
+
   // Tracks if the user is actively typing in the Navbar's own search bar.
   // Without this guard, the debounce effect fires on any re-render where
   // searchQuery !== filters.query, causing rogue /search redirects (e.g. while
@@ -33,22 +35,26 @@ export const Navbar = () => {
   
   // Debounce effect for search — only navigate if user actually typed here
   React.useEffect(() => {
-    if (!userTypedInNavSearch.current) return
-    const timer = setTimeout(() => {
-      if (searchQuery !== (filters.query || '')) {
-        updateFilters({ query: searchQuery })
-        if (!location.pathname.startsWith('/search') && searchQuery.length > 0) {
-          navigate('/search')
-        }
+  if (!userTypedInNavSearch.current) return
+  const timer = setTimeout(() => {
+    if (searchQuery !== (filters.query || '')) {
+      updateFilters({ query: searchQuery })
+      if (!location.pathname.startsWith('/search') && searchQuery.length > 0) {
+        navigate('/search')
       }
-    }, 400) // 400ms debounce
-    return () => clearTimeout(timer)
-  }, [searchQuery, updateFilters, navigate, location.pathname, filters.query])
+    }
+  }, 400)
 
-  const languages = [
-    { code: 'en', label: 'English', short: 'EN' },
-    { code: 'hi', label: 'हिंदी', short: 'HI' }
-  ]
+  return () => clearTimeout(timer)
+}, [searchQuery, updateFilters, navigate, location.pathname, filters.query])
+
+// 👇 ADD THIS HERE
+
+
+const languages = [
+  { code: 'en', label: 'English', short: 'EN' },
+  { code: 'hi', label: 'हिंदी', short: 'HI' }
+]
   const currentLang = languages.find(l => l.code === (i18n.language?.split('-')[0] || 'en')) || languages[0]
 
   const changeLanguage = (code) => {
@@ -168,8 +174,18 @@ export const Navbar = () => {
                   onClick={() => setUserMenuOpen(v => !v)}
                   className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#0B0F19] text-white text-sm font-semibold hover:bg-[#CA3433] transition-all duration-300 transform hover:scale-105"
                 >
-                  {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt="Avatar" className="w-5 h-5 rounded-full object-cover" />
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt="Avatar"
+                      className="w-5 h-5 rounded-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null
+                        e.currentTarget.src = `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(
+                          profile?.full_name || 'User'
+                        )}`
+                      }}
+                    />
                   ) : (
                     <User size={16} />
                   )}
