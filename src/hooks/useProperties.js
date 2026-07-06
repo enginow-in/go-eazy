@@ -267,7 +267,8 @@ export const useProperties = () => {
       } else {
         await supabase.from('favorites').insert({ user_id: user.id, property_id: propertyId })
       }
-    } catch (err) {
+    } catch {
+      // Revert optimistic update on failure
       dispatch(toggleFav(propertyId))
     }
   }
@@ -278,7 +279,7 @@ export const useProperties = () => {
       const seventyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString()
       const { data } = await supabase.from('recently_viewed').select('property_id').eq('user_id', user.id).gte('viewed_at', seventyTwoHoursAgo).order('viewed_at', { ascending: false }).limit(20)
       dispatch(setRecentlyViewed(data?.map(r => r.property_id) || []))
-    } catch {}
+    } catch { /* ignore */ }
   }, [user, dispatch])
 
   const getLandlordProperties = async () => {
