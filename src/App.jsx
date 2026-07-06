@@ -33,6 +33,7 @@ const PrivacyPolicy           = lazy(() => import('./pages/legal/PrivacyPolicy')
 const TermsOfService          = lazy(() => import('./pages/legal/TermsOfService'))
 const CookiePolicy            = lazy(() => import('./pages/legal/CookiePolicy'))
 const RefundPolicy            = lazy(() => import('./pages/legal/RefundPolicy'))
+const ResetPassword           = lazy(() => import('./pages/ResetPassword').then(m => ({ default: m.ResetPassword })))
 
 const PageSpinner = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -63,6 +64,7 @@ function App() {
           <Routes>
           <Route path="/" element={<Navigate to="/search" replace />} />
           <Route path="/search" element={<Search />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/property/:id" element={<PropertyDetail />} />
           
           {/* Legal Routes */}
