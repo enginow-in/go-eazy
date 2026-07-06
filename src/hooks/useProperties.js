@@ -134,24 +134,18 @@ export const useProperties = () => {
   const fetchGatedData = useCallback(async (id) => {
     if (!user) return null
     try {
-      // 1. Try the RPC first
-      const rpcResult = await supabase.rpc('get_unlocked_property_details', { prop_id: id })
-      const rpcData = rpcResult.data?.[0] || {}
-
-      // 2. ALWAYS also directly fetch contact_phone + contact_email from properties table
-      //    (the RPC may not include these fields, and landlords can always read their own data)
-      const { data: directData } = await supabase
-        .from('properties')
-        .select('contact_phone, contact_email, exact_location')
-        .eq('id', id)
-        .maybeSingle()
-
-      // 3. Merge — RPC fields take priority, direct fields fill any gaps
+      // The gating is enforced by the get_unlocked_property_details RPC, which
+      // only returns the sensitive fields to the landlord owner or a user who
+      // has paid to unlock the property. We no longer read these columns
+      // directly from the properties table, since that path leaked them to
+      // anyone regardless of payment.
+      const { data, error } = await supabase.rpc('get_unlocked_property_details', { prop_id: id })
+      if (error) throw error
+      const row = data?.[0] || {}
       return {
-        ...rpcData,
-        contact_phone: rpcData?.contact_phone || directData?.contact_phone || null,
-        contact_email: rpcData?.contact_email || directData?.contact_email || null,
-        exact_location: rpcData?.exact_location || directData?.exact_location || null,
+        contact_phone: row.contact_phone || null,
+        contact_email: row.contact_email || null,
+        exact_location: row.exact_location || null,
       }
     } catch (err) {
       console.error('Error fetching gated data:', err)
@@ -220,7 +214,9 @@ export const useProperties = () => {
       const { data: { publicUrl } } = supabase.storage.from('property-images').getPublicUrl(path)
       imageUrls.push(publicUrl)
     }
-    const { data, error } = await supabase.from('properties').insert({ ...propertyData, landlord_id: user.id, images: imageUrls, views: 0 }).select().maybeSingle()
+    // Return only id: reading the sensitive columns back is now revoked for the
+    // authenticated role, so a bare .select() would fail.
+    const { data, error } = await supabase.from('properties').insert({ ...propertyData, landlord_id: user.id, images: imageUrls, views: 0 }).select('id').maybeSingle()
     if (error) throw error
     return data
   }
@@ -237,7 +233,9 @@ export const useProperties = () => {
         imageUrls.push(publicUrl)
       }
     }
-    const { data, error } = await supabase.from('properties').update({ ...updates, images: imageUrls }).eq('id', id).eq('landlord_id', user.id).select().maybeSingle()
+    // Return only id: reading the sensitive columns back is now revoked for the
+    // authenticated role, so a bare .select() would fail.
+    const { data, error } = await supabase.from('properties').update({ ...updates, images: imageUrls }).eq('id', id).eq('landlord_id', user.id).select('id').maybeSingle()
     if (error) throw error
     return data
   }
@@ -282,7 +280,10 @@ export const useProperties = () => {
   }, [user, dispatch])
 
   const getLandlordProperties = async () => {
-    const { data, error } = await supabase.from('properties').select('*').eq('landlord_id', user.id).order('created_at', { ascending: false })
+    // select() the non-sensitive columns only. select('*') would now fail
+    // because SELECT on contact_phone/contact_email/exact_location is revoked
+    // for the authenticated role. The dashboard doesn't display those anyway.
+    const { data, error } = await supabase.from('properties').select(PUBLIC_PROPERTY_FIELDS).eq('landlord_id', user.id).order('created_at', { ascending: false })
     if (error) throw error
     return data || []
   }
