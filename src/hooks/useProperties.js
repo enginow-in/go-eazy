@@ -88,7 +88,8 @@ export const useProperties = () => {
         .limit(8)
       if (error) throw error
       dispatch(setFeatured(data?.length ? data : MOCK_PROPERTIES.sort((a, b) => b.views - a.views).slice(0, 8)))
-    } catch {
+    } catch(err) {
+      console.error(err);
       dispatch(setFeatured(MOCK_PROPERTIES.sort((a, b) => b.views - a.views).slice(0, 8)))
     }
   }, [dispatch])
@@ -104,7 +105,8 @@ export const useProperties = () => {
         .limit(10)
       if (error) throw error
       return data?.length ? data : MOCK_PROPERTIES.filter(p => p.type === type)
-    } catch {
+    } catch(err) {
+      console.error(err);
       return MOCK_PROPERTIES.filter(p => p.type === type)
     }
   }, [])
