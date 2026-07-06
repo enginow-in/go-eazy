@@ -50,6 +50,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           <img 
             src={mainImage} 
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+            alt={property.title || "Property image"}   //  Add alt attribute here
             onLoad={() => setImgLoaded(true)}
             loading="lazy"
           />
