@@ -168,19 +168,19 @@ export const Navbar = () => {
                   onClick={() => setUserMenuOpen(v => !v)}
                   className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#0B0F19] text-white text-sm font-semibold hover:bg-[#CA3433] transition-all duration-300 transform hover:scale-105"
                 >
-                  {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt="Avatar" className="w-5 h-5 rounded-full object-cover" />
-                  ) : (
-                    <User size={16} />
-                  )}
-                  <span>{role === 'admin' ? 'Admin Panel' : (profile?.full_name?.split(' ')[0] || 'Dashboard')}</span>
-                </button>
-
-                {userMenuOpen && (
-                  <>
-                    <div className="fixed inset-0 z-10" onClick={() => setUserMenuOpen(false)} />
-                    <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-xl border border-gray-100 z-20 overflow-hidden">
-                      <div className="py-1">
+                 {profile?.avatar_url ? (
+  <img 
+    src={profile?.avatar_url} 
+    alt="Avatar" 
+    className="w-5 h-5 rounded-full object-cover" 
+    onError={(e) => {
+      e.target.onerror = null; 
+      e.target.src = 'https://api.dicebear.com/7.x/bottts/svg';
+    }}
+  />
+) : (
+  <User size={16} />
+)}
                         <button
                           onClick={() => { 
                             const dest = role === 'admin' ? '/systemadmin' : role === 'landlord' ? '/landlord' : role === 'service_provider' ? '/service-provider' : '/dashboard'
