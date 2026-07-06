@@ -14,7 +14,7 @@ const ROLE_OPTIONS = [
 ]
 
 export const AuthGateModal = () => {
-  const { user, signIn, signUp, signInWithGoogle } = useAuth()
+  const { user, signIn, signUp, signInWithGoogle, resetPasswordForEmail } = useAuth()
   const { loading } = useSelector(s => s.auth)
 
   const [tab, setTab] = useState('login')
@@ -41,7 +41,11 @@ export const AuthGateModal = () => {
     if (!validate()) return
     setFormLoading(true)
     try {
-      if (tab === 'login') {
+      if (tab === 'forgot_password') {
+        await resetPasswordForEmail(form.email)
+        toast.success('Password reset link sent to your email!')
+        setTab('login')
+      } else if (tab === 'login') {
         await signIn({ email: form.email, password: form.password })
         toast.success('Welcome back!')
       } else {
@@ -99,19 +103,26 @@ export const AuthGateModal = () => {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 p-0.5 bg-gray-100 rounded-lg mb-4">
-            {['login', 'signup'].map(t => (
-              <button
-                key={t}
-                onClick={() => { setTab(t); setErrors({}) }}
-                className={`flex-1 py-1.5 rounded-md text-xs font-bold transition-all ${
-                  tab === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'
-                }`}
-              >
-                {t === 'login' ? 'Sign In' : 'Sign Up'}
-              </button>
-            ))}
-          </div>
+          {tab === 'forgot_password' ? (
+            <div className="text-center mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Forgot Password</h3>
+              <p className="text-xs text-gray-500 mt-1">Enter your email to receive a password reset link</p>
+            </div>
+          ) : (
+            <div className="flex gap-1 p-0.5 bg-gray-100 rounded-lg mb-4">
+              {['login', 'signup'].map(t => (
+                <button
+                  key={t}
+                  onClick={() => { setTab(t); setErrors({}) }}
+                  className={`flex-1 py-1.5 rounded-md text-xs font-bold transition-all ${
+                    tab === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+                  }`}
+                >
+                  {t === 'login' ? 'Sign In' : 'Sign Up'}
+                </button>
+              ))}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit}>
             <AnimatePresence mode="wait">
@@ -144,20 +155,22 @@ export const AuthGateModal = () => {
                   className="text-sm py-2"
                 />
 
-                <Input
-                  type={showPass ? 'text' : 'password'}
-                  placeholder="Password (min 8 chars)"
-                  leftIcon={<Lock size={13} />}
-                  rightIcon={
-                    <button type="button" onClick={() => setShowPass(!showPass)} className="cursor-pointer text-gray-400">
-                      {showPass ? <EyeOff size={13} /> : <Eye size={13} />}
-                    </button>
-                  }
-                  value={form.password}
-                  onChange={e => { setForm(f => ({ ...f, password: e.target.value })); setErrors(v => ({ ...v, password: '' })) }}
-                  error={errors.password}
-                  className="text-sm py-2"
-                />
+                {tab !== 'forgot_password' && (
+                  <Input
+                    type={showPass ? 'text' : 'password'}
+                    placeholder="Password (min 8 chars)"
+                    leftIcon={<Lock size={13} />}
+                    rightIcon={
+                      <button type="button" onClick={() => setShowPass(!showPass)} className="cursor-pointer text-gray-400">
+                        {showPass ? <EyeOff size={13} /> : <Eye size={13} />}
+                      </button>
+                    }
+                    value={form.password}
+                    onChange={e => { setForm(f => ({ ...f, password: e.target.value })); setErrors(v => ({ ...v, password: '' })) }}
+                    error={errors.password}
+                    className="text-sm py-2"
+                  />
+                )}
 
                 {/* Role Selector — compact pill row for signup */}
                 {tab === 'signup' && (
@@ -194,10 +207,34 @@ export const AuthGateModal = () => {
               loading={formLoading}
             >
               <span className="flex items-center justify-center gap-1.5">
-                {tab === 'login' ? 'Sign In' : 'Create Account'}
-                <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
+                {tab === 'login' ? 'Sign In' : tab === 'forgot_password' ? 'Send Reset Link' : 'Create Account'}
+                {tab !== 'forgot_password' && <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />}
               </span>
             </Button>
+
+            {tab === 'login' && (
+              <div className="text-center mt-3">
+                <button
+                  type="button"
+                  onClick={() => { setTab('forgot_password'); setErrors({}) }}
+                  className="text-xs font-semibold text-[#CA3433] hover:underline cursor-pointer"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+            )}
+
+            {tab === 'forgot_password' && (
+              <div className="text-center mt-3">
+                <button
+                  type="button"
+                  onClick={() => { setTab('login'); setErrors({}) }}
+                  className="text-xs font-semibold text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+                >
+                  Back to Login
+                </button>
+              </div>
+            )}
           </form>
 
           {/* Divider */}
