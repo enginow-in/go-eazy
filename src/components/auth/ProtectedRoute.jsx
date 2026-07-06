@@ -9,12 +9,14 @@ const Spinner = () => (
 )
 
 export const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { user, profile, role, loading } = useSelector(s => s.auth)
+  const { user, profile, role, loading, initialized } = useSelector(s => s.auth)
 
-  // Show spinner while auth is loading OR while user is logged in but profile hasn't loaded yet
-  if (loading || (user && !profile)) return <Spinner />
+  // Wait for the initial auth check to complete before making any decisions.
+  // Without this, a slow getSession() call can cause a premature redirect
+  // because `user` is transiently null before the session is hydrated.
+  if (!initialized || loading || (user && !profile)) return <Spinner />
 
-  // Not logged in at all
+  // Auth is fully resolved — user is definitively not logged in
   if (!user) return <Navigate to="/" replace />
 
   // Role restriction check

@@ -297,15 +297,34 @@ export const useServices = () => {
   }
 
   // ── Payment Function ────────────────────────────────────────────────
-  const payServiceListing = async (id) => {
-    // Only successful payments should call this
-    const { error } = await supabase
-      .from('service_providers')
-      .update({ payment_status: 'paid' })
-      .eq('id', id)
-      .eq('provider_id', user.id)
+  // Verifies Razorpay payment server-side before activating the listing.
+  // NEVER update payment_status directly from the client.
+  const payServiceListing = async (id, razorpayResponse) => {
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token
+    if (!token) throw new Error('Session expired — please log in again')
 
-    if (error) throw error
+    const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-service-payment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({
+        razorpay_order_id: razorpayResponse.razorpay_order_id,
+        razorpay_payment_id: razorpayResponse.razorpay_payment_id,
+        razorpay_signature: razorpayResponse.razorpay_signature,
+        service_id: id,
+      }),
+    })
+
+    if (!resp.ok) {
+      const errJson = await resp.json().catch(() => ({}))
+      throw new Error(errJson.error || `Payment verification failed (HTTP ${resp.status})`)
+    }
+
+    return await resp.json()
   }
 
   // updateFilters is the primary alias used across all pages (NearbyServices, etc.)
