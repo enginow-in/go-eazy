@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import {
@@ -20,9 +20,16 @@ export const useServices = () => {
     reviewsLoading, hasMore, page,
   } = useSelector(s => s.service)
   const { user } = useSelector(s => s.auth)
+  const abortControllerRef = useRef(null)
 
   // ── Fetch Services List ─────────────────────────────────────────────
   const fetchServices = useCallback(async (reset = false) => {
+    // Cancel any in-flight request so a slower, now-stale response can never
+    // resolve after a newer one and overwrite fresher results.
+    abortControllerRef.current?.abort()
+    const controller = new AbortController()
+    abortControllerRef.current = controller
+
     dispatch(setServiceLoading(true))
     try {
       const from = reset ? 0 : page * PAGE_SIZE
@@ -33,6 +40,7 @@ export const useServices = () => {
         // profiles!provider_id uses column-name hint (more portable than FK constraint name).
         .select(`*, profiles!provider_id(${PUBLIC_PROFILE_FIELDS})`)
         .eq('verification_status', 'verified') // Admin approval is the public gate
+        .abortSignal(controller.signal)
 
       if (filters.category) query = query.eq('category', filters.category)
       if (filters.state)    query = query.ilike('state', `%${filters.state}%`)
@@ -55,10 +63,11 @@ export const useServices = () => {
       dispatch(setServiceHasMore((data || []).length === PAGE_SIZE))
       dispatch(setServicePage(reset ? 1 : page + 1))
     } catch (err) {
+      if (abortControllerRef.current !== controller) return // superseded by a newer request — ignore
       console.error('fetchServices error:', err)
       dispatch(setServices([]))
     } finally {
-      dispatch(setServiceLoading(false))
+      if (abortControllerRef.current === controller) dispatch(setServiceLoading(false))
     }
   }, [filters, page, dispatch])
 
