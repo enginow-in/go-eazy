@@ -23,6 +23,7 @@ export const Navbar = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [cityMenuOpen, setCityMenuOpen] = useState(false)
   const [langMenuOpen, setLangMenuOpen] = useState(false)
+  const [currencyMenuOpen, setCurrencyMenuOpen] = useState(false)
   const [selectedCity, setSelectedCity] = useState(filters.city || 'All Cities')
   const [searchQuery, setSearchQuery] = useState(filters.query || '')
   // Tracks if the user is actively typing in the Navbar's own search bar.
@@ -153,7 +154,10 @@ export const Navbar = () => {
             
             <div className="w-px h-6 bg-gray-200"></div>
 
-            <button className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+            <button
+  onClick={() => setCurrencyMenuOpen(!currencyMenuOpen)}
+  className="flex items-center gap-2 text-sm font-semibold text-gray-700"
+>
               <div className="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center text-xs overflow-hidden border border-brand-100">
                 <img src="/INR.webp" alt="INR" className="w-full h-full object-cover" />
               </div>
