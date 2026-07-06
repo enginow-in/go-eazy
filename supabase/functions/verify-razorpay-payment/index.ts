@@ -23,7 +23,7 @@ function getCorsHeaders(req: Request) {
 }
 
 // ── TIMING-SAFE HMAC COMPARISON ───────────────────────────────────────────────
-// Uses bitwise XOR across all bytes so execution time doesn't leak secret length
+// Uses bitwise XOR across all bytes so execution time doesn't leak secret length.
 function timingSafeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false
   const encoder = new TextEncoder()
@@ -61,24 +61,37 @@ async function verifySignature(
 }
 
 // ── VALIDATE PAYMENT WITH RAZORPAY API ────────────────────────────────────────
-// Cross-check: ensure the payment actually exists, is captured, correct amount
-// This prevents replay attacks and forged payment IDs
+// Cross-checks:
+//   1. Payment exists, is captured, is ₹9 INR
+//   2. Payment's order_id matches the submitted order_id
+//   3. [FIX #3 — IDOR] Order's notes.property_id matches the submitted
+//      property_id — prevents one valid payment from unlocking any property
+//      other than the one it was actually paid for.
+//
+// Why notes? create-razorpay-order embeds property_id server-side in the
+// Razorpay order notes at creation time. A client cannot forge or alter
+// notes after the order exists. The HMAC signature covers orderId|paymentId
+// only, so property_id must be cross-checked via the order notes — it is
+// the only tamper-evident binding between a payment and a specific property.
 async function validatePaymentWithRazorpay(
   paymentId: string,
   expectedOrderId: string,
+  expectedPropertyId: string,   // [FIX #3] compared against order.notes.property_id
   keyId: string,
   keySecret: string
 ): Promise<{ valid: boolean; reason?: string }> {
   const auth = btoa(`${keyId}:${keySecret}`)
-  const resp = await fetch(`https://api.razorpay.com/v1/payments/${paymentId}`, {
+
+  // Step A: Fetch payment and verify amount / status / order binding
+  const payResp = await fetch(`https://api.razorpay.com/v1/payments/${paymentId}`, {
     headers: { Authorization: `Basic ${auth}` }
   })
 
-  if (!resp.ok) {
-    return { valid: false, reason: `Razorpay API returned ${resp.status}` }
+  if (!payResp.ok) {
+    return { valid: false, reason: `Razorpay payment API returned ${payResp.status}` }
   }
 
-  const payment = await resp.json()
+  const payment = await payResp.json()
 
   if (payment.order_id !== expectedOrderId) {
     return { valid: false, reason: 'Order ID mismatch' }
@@ -94,6 +107,37 @@ async function validatePaymentWithRazorpay(
 
   if (payment.amount !== 900) {
     return { valid: false, reason: 'Amount tampered' }
+  }
+
+  // Step B: [FIX #3 — IDOR] Fetch the order and verify its notes.property_id.
+  //
+  // Attack vector being blocked:
+  //   Attacker pays ₹9 to unlock property X → receives valid
+  //   (order_id, payment_id, signature). They then call this endpoint again
+  //   with the same credentials but property_id = Y. HMAC and Razorpay amount
+  //   checks all pass (the payment IS real). Without this check, property Y
+  //   would be unlocked for free.
+  //
+  //   By comparing order.notes.property_id (set server-side during order
+  //   creation and immutable thereafter) against the submitted property_id,
+  //   we ensure a payment can only unlock the exact property it was paid for.
+  const orderResp = await fetch(`https://api.razorpay.com/v1/orders/${expectedOrderId}`, {
+    headers: { Authorization: `Basic ${auth}` }
+  })
+
+  if (!orderResp.ok) {
+    return { valid: false, reason: `Razorpay order API returned ${orderResp.status}` }
+  }
+
+  const order = await orderResp.json()
+
+  if (order.notes?.property_id !== expectedPropertyId) {
+    // Log the mismatch (non-sensitive data only) for incident detection
+    console.error(
+      `[SECURITY] Property ID mismatch — order notes: "${order.notes?.property_id}", ` +
+      `request body: "${expectedPropertyId}", order: "${expectedOrderId}"`
+    )
+    return { valid: false, reason: 'Property ID mismatch in order notes' }
   }
 
   return { valid: true }
@@ -185,10 +229,15 @@ serve(async (req: Request) => {
     }
 
     // 4. Cross-validate payment with Razorpay API
-    // Prevents replay attacks and forged payment IDs
+    // [FIX #3] Now also verifies order.notes.property_id === property_id
+    // to prevent IDOR: one payment unlocking a different property.
     const keyId = Deno.env.get('RAZORPAY_KEY_ID')!
     const { valid, reason } = await validatePaymentWithRazorpay(
-      razorpay_payment_id, razorpay_order_id, keyId, secret
+      razorpay_payment_id,
+      razorpay_order_id,
+      property_id,   // [FIX #3] passed as expectedPropertyId
+      keyId,
+      secret
     )
 
     if (!valid) {

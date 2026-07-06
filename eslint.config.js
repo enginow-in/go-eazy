@@ -23,7 +23,16 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      'no-unused-vars': ['error', {
+        // Uppercase-prefixed vars (React components, constants) and the
+        // framer-motion `motion` namespace are exempt — ESLint does not
+        // track JSX namespace usage (<motion.div>) as a variable reference.
+        varsIgnorePattern: '^[A-Z_]|^motion$',
+        // Catch clause bindings and function args prefixed with _ are
+        // intentionally unused (e.g. `catch (_err)` for optimistic rollback).
+        caughtErrorsIgnorePattern: '^_',
+        argsIgnorePattern: '^_',
+      }],
     },
   },
 ])

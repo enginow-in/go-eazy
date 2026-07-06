@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useMemo, useRef, useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import { useProperties } from '../../hooks/useProperties'
 import { PropertyCard } from './PropertyCard'
@@ -6,25 +6,30 @@ import { cn } from '../../utils/helpers'
 
 export const RecommendedSection = ({ viewMode = 'grid' }) => {
   const { getRecommendedProperties, loading } = useProperties()
-  const [recommendations, setRecommendations] = useState([])
-  const isLocked = useRef(false)
+  // Stable random seed — computed once per mount, reused on every memo evaluation
+  // so the card order never reshuffles on re-renders (same UX as the previous lock).
+  const seedRef = useRef(Math.random())
+  // resetCount drives useMemo re-evaluation when the user clicks Reset.
+  const [resetCount, setResetCount] = useState(0)
 
-  // Lock recommendations once — prevents re-shuffle flicker on every re-render
-  useEffect(() => {
-    if (!loading && !isLocked.current) {
-      const recs = getRecommendedProperties()
-      if (recs.length > 0) {
-        setRecommendations(recs)
-        isLocked.current = true
-      }
-    }
-  }, [loading, getRecommendedProperties])
+  // Derive recommendations without a setState side-effect.
+  // seedRef.current is intentionally read inside the memo but not listed as a dep —
+  // it is a stable ref; resetCount is the dep that signals when to re-shuffle.
+  const recommendations = useMemo(() => {
+    if (loading) return []
+    const recs = getRecommendedProperties()
+    if (!recs.length) return []
+    // Stable sort using the frozen seed so order is consistent across re-renders.
+    return [...recs].sort(() => seedRef.current - 0.5)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, getRecommendedProperties, resetCount])
 
   if (!recommendations.length) return null
 
   const handleResetQuiz = () => {
-    isLocked.current = false
-    setRecommendations([])
+    // Assign a fresh seed so the next memo evaluation produces a different order.
+    seedRef.current = Math.random()
+    setResetCount(c => c + 1)
     window.dispatchEvent(new Event('goeazy_quiz_reset'))
   }
 
