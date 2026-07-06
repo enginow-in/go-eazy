@@ -26,7 +26,7 @@ export const Layout = ({ children }) => {
       <main className={location.pathname === '/systemadmin' ? "" : "min-h-screen"}>
         {children}
       </main>
-      {location.pathname === '/search' && <Footer />}
+      {(location.pathname === '/search' || location.pathname === '/') && <Footer />}
       <AuthModal />
     </>
   )
