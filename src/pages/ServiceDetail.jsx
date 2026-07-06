@@ -143,7 +143,7 @@ export const ServiceDetail = () => {
       setReviewRating(0); setReviewText('')
       toast.success(myReview ? t('services.reviews.reviewUpdated') : t('services.reviews.reviewSubmitted'))
     } catch (err) {
-      toast.error(err.message || t('property.sections.reviewError'))
+      toast.error(err.message || t('services.reviews.reviewError'))
     } finally {
       setSubmittingReview(false)
     }
@@ -153,7 +153,7 @@ export const ServiceDetail = () => {
     try {
       await deleteReview(reviewId)
       toast.success(t('services.reviews.reviewDeleted'))
-    } catch { toast.error(t('property.sections.reviewError')) }
+    } catch { toast.error(t('services.reviews.reviewError')) }
   }
 
   const openGallery = (index) => {
