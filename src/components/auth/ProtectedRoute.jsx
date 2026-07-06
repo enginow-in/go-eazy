@@ -8,22 +8,26 @@ const Spinner = () => (
   </div>
 )
 
+const roleRedirectMap = {
+  admin: '/systemadmin',
+  service_provider: '/service-provider',
+  landlord: '/landlord',
+  user: '/dashboard',
+}
+
 export const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { user, profile, role, loading } = useSelector(s => s.auth)
+  const { user, profile, role, loading, authChecked } = useSelector(s => s.auth)
 
-  // Show spinner while auth is loading OR while user is logged in but profile hasn't loaded yet
-  if (loading || (user && !profile)) return <Spinner />
+  // Wait for initial auth check to complete and for profile to load when user exists
+  if (!authChecked || loading || (user && !profile)) return <Spinner />
 
-  // Not logged in at all
+  // Not logged in at all (after auth check)
   if (!user) return <Navigate to="/" replace />
 
   // Role restriction check
   if (allowedRoles && !allowedRoles.includes(role)) {
-    // Smart redirect to correct dashboard for this user's actual role
-    if (role === 'admin') return <Navigate to="/systemadmin" replace />
-    if (role === 'service_provider') return <Navigate to="/service-provider" replace />
-    if (role === 'landlord') return <Navigate to="/landlord" replace />
-    return <Navigate to="/dashboard" replace />
+    const redirectTo = roleRedirectMap[role] || '/'
+    return <Navigate to={redirectTo} replace />
   }
 
   return children

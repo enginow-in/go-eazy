@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
-import { setUser, setProfile, logout, setLoading } from '../store/authSlice'
+import { setUser, setProfile, logout, setLoading, setAuthChecked } from '../store/authSlice'
 
 export const useAuth = () => {
   const dispatch = useDispatch()
@@ -16,6 +16,9 @@ export const useAuth = () => {
       dispatch(setUser(session?.user ?? null))
       if (session?.user) fetchProfile(session.user.id)
       else dispatch(setLoading(false))
+
+      // Mark that initial auth check has completed (success or no-session)
+      dispatch(setAuthChecked(true))
     })
 
     // Listen for auth changes
