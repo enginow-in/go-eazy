@@ -1,0 +1,12 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Keep private / authenticated areas out of search results
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /systemadmin
+Disallow: /landlord
+Disallow: /service-provider
+
+Sitemap: https://go-eazy.vercel.app/sitemap.xml

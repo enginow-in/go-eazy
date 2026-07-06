@@ -1,0 +1,19 @@
+{
+  "name": "GoEazy | Rooms, PGs & Hostels in Uttarakhand",
+  "short_name": "GoEazy",
+  "description": "Find and list verified Rooms, PGs, and Hostels in Uttarakhand. Broker free, student friendly housing.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#CA3433",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
