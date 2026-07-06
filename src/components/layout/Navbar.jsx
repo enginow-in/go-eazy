@@ -23,7 +23,9 @@ export const Navbar = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [cityMenuOpen, setCityMenuOpen] = useState(false)
   const [langMenuOpen, setLangMenuOpen] = useState(false)
+  const [currencyMenuOpen, setCurrencyMenuOpen] = useState(false)
   const [selectedCity, setSelectedCity] = useState(filters.city || 'All Cities')
+  const [selectedCurrency, setSelectedCurrency] = useState('INR')
   const [searchQuery, setSearchQuery] = useState(filters.query || '')
   // Tracks if the user is actively typing in the Navbar's own search bar.
   // Without this guard, the debounce effect fires on any re-render where
@@ -51,9 +53,21 @@ export const Navbar = () => {
   ]
   const currentLang = languages.find(l => l.code === (i18n.language?.split('-')[0] || 'en')) || languages[0]
 
+  const currencies = [
+    { code: 'INR', label: 'Indian Rupee', symbol: '₹', flag: '/INR.webp' },
+    { code: 'USD', label: 'US Dollar', symbol: '$', flag: 'https://flagcdn.com/w20/us.png' },
+    { code: 'EUR', label: 'Euro', symbol: '€', flag: 'https://flagcdn.com/w20/eu.png' },
+  ]
+  const currentCurrency = currencies.find(c => c.code === selectedCurrency) || currencies[0]
+
   const changeLanguage = (code) => {
     i18n.changeLanguage(code)
     setLangMenuOpen(false)
+  }
+
+  const changeCurrency = (code) => {
+    setSelectedCurrency(code)
+    setCurrencyMenuOpen(false)
   }
 
 
@@ -100,7 +114,11 @@ export const Navbar = () => {
           {/* Language Picker (Left side) */}
           <div className="relative z-30">
             <button 
-              onClick={() => setLangMenuOpen(!langMenuOpen)}
+              onClick={() => {
+                setLangMenuOpen(!langMenuOpen)
+                setUserMenuOpen(false)
+                setCurrencyMenuOpen(false)
+              }}
               className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-700 hover:text-[#CA3433] transition-colors uppercase px-1 py-2"
             >
               {currentLang.short} <ChevronDown size={14} className={`transition-transform duration-200 ${langMenuOpen ? 'rotate-180 text-[#CA3433]' : ''}`} />
@@ -153,19 +171,55 @@ export const Navbar = () => {
             
             <div className="w-px h-6 bg-gray-200"></div>
 
-            <button className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-              <div className="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center text-xs overflow-hidden border border-brand-100">
-                <img src="/INR.webp" alt="INR" className="w-full h-full object-cover" />
-              </div>
-              INR <ChevronDown size={14} />
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => {
+                  setCurrencyMenuOpen(!currencyMenuOpen)
+                  setUserMenuOpen(false)
+                  setLangMenuOpen(false)
+                }}
+                className="flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-[#CA3433] transition-colors"
+              >
+                <div className="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center text-xs overflow-hidden border border-brand-100">
+                  <img src={currentCurrency.flag} alt={currentCurrency.code} className="w-full h-full object-cover" />
+                </div>
+                {currentCurrency.code} <ChevronDown size={14} className={`transition-transform duration-200 ${currencyMenuOpen ? 'rotate-180 text-[#CA3433]' : ''}`} />
+              </button>
+
+              {currencyMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setCurrencyMenuOpen(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden py-1">
+                    {currencies.map(currency => (
+                      <button
+                        key={currency.code}
+                        onClick={() => changeCurrency(currency.code)}
+                        className={`w-full text-left px-4 py-3 text-sm font-semibold transition-colors flex items-center gap-3 ${selectedCurrency === currency.code ? 'bg-[#fff5f5] text-[#CA3433]' : 'text-gray-700 hover:bg-gray-50'}`}
+                      >
+                        <div className="w-5 h-5 rounded-full overflow-hidden border border-gray-200 flex-shrink-0">
+                          <img src={currency.flag} alt={currency.code} className="w-full h-full object-cover" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-bold">{currency.code} ({currency.symbol})</div>
+                          <div className="text-xs text-gray-500">{currency.label}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
 
             {loading ? (
               <Skeleton className="h-10 w-28 rounded-full" />
             ) : user ? (
               <div className="relative">
                 <button
-                  onClick={() => setUserMenuOpen(v => !v)}
+                  onClick={() => {
+                    setUserMenuOpen(v => !v)
+                    setLangMenuOpen(false)
+                    setCurrencyMenuOpen(false)
+                  }}
                   className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#0B0F19] text-white text-sm font-semibold hover:bg-[#CA3433] transition-all duration-300 transform hover:scale-105"
                 >
                   {profile?.avatar_url ? (
