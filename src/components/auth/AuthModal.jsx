@@ -79,9 +79,16 @@ export const AuthModal = () => {
   }
 
   const handleGoogle = async () => {
-    // Save current path to return back after OAuth redirect
-    localStorage.setItem('sb_return_to', window.location.pathname + window.location.search)
-    
+    // Save current path to return back after OAuth redirect. Isolated in its
+    // own try/catch — a storage failure (e.g. localStorage disabled in
+    // private browsing) should never block sign-in; the "return to"
+    // bookmark is a convenience, not a requirement for successful login.
+    try {
+      localStorage.setItem('sb_return_to', window.location.pathname + window.location.search)
+    } catch (err) {
+      console.warn('Could not save return path:', err)
+    }
+
     setGoogleLoading(true)
     try {
       await signInWithGoogle()
