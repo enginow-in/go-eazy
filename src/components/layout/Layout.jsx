@@ -3,7 +3,6 @@ import { useLocation } from 'react-router-dom'
 import { Navbar } from '../layout/Navbar'
 import { Footer } from '../layout/Footer'
 import { AuthModal } from '../auth/AuthModal'
-import { AuthGateModal } from '../auth/AuthGateModal'
 import { Toaster } from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -19,9 +18,6 @@ export const Layout = ({ children }) => {
           success: { iconTheme: { primary: '#CA3433', secondary: '#fff' } },
         }}
       />
-      
-      {/* Forced Auth Gate for Search page */}
-      {location.pathname === '/search' && <AuthGateModal />}
       
       {location.pathname !== '/systemadmin' && <Navbar />}
       <AnimatePresence mode="wait">
