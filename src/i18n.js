@@ -15,7 +15,8 @@ const resources = {
         dashboard: 'Dashboard',
         settings: 'Settings',
         signOut: 'Sign Out',
-        state: 'Uttarakhand'
+        state: 'Uttarakhand',
+        onlyLandlords: 'Only landlords can list properties.'
       },
       cities: {
         Dehradun: 'Dehradun',
@@ -277,7 +278,8 @@ const resources = {
         dashboard: 'डैशबोर्ड',
         settings: 'सेटिंग्स',
         signOut: 'लॉग आउट',
-        state: 'उत्तराखंड'
+        state: 'उत्तराखंड',
+        onlyLandlords: 'केवल मकान मालिक ही प्रॉपर्टी लिस्ट कर सकते हैं।'
       },
       cities: {
         Dehradun: 'देहरादून',
