@@ -79,7 +79,7 @@ User experience is the core of GoEazy. We've implemented several "Premium-Only" 
 ### Backend Gating (Supabase + Edge Functions)
 - **Zero-Trust Database**: Powered by **PostgreSQL Row Level Security (RLS)**. No user can read, modify, or delete another user's property data, even if they have the ID.
 - **Payment-Gated API**: Property creation is **not allowed directly** via the client. It is strictly gated behind a secure Supabase Edge Function that verifies the **Razorpay HMAC Signature** and payment status before touching the database.
-- **ES256 JWT Validation**: Using high-entropy Eliptic Curve signatures for user session validation, ensuring sessions cannot be spoofed.
+- **ES256 JWT Validation**: Using high-entropy Elliptic Curve signatures for user session validation, ensuring sessions cannot be spoofed.
 
 ### Content Protection Engine
 - **Anti-Scraping Layer**: Global selection disabling and context-menu blocking to prevent automated or manual content theft.
