@@ -73,7 +73,11 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
   useEffect(() => {
     if (map.current) return
     const mapboxgl = window.mapboxgl
-    if (!mapboxgl) { console.error('mapbox-gl not loaded from CDN'); return }
+    if (!mapboxgl) { 
+      console.error('mapbox-gl not loaded from CDN')
+      toast.error('Please disable your adblocker to view the map')
+      return 
+    }
 
     mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN
 
