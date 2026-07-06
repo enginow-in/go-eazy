@@ -71,27 +71,50 @@ export const useProperties = () => {
       dispatch(setHasMore((data || []).length === PAGE_SIZE))
       dispatch(setPage(reset ? 1 : page + 1))
     } catch (err) {
-      console.error('fetchProperties error:', err)
-      dispatch(setListings([]))
-    } finally {
+  console.error('fetchProperties error:', err)
+
+  dispatch(setListings([]))
+  dispatch(setHasMore(false))
+  dispatch(setTotalCount(0))
+
+  if (reset) {
+    dispatch(setPage(0))
+  }
+} finally {
       dispatch(setLoading(false))
     }
   }, [filters, page, dispatch])
 
-  const fetchFeatured = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from('properties')
-        .select(`${PUBLIC_PROPERTY_FIELDS}, profiles!properties_landlord_id_fkey(${PUBLIC_PROFILE_FIELDS})`)
-        .eq('availability', true)
-        .order('views', { ascending: false })
-        .limit(8)
-      if (error) throw error
-      dispatch(setFeatured(data?.length ? data : MOCK_PROPERTIES.sort((a, b) => b.views - a.views).slice(0, 8)))
-    } catch {
-      dispatch(setFeatured(MOCK_PROPERTIES.sort((a, b) => b.views - a.views).slice(0, 8)))
-    }
-  }, [dispatch])
+const fetchFeatured = useCallback(async () => {
+  try {
+    const { data, error } = await supabase
+      .from('properties')
+      .select(`${PUBLIC_PROPERTY_FIELDS}, profiles!properties_landlord_id_fkey(${PUBLIC_PROFILE_FIELDS})`)
+      .eq('availability', true)
+      .order('views', { ascending: false })
+      .limit(8)
+
+    if (error) throw error
+
+    dispatch(
+      setFeatured(
+        data?.length
+          ? data
+          : [...MOCK_PROPERTIES]
+              .sort((a, b) => b.views - a.views)
+              .slice(0, 8)
+      )
+    )
+  } catch {
+    dispatch(
+      setFeatured(
+        [...MOCK_PROPERTIES]
+          .sort((a, b) => b.views - a.views)
+          .slice(0, 8)
+      )
+    )
+  }
+}, [dispatch])
 
   const fetchByType = useCallback(async (type) => {
     try {
@@ -209,9 +232,38 @@ export const useProperties = () => {
     if (error) throw error
     dispatch(removeReview(reviewId))
   }
+  const uploadImages = async (images) => {
+  const imageUrls = []
+
+  for (const img of images) {
+    const ext = img.name.split(".").pop()
+
+    const path = `properties/${user.id}/${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(7)}.${ext}`
+
+    const { error } = await supabase.storage
+      .from("property-images")
+      .upload(path, img)
+
+    if (error) {
+      throw new Error(`Image upload failed: ${error.message}`)
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage
+      .from("property-images")
+      .getPublicUrl(path)
+
+    imageUrls.push(publicUrl)
+  }
+
+  return imageUrls
+}
 
   const createProperty = async (propertyData, images) => {
-    const imageUrls = []
+    const imageUrls = await uploadImages(images)
     for (const img of images) {
       const ext = img.name.split('.').pop()
       const path = `properties/${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`
@@ -226,21 +278,27 @@ export const useProperties = () => {
   }
 
   const updateProperty = async (id, updates, newImages) => {
-    let imageUrls = updates.images || []
-    if (newImages?.length) {
-      for (const img of newImages) {
-        const ext = img.name.split('.').pop()
-        const path = `properties/${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`
-        const { error: uploadError } = await supabase.storage.from('property-images').upload(path, img)
-        if (uploadError) throw new Error(`Image upload failed: ${uploadError.message}`)
-        const { data: { publicUrl } } = supabase.storage.from('property-images').getPublicUrl(path)
-        imageUrls.push(publicUrl)
-      }
-    }
-    const { data, error } = await supabase.from('properties').update({ ...updates, images: imageUrls }).eq('id', id).eq('landlord_id', user.id).select().maybeSingle()
-    if (error) throw error
-    return data
+  let imageUrls = updates.images || []
+
+  if (newImages?.length) {
+    imageUrls.push(...(await uploadImages(newImages)))
   }
+
+  const { data, error } = await supabase
+    .from('properties')
+    .update({
+      ...updates,
+      images: imageUrls,
+    })
+    .eq('id', id)
+    .eq('landlord_id', user.id)
+    .select()
+    .maybeSingle()
+
+  if (error) throw error
+
+  return data
+}
 
   const deleteProperty = async (id) => {
     const { count, error } = await supabase.from('properties').delete({ count: 'exact' }).eq('id', id).eq('landlord_id', user.id)
@@ -265,11 +323,19 @@ export const useProperties = () => {
       if (isFav) {
         await supabase.from('favorites').delete().eq('user_id', user.id).eq('property_id', propertyId)
       } else {
-        await supabase.from('favorites').insert({ user_id: user.id, property_id: propertyId })
+        const { error } = await supabase
+          .from('favorites')
+          .insert({
+        user_id: user.id,
+        property_id: propertyId
+  })
+
+        if (error) throw error
       }
     } catch (err) {
-      dispatch(toggleFav(propertyId))
-    }
+    console.error("Failed to update favorite:", err)
+    dispatch(toggleFav(propertyId))
+}
   }
 
   const fetchRecentlyViewed = useCallback(async () => {
@@ -322,7 +388,14 @@ export const useProperties = () => {
     }
 
     // Sort randomly and limit to 8 results for the section
-    return filtered.sort(() => 0.5 - Math.random()).slice(0, 8)
+    const shuffled = [...filtered]
+
+for (let i = shuffled.length - 1; i > 0; i--) {
+  const j = Math.floor(Math.random() * (i + 1))
+  ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+}
+
+return shuffled.slice(0, 8)
   }, [listings, profile])
 
   return {
