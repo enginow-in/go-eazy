@@ -4,10 +4,24 @@ import { X } from 'lucide-react'
 
 export const Modal = ({ open, onClose, children, title, size = 'md', className = '' }) => {
   useEffect(() => {
-    if (open) document.body.style.overflow = 'hidden'
-    else document.body.style.overflow = ''
-    return () => { document.body.style.overflow = '' }
-  }, [open])
+    const handleKeyDown = (e) => {
+        if (e.key === 'Escape' && onClose) {
+            onClose();
+        }
+    };
+
+    if (open) {
+        document.body.style.overflow = 'hidden';
+        window.addEventListener('keydown', handleKeyDown);
+    } else {
+        document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+        document.body.style.overflow = 'unset';
+        window.removeEventListener('keydown', handleKeyDown);
+    };
+}, [open, onClose]);
 
   if (!open) return null
 
