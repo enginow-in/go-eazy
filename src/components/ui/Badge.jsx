@@ -3,14 +3,10 @@ import { Home, Building, Tent, MapPin } from 'lucide-react'
 
 export const Badge = ({ children, variant = 'default', className = '' }) => {
   const variants = {
-    default:  'bg-gray-100 text-gray-700',
     brand:    'bg-brand-100 text-brand-700',
-    accent:   'bg-accent-100 text-accent-700',
     success:  'bg-green-100 text-green-700',
     warning:  'bg-yellow-100 text-yellow-700',
-    danger:   'bg-red-100 text-red-700',
     purple:   'bg-purple-100 text-purple-700',
-    ghost:    'bg-transparent text-gray-700 p-0 shadow-none',
   }
   return (
     <span className={cn(
