@@ -6,12 +6,16 @@ import { AuthModal } from '../auth/AuthModal'
 import { AuthGateModal } from '../auth/AuthGateModal'
 import { Toaster } from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
+import SkipToContent from '../common/SkipToContent'
 
 export const Layout = ({ children }) => {
   const location = useLocation()
   
   return (
     <>
+      {/* Accessibility: Skip Navigation Link */}
+      <SkipToContent />
+
       <Toaster
         position="top-center"
         toastOptions={{
@@ -26,12 +30,15 @@ export const Layout = ({ children }) => {
       {location.pathname !== '/systemadmin' && <Navbar />}
       <AnimatePresence mode="wait">
         <motion.main
+          id="main-content"
+          role="main"
           key={location.pathname}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
           className={location.pathname === '/systemadmin' ? "" : "min-h-screen"}
+          aria-label="Page content"
         >
           {children}
         </motion.main>
@@ -41,3 +48,4 @@ export const Layout = ({ children }) => {
     </>
   )
 }
+
