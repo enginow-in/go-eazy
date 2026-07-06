@@ -17,7 +17,7 @@ import { RecommendedSection } from '../components/property/RecommendedSection'
 export const Search = () => {
   const { t } = useTranslation()
   const dispatch = useDispatch()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { listings, filters, loading, hasMore, fetchProperties, updateFilters, totalCount } = useProperties()
   
   const [viewMode, setViewMode] = useState('grid')
@@ -29,22 +29,19 @@ export const Search = () => {
     priceMax: filters.priceMax || 100000, 
     amenities: [...(filters.amenities || [])], 
     sortBy: filters.sortBy || 'created_at', 
-    sortOrder: filters.sortOrder || 'desc'
+    sortOrder: filters.sortOrder || 'desc',
+    type: filters.type || ''
   })
 
-  // Read ?type= from URL and apply as filter
   useEffect(() => {
     const typeParam = searchParams.get('type')
     if (typeParam && ['Room', 'Flat', 'Hostel', 'PG'].includes(typeParam)) {
       if (filters.type !== typeParam) updateFilters({ type: typeParam })
     } else {
-      // If no type param, ensure filter is cleared (important for "All Category" button)
       if (filters.type) updateFilters({ type: '' })
     }
   }, [searchParams, updateFilters, filters.type])
 
-  // Sync local filters with global filters when global filters change
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setLocalFilters({
       city: filters.city || '', 
@@ -53,11 +50,19 @@ export const Search = () => {
       priceMax: filters.priceMax || 100000, 
       amenities: [...(filters.amenities || [])], 
       sortBy: filters.sortBy || 'created_at', 
-      sortOrder: filters.sortOrder || 'desc'
+      sortOrder: filters.sortOrder || 'desc',
+      type: filters.type || ''
     })
   }, [filters])
 
   const applyFilters = () => {
+    const newParams = new URLSearchParams(searchParams)
+    if (localFilters.type) {
+      newParams.set('type', localFilters.type)
+    } else {
+      newParams.delete('type')
+    }
+    setSearchParams(newParams)
     updateFilters(localFilters)
     setShowFilters(false)
   }
@@ -66,12 +71,10 @@ export const Search = () => {
     fetchProperties(true)
   }, [filters, fetchProperties])
 
-  // Use the actual totalCount from database
   const count = useMemo(() => totalCount, [totalCount])
 
   const renderFilterContent = () => (
     <div className="space-y-6">
-      {/* Location Selection */}
       <div>
         <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">Location Selection</h4>
         <div className="grid grid-cols-2 gap-3">
@@ -106,7 +109,6 @@ export const Search = () => {
         </div>
       </div>
 
-      {/* Sort & Price Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">Sort By</h4>
@@ -149,14 +151,13 @@ export const Search = () => {
         </div>
       </div>
 
-      {/* Property Type */}
       <div>
         <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">Property Type</h4>
         <div className="flex flex-wrap gap-2">
           {['Room', 'Flat', 'Hostel', 'PG'].map(type => (
             <button
               key={type}
-              onClick={() => setLocalFilters(prev => ({ ...prev, type }))}
+              onClick={() => setLocalFilters(prev => ({ ...prev, type: prev.type === type ? '' : type }))}
               className={`px-5 py-2 rounded-xl text-[13px] font-semibold transition-all border ${localFilters.type === type ? 'bg-[#fdf2f2] text-[#CA3433] border-[#fbe1e1] shadow-sm' : 'border-gray-100 text-gray-600 hover:bg-gray-50'}`}
             >
               {t(`property.types.${type}`)}
@@ -172,14 +173,12 @@ export const Search = () => {
     </div>
   )
 
-  // Memoize Filter UI to prevent unnecessary re-calculation during typing
   const filterContent = useMemo(() => renderFilterContent(), [localFilters, t, dispatch, showFilters])
 
   return (
     <div className="pt-4 pb-12 min-h-screen bg-gray-50/50">
       <div className="w-full px-2 sm:px-4">
         
-        {/* Header Area */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div className="flex-1 w-full">
             <div className="flex items-center justify-between gap-4 w-full">
@@ -196,7 +195,6 @@ export const Search = () => {
                 </p>
               </div>
 
-              {/* Mobile Actions (View Toggles + Filter) */}
               <div className="md:hidden flex items-center gap-3 relative z-30">
                 <div className="flex items-center gap-2 pr-2 border-r border-gray-200 mr-1">
                   <button 
@@ -236,7 +234,6 @@ export const Search = () => {
           </div>
 
           <div className="hidden md:flex items-center gap-4">
-             {/* View Toggles */}
              <div className="flex items-center gap-3 text-gray-400 mr-2">
                <button onClick={() => setViewMode('grid')} className={`hover:text-gray-900 transition-colors ${viewMode === 'grid' ? 'text-gray-900 border border-gray-200 rounded p-1 shadow-sm' : 'p-1'}`}>
                  <Grid size={20} />
@@ -246,7 +243,6 @@ export const Search = () => {
                </button>
              </div>
              
-             {/* Desktop Filters Button & Dropdown */}
              <div className="relative z-20">
                <button onClick={() => setShowFilters(!showFilters)} className={`flex items-center gap-2 px-6 py-2.5 bg-white border rounded-xl text-sm font-semibold transition-all ml-4 ${showFilters ? 'border-brand-500 text-brand-600 shadow-sm' : 'border-gray-200 text-gray-700 hover:shadow-sm'}`}>
                   <Filter size={16} />
@@ -266,10 +262,8 @@ export const Search = () => {
           </div>
         </div>
 
-        {/* Recommendation Section (if quiz done) */}
         <RecommendedSection viewMode={viewMode} />
 
-        {/* Results Area */}
         {loading && listings.length === 0 ? (
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-6 xl:gap-8">
             {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
