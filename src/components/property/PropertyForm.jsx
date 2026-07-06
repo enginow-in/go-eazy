@@ -180,12 +180,23 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
     if (!validateForm()) return
     if (loading) return
     setLoading(true)
+    
+    const uploadedUrls = []
+    const uploadedPaths = []
+    let paymentCompleted = false
+    
+    const cleanupUploadedImages = async () => {
+      if (!paymentCompleted && uploadedPaths.length > 0) {
+        const { error } = await supabase.storage.from('property-images').remove(uploadedPaths)
+        if (error) console.error('Cleanup failed:', error)
+      }
+    }
+    
     try {
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
       if (!token) { toast.error('Session expired — please log in again'); setLoading(false); return }
 
-      const uploadedUrls = []
       for (const file of images) {
         const ext = file.name.split('.').pop()
         const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${ext}`
@@ -194,6 +205,7 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
         if (uploadError) throw new Error('Image upload failed: ' + uploadError.message)
         const { data: { publicUrl } } = supabase.storage.from('property-images').getPublicUrl(uploadData.path)
         uploadedUrls.push(publicUrl)
+        uploadedPaths.push(uploadData.path)
       }
 
       const loadRazorpay = () => new Promise(resolve => {
@@ -231,18 +243,22 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
               body: JSON.stringify({ ...response, property_data: { ...form, images: uploadedUrls } })
             })
             if (!verifyResp.ok) { const e = await verifyResp.json().catch(() => ({})); throw new Error(e.error || 'Payment verification failed') }
+            paymentCompleted = true
             setShowSuccess(true)
             setTimeout(() => navigate('/landlord'), 2800)
-          } catch (vErr) { toast.error('Payment verification failed: ' + vErr.message) }
+          } catch (vErr) { 
+            await cleanupUploadedImages()
+            toast.error('Payment verification failed: ' + vErr.message) 
+          }
           finally { setLoading(false) }
         },
         prefill: { name: user?.user_metadata?.full_name || 'Landlord', email: user?.email || '' },
         theme: { color: '#CA3433' },
-        modal: { ondismiss: () => setLoading(false) }
+        modal: { ondismiss: async () => { await cleanupUploadedImages(); setLoading(false) } }
       })
-      rzp.on('payment.failed', resp => { toast.error('Payment failed: ' + (resp.error?.description || '')); setLoading(false) })
+      rzp.on('payment.failed', async resp => { await cleanupUploadedImages(); toast.error('Payment failed: ' + (resp.error?.description || '')); setLoading(false) })
       rzp.open()
-    } catch (err) { toast.error(err.message || 'Something went wrong'); setLoading(false) }
+    } catch (err) { await cleanupUploadedImages(); toast.error(err.message || 'Something went wrong'); setLoading(false) }
   }
 
   // ── Render Steps ──────────────────────────────────────────────────────────
