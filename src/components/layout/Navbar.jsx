@@ -25,12 +25,18 @@ export const Navbar = () => {
   const [langMenuOpen, setLangMenuOpen] = useState(false)
   const [selectedCity, setSelectedCity] = useState(filters.city || 'All Cities')
   const [searchQuery, setSearchQuery] = useState(filters.query || '')
+  const [avatarError, setAvatarError] = useState(false)
   // Tracks if the user is actively typing in the Navbar's own search bar.
   // Without this guard, the debounce effect fires on any re-render where
   // searchQuery !== filters.query, causing rogue /search redirects (e.g. while
   // filling the service provider contact form).
   const userTypedInNavSearch = React.useRef(false)
   
+  // Reset avatar error state when the URL changes (e.g. user updates their avatar)
+  React.useEffect(() => {
+    setAvatarError(false)
+  }, [profile?.avatar_url])
+
   // Debounce effect for search — only navigate if user actually typed here
   React.useEffect(() => {
     if (!userTypedInNavSearch.current) return
@@ -168,8 +174,8 @@ export const Navbar = () => {
                   onClick={() => setUserMenuOpen(v => !v)}
                   className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#0B0F19] text-white text-sm font-semibold hover:bg-[#CA3433] transition-all duration-300 transform hover:scale-105"
                 >
-                  {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt="Avatar" className="w-5 h-5 rounded-full object-cover" />
+                  {profile?.avatar_url && !avatarError ? (
+                    <img src={profile.avatar_url} alt="Avatar" className="w-5 h-5 rounded-full object-cover" onError={() => setAvatarError(true)} />
                   ) : (
                     <User size={16} />
                   )}
