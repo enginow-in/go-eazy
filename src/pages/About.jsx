@@ -2,16 +2,23 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import SEOHead from '../components/common/SEOHead'
 
 export const About = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
 
   return (
-    <div className="pt-12 md:pt-16 pb-20 min-h-screen bg-gray-50/30">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Back Button */}
+    <>
+      <SEOHead 
+        title="About Us"
+        description="Learn about GoEazy's mission to bring transparency, trust, and ease to the rental market in Uttarakhand. Say goodbye to fake listings and broker hassles."
+        path="/about"
+      />
+      <div className="pt-12 md:pt-16 pb-20 min-h-screen bg-gray-50/30">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          {/* Back Button */}
         <button 
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900 mb-12 transition-colors group"
@@ -46,8 +53,8 @@ export const About = () => {
             <div className="w-16 h-1 bg-[#CA3433] rounded-full mx-auto mt-8 mb-6"></div>
           </div>
         </div>
-        
+        </div>
       </div>
-    </div>
+    </>
   )
 }

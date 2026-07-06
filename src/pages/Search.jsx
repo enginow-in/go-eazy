@@ -176,8 +176,14 @@ export const Search = () => {
   const filterContent = useMemo(() => renderFilterContent(), [localFilters, t, dispatch, showFilters])
 
   return (
-    <div className="pt-4 pb-12 min-h-screen bg-gray-50/50">
-      <div className="w-full px-2 sm:px-4">
+    <>
+      <SEOHead 
+        title="Search Properties"
+        description="Search for the best verified rooms, flats, PGs, and hostels in Dehradun, Srinagar, and across Uttarakhand on GoEazy."
+        path="/search"
+      />
+      <div className="pt-4 pb-12 min-h-screen bg-gray-50/50">
+        <div className="w-full px-2 sm:px-4">
         
         {/* Header Area */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
@@ -318,5 +324,6 @@ export const Search = () => {
         )}
       </div>
     </div>
+    </>
   )
 }
