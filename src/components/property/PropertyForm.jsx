@@ -132,9 +132,12 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   }
 
   const removeImage = (index) => {
+    const targetUrl = previewUrls[index]
     setPreviewUrls(prev => prev.filter((_, i) => i !== index))
-    if (index >= (initialData?.images?.length || 0)) {
-      setImages(prev => prev.filter((_, i) => i !== index - (initialData?.images?.length || 0)))
+    
+    if (targetUrl?.startsWith('blob:')) {
+      const localIndex = previewUrls.slice(0, index).filter(url => url.startsWith('blob:')).length
+      setImages(prev => prev.filter((_, i) => i !== localIndex))
     }
   }
 
