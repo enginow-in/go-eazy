@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { MOCK_PROPERTIES } from '../utils/constants'
@@ -29,8 +29,12 @@ export const useProperties = () => {
   } = useSelector(s => s.property)
   const { user, profile } = useSelector(s => s.auth)
 
+  const pageRef = useRef(page)
+  pageRef.current = page
+
   const fetchProperties = useCallback(async (reset = false) => {
     dispatch(setLoading(true))
+    const currentPage = pageRef.current
     try {
       let query = supabase
         .from('properties')
@@ -54,7 +58,7 @@ export const useProperties = () => {
         query = query.ilike('area', fuzzyPattern)
       }
 
-      const from = reset ? 0 : page * PAGE_SIZE
+      const from = reset ? 0 : currentPage * PAGE_SIZE
       const { data, error, count: dbCount } = await query
         .order(filters.sortBy || 'created_at', { ascending: filters.sortOrder === 'asc' })
         .range(from, from + PAGE_SIZE - 1)
@@ -69,14 +73,14 @@ export const useProperties = () => {
       }
 
       dispatch(setHasMore((data || []).length === PAGE_SIZE))
-      dispatch(setPage(reset ? 1 : page + 1))
+      dispatch(setPage(reset ? 1 : currentPage + 1))
     } catch (err) {
       console.error('fetchProperties error:', err)
       dispatch(setListings([]))
     } finally {
       dispatch(setLoading(false))
     }
-  }, [filters, page, dispatch])
+  }, [filters, dispatch])
 
   const fetchFeatured = useCallback(async () => {
     try {
