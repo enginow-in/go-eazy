@@ -33,15 +33,15 @@ export const Search = () => {
   })
 
   // Read ?type= from URL and apply as filter
+  const typeParam = searchParams.get('type')
   useEffect(() => {
-    const typeParam = searchParams.get('type')
     if (typeParam && ['Room', 'Flat', 'Hostel', 'PG'].includes(typeParam)) {
       if (filters.type !== typeParam) updateFilters({ type: typeParam })
     } else {
       // If no type param, ensure filter is cleared (important for "All Category" button)
       if (filters.type) updateFilters({ type: '' })
     }
-  }, [searchParams, updateFilters, filters.type])
+  }, [typeParam, updateFilters, filters.type])
 
   // Sync local filters with global filters when global filters change
   // eslint-disable-next-line react-hooks/exhaustive-deps
