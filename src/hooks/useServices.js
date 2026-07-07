@@ -32,8 +32,8 @@ export const useServices = () => {
         // Use * to avoid 400 from PostgREST stale schema cache rejecting specific column names.
         // profiles!provider_id uses column-name hint (more portable than FK constraint name).
         .select(`*, profiles!provider_id(${PUBLIC_PROFILE_FIELDS})`)
-        .eq('verification_status', 'verified') // Admin approval is the public gate
-        .eq('payment_status', 'paid') // Only show paid listings to the public
+        .eq('verification_status', 'verified') // Verification AND payment are required for public visibility
+        .eq('payment_status', 'paid')
 
       if (filters.category) query = query.eq('category', filters.category)
       if (filters.state)    query = query.ilike('state', `%${filters.state}%`)
@@ -76,6 +76,14 @@ export const useServices = () => {
         .maybeSingle()
 
       if (error) throw error
+
+      // Prevent public users from directly accessing unverified or unpaid services via ID
+      if (data && (data.verification_status !== 'verified' || data.payment_status !== 'paid')) {
+        if (!user || (user.id !== data.provider_id && user.role !== 'admin')) {
+          throw new Error('Service is not publicly available')
+        }
+      }
+
       dispatch(setCurrentService(data))
 
       // Increment views for verified (publicly visible) listings
@@ -86,7 +94,7 @@ export const useServices = () => {
       console.error('fetchServiceById error:', err)
       dispatch(setCurrentService(null))
     }
-  }, [dispatch])
+  }, [dispatch, user])
 
   const fetchServiceGatedData = useCallback(async (id) => {
     if (!user) return null
