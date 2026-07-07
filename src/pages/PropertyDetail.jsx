@@ -613,7 +613,7 @@ export const PropertyDetail = () => {
             </div>
           </div>
 
-          {user && !myReview && (
+          {user && !myReview && p.landlord_id !== user.id && (
             <div className="mb-10 p-6 rounded-2xl bg-[#F9F8F6] border border-gray-100">
               <h4 className="font-bold text-gray-900 mb-4">{t('property.sections.postReview')}</h4>
               <div className="mb-4">
