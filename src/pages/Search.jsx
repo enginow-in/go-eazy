@@ -17,7 +17,7 @@ import { RecommendedSection } from '../components/property/RecommendedSection'
 export const Search = () => {
   const { t } = useTranslation()
   const dispatch = useDispatch()
-  const [searchParams] = useSearchParams()
+  const [searchParams,setSearchparams] = useSearchParams()
   const { listings, filters, loading, hasMore, fetchProperties, updateFilters, totalCount } = useProperties()
   
   const [viewMode, setViewMode] = useState('grid')
@@ -166,7 +166,7 @@ export const Search = () => {
       </div>
 
       <div className="pt-4 flex gap-3 border-t border-gray-100">
-        <Button variant="secondary" className="flex-1 bg-white hover:bg-gray-50 border border-gray-100 rounded-xl font-bold py-2.5" onClick={() => { dispatch(resetFilters()); setShowFilters(false); }}>Reset All</Button>
+        <Button variant="secondary" className="flex-1 bg-white hover:bg-gray-50 border border-gray-100 rounded-xl font-bold py-2.5" onClick={() => { dispatch(resetFilters()); setSearchparams({}); setShowFilters(false); }}>Reset All</Button>
         <Button variant="primary" className="flex-1 rounded-xl shadow-lg shadow-brand-500/10 font-bold py-2.5" onClick={applyFilters}>Show Results</Button>
       </div>
     </div>
@@ -311,7 +311,7 @@ export const Search = () => {
             <p className="text-gray-500 max-w-sm mx-auto mb-6">
               We couldn't find any properties matching your current filters. Try adjusting your search criteria.
             </p>
-            <Button variant="secondary" onClick={() => dispatch(resetFilters())}>
+            <Button variant="secondary" onClick={() => {dispatch(resetFilters());setSearchparams({});}}>
               Clear all filters
             </Button>
           </div>
