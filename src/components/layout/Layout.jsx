@@ -10,6 +10,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 export const Layout = ({ children }) => {
   const location = useLocation()
   
+  const excludedPrefixes = ['/systemadmin', '/landlord', '/service-provider', '/dashboard', '/settings']
+  const showFooter = !excludedPrefixes.some(prefix => location.pathname.startsWith(prefix))
+  
   return (
     <>
       <Toaster
@@ -36,7 +39,7 @@ export const Layout = ({ children }) => {
           {children}
         </motion.main>
       </AnimatePresence>
-      {location.pathname === '/search' && <Footer />}
+      {showFooter && <Footer />}
       <AuthModal />
     </>
   )
