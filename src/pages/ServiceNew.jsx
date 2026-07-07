@@ -214,7 +214,7 @@ export const ServiceNew = () => {
                 </div>
               </div>
 
-              <TextareaField label="Description" rows={3} placeholder="Tell customers about your service..." value={basicInfo.description} onChange={e => setBasicInfo(v => ({ ...v, description: e.target.value }))} />
+              <TextareaField label="Description" rows={3} maxLength={1000} placeholder="Tell customers about your service..." value={basicInfo.description} onChange={e => setBasicInfo(v => ({ ...v, description: e.target.value }))} />
               <InputField label="Experience" placeholder="e.g. 5 years of home-cooked tiffin delivery" value={basicInfo.experience} onChange={e => setBasicInfo(v => ({ ...v, experience: e.target.value }))} />
               <TextareaField label="Speciality" rows={2} placeholder="e.g. Eco-friendly wash, home-made food, deep cleaning..." value={basicInfo.speciality} onChange={e => setBasicInfo(v => ({ ...v, speciality: e.target.value }))} />
             </div>
@@ -420,7 +420,7 @@ export const ServiceNew = () => {
             <div className="space-y-5">
               <h2 className="text-lg font-bold text-gray-900">Contact Details</h2>
               <p className="text-sm text-gray-500">These will be shown to customers after they request access.</p>
-              <InputField label="Phone Number" required type="tel" placeholder="+91 98765 43210" value={contact.contact_phone} onChange={e => setContact(v => ({ ...v, contact_phone: e.target.value }))} />
+              <InputField label="Phone Number" required type="tel" maxLength={15} placeholder="+91 98765 43210" value={contact.contact_phone} onChange={e => setContact(v => ({ ...v, contact_phone: e.target.value }))} />
               <InputField label="Email Address" type="email" placeholder="youremail@example.com" value={contact.contact_email} onChange={e => setContact(v => ({ ...v, contact_email: e.target.value }))} />
             </div>
           )}

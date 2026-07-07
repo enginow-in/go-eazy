@@ -2,10 +2,10 @@ import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { setUser, setProfile, logout, setLoading } from '../store/authSlice'
+import { setFavorites, setRecentlyViewed } from '../store/propertySlice'
 
-export const useAuth = () => {
+export const useInitializeAuth = () => {
   const dispatch = useDispatch()
-  const { user, profile, role, loading, authModalOpen, authModalTab } = useSelector(s => s.auth)
 
   useEffect(() => {
     // Get initial session
@@ -27,6 +27,8 @@ export const useAuth = () => {
         fetchProfile(session.user.id)
       } else if (event === 'SIGNED_OUT') {
         dispatch(logout())
+        dispatch(setFavorites([]))
+        dispatch(setRecentlyViewed([]))
       } else {
         dispatch(setLoading(false))
       }
@@ -111,6 +113,11 @@ export const useAuth = () => {
       dispatch(setLoading(false))
     }
   }
+}
+
+export const useAuth = () => {
+  const dispatch = useDispatch()
+  const { user, profile, role, loading, authModalOpen, authModalTab } = useSelector(s => s.auth)
 
   const signUp = async ({ email, password, name, role }) => {
     const { data, error } = await supabase.auth.signUp({
@@ -165,6 +172,8 @@ export const useAuth = () => {
   const signOut = async () => {
     await supabase.auth.signOut()
     dispatch(logout())
+    dispatch(setFavorites([]))
+    dispatch(setRecentlyViewed([]))
   }
 
   const updateProfile = async (updates) => {
