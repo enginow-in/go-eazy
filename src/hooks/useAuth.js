@@ -114,7 +114,9 @@ export const useAuth = () => {
       console.error('Auth: fetchProfile catch block', err)
       dispatch(setLoading(false))
     } finally {
-      fetchingProfileFor.current = null
+      if (fetchingProfileFor.current === uid) {
+        fetchingProfileFor.current = null
+      }
     }
   }
 
