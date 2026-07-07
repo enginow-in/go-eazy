@@ -134,25 +134,10 @@ export const useProperties = () => {
   const fetchGatedData = useCallback(async (id) => {
     if (!user) return null
     try {
-      // 1. Try the RPC first
       const rpcResult = await supabase.rpc('get_unlocked_property_details', { prop_id: id })
-      const rpcData = rpcResult.data?.[0] || {}
+      const rpcData = rpcResult.data?.[0] || null
 
-      // 2. ALWAYS also directly fetch contact_phone + contact_email from properties table
-      //    (the RPC may not include these fields, and landlords can always read their own data)
-      const { data: directData } = await supabase
-        .from('properties')
-        .select('contact_phone, contact_email, exact_location')
-        .eq('id', id)
-        .maybeSingle()
-
-      // 3. Merge — RPC fields take priority, direct fields fill any gaps
-      return {
-        ...rpcData,
-        contact_phone: rpcData?.contact_phone || directData?.contact_phone || null,
-        contact_email: rpcData?.contact_email || directData?.contact_email || null,
-        exact_location: rpcData?.exact_location || directData?.exact_location || null,
-      }
+      return rpcData
     } catch (err) {
       console.error('Error fetching gated data:', err)
       return null
@@ -267,7 +252,7 @@ export const useProperties = () => {
       } else {
         await supabase.from('favorites').insert({ user_id: user.id, property_id: propertyId })
       }
-    } catch (err) {
+    } catch {
       dispatch(toggleFav(propertyId))
     }
   }
@@ -278,7 +263,9 @@ export const useProperties = () => {
       const seventyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString()
       const { data } = await supabase.from('recently_viewed').select('property_id').eq('user_id', user.id).gte('viewed_at', seventyTwoHoursAgo).order('viewed_at', { ascending: false }).limit(20)
       dispatch(setRecentlyViewed(data?.map(r => r.property_id) || []))
-    } catch {}
+    } catch (err) {
+      console.error(err)
+    }
   }, [user, dispatch])
 
   const getLandlordProperties = async () => {
