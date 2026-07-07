@@ -11,7 +11,7 @@ import { AppInitializer } from './components/common/AppInitializer'
 import { RoleSelectionModal } from './components/auth/RoleSelectionModal'
 import { OnboardingQuiz } from './components/common/OnboardingQuiz'
 import { useSelector } from 'react-redux'
-import { useAuth } from './hooks/useAuth'
+import { useInitializeAuth } from './hooks/useAuth'
 import ScrollToTop from './components/common/ScrollToTop'
 
 // Heavy pages: lazy-loaded into separate chunks to prevent
@@ -41,7 +41,7 @@ const PageSpinner = () => (
 )
 
 function App() {
-  useAuth() 
+  useInitializeAuth()
   const { loading } = useSelector(s => s.auth)
 
   if (loading) {

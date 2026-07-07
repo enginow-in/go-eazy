@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { Skeleton } from '../ui/Skeleton'
 import { CITIES } from '../../utils/constants'
 import { BannerSlider } from './BannerSlider'
+import toast from 'react-hot-toast'
 
 export const Navbar = () => {
   const dispatch = useDispatch()
@@ -153,7 +154,10 @@ export const Navbar = () => {
             
             <div className="w-px h-6 bg-gray-200"></div>
 
-            <button className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+            <button 
+              onClick={() => toast('Currency conversion coming soon', { icon: '💱' })}
+              className="flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-[#CA3433] transition-colors"
+            >
               <div className="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center text-xs overflow-hidden border border-brand-100">
                 <img src="/INR.webp" alt="INR" className="w-full h-full object-cover" />
               </div>
