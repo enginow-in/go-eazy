@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useEffect, useState, useCallback } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { Heart, Clock, User as UserIcon, ChevronLeft, Bell, Calendar, MapPin } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useProperties } from '../hooks/useProperties'
@@ -11,6 +11,7 @@ import { Skeleton } from '../components/ui/Skeleton'
 export const UserDashboard = () => {
   const { user, profile } = useAuth()
   const { favorites, recentlyViewed } = useProperties()
+  const navigate = useNavigate()
   const [favProps, setFavProps] = useState([])
   const [recentProps, setRecentProps] = useState([])
   const [loading, setLoading] = useState(true)
@@ -20,14 +21,7 @@ export const UserDashboard = () => {
   const [myVisits, setMyVisits] = useState([])
   const [loadingData, setLoadingData] = useState(true)
 
-  useEffect(() => {
-    if (user) {
-      loadProperties()
-      loadUserData()
-    }
-  }, [user, favorites, recentlyViewed]) // React to changes in the Redux IDs
-
-  const loadUserData = async () => {
+  const loadUserData = useCallback(async () => {
     if (!user) return
     try {
       setLoadingData(true)
@@ -43,20 +37,9 @@ export const UserDashboard = () => {
     } finally {
       setLoadingData(false)
     }
-  }
+  }, [user])
 
-  const markAsRead = async () => {
-    try {
-      await supabase.from('notifications').update({ is_read: true }).eq('user_id', user.id).eq('is_read', false)
-      setNotifications(prev => prev.map(n => ({...n, is_read: true})))
-    } catch (err) {
-      console.error(err)
-    }
-  }
-  
-  const unreadCount = notifications.filter(n => !n.is_read).length
-
-  const loadProperties = async () => {
+  const loadProperties = useCallback(async () => {
     if (!user) return
     
     // Only set loading if we don't have any data yet
@@ -96,7 +79,25 @@ export const UserDashboard = () => {
     } finally {
       setLoading(false)
     }
+  }, [user, favorites, recentlyViewed, favProps.length, recentProps.length])
+
+  useEffect(() => {
+    if (user) {
+      loadProperties()
+      loadUserData()
+    }
+  }, [user, loadProperties, loadUserData]) // React to changes in the Redux IDs and callbacks
+
+  const markAsRead = async () => {
+    try {
+      await supabase.from('notifications').update({ is_read: true }).eq('user_id', user.id).eq('is_read', false)
+      setNotifications(prev => prev.map(n => ({...n, is_read: true})))
+    } catch (err) {
+      console.error(err)
+    }
   }
+  
+  const unreadCount = notifications.filter(n => !n.is_read).length
 
   const LoadingRow = () => (
     <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide">
