@@ -71,6 +71,12 @@ export const Search = () => {
 
   // Use the actual totalCount from database
   const count = useMemo(() => totalCount, [totalCount])
+  const activeFilterCount = [
+  filters.city,
+  filters.area,
+  filters.type,
+  filters.priceMax < 100000,
+].filter(Boolean).length
 
   const renderFilterContent = () => (
     <div className="space-y-6">
@@ -116,15 +122,23 @@ export const Search = () => {
           <div className="grid grid-cols-2 gap-2">
             {SORT_OPTIONS.map(opt => (
               <button
-                key={opt.value}
-                onClick={() => {
-                  const [by, ord] = opt.value.split(':');
-                  setLocalFilters(prev => ({ ...prev, sortBy: by, sortOrder: ord }));
-                }}
-                className={`px-3 py-2 rounded-xl text-[11px] font-semibold transition-all border ${localFilters.sortBy + ':' + localFilters.sortOrder === opt.value ? 'bg-brand-50 text-brand-600 border-brand-200 shadow-sm' : 'border-gray-100 text-gray-600 hover:bg-gray-50'}`}
-              >
-                {opt.label}
-              </button>
+  key={opt.value}
+  onClick={() => {
+    const [by, ord] = opt.value.split(":")
+    setLocalFilters(prev => ({
+      ...prev,
+      sortBy: by,
+      sortOrder: ord,
+    }))
+  }}
+  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all border ${
+    localFilters.sortBy + ":" + localFilters.sortOrder === opt.value
+      ? "bg-brand-500 text-white border-brand-500 shadow"
+      : "bg-white border-gray-200 hover:bg-gray-50"
+  }`}
+>
+  {opt.label}
+</button>
             ))}
           </div>
         </div>
@@ -227,21 +241,11 @@ export const Search = () => {
 >
   <Filter size={20} />
 
-  {[
-    filters.city,
-    filters.area,
-    filters.type,
-    filters.priceMax < 100000,
-  ].filter(Boolean).length > 0 && (
-    <span className="bg-brand-500 text-white text-[10px] rounded-full px-1.5 py-0.5">
-      {[
-        filters.city,
-        filters.area,
-        filters.type,
-        filters.priceMax < 100000,
-      ].filter(Boolean).length}
-    </span>
-  )}
+  {activeFilterCount > 0 && (
+  <span className="bg-brand-500 text-white text-[10px] rounded-full px-2 py-0.5">
+    {activeFilterCount} Filters
+  </span>
+)}
 </button>
                   
                   {showFilters && (
@@ -274,19 +278,9 @@ export const Search = () => {
                   <Filter size={16} />
                   <span>{t("search.filters")}</span>
 
-{[
-  filters.city,
-  filters.area,
-  filters.type,
-  filters.priceMax < 100000,
-].filter(Boolean).length > 0 && (
-  <span className="bg-brand-500 text-white text-xs rounded-full px-2 py-0.5">
-    {[
-      filters.city,
-      filters.area,
-      filters.type,
-      filters.priceMax < 100000,
-    ].filter(Boolean).length}
+{activeFilterCount > 0 && (
+  <span className="bg-brand-500 text-white text-[10px] rounded-full px-2 py-0.5">
+    {activeFilterCount} Filters
   </span>
 )}
                   <ChevronDown size={14} className={`ml-2 transition-transform duration-300 ${showFilters ? 'rotate-180 text-brand-500' : 'text-gray-400'}`} />
@@ -306,6 +300,43 @@ export const Search = () => {
 
         {/* Recommendation Section (if quiz done) */}
         <RecommendedSection viewMode={viewMode} />
+        <div className="flex flex-wrap gap-2 mt-6 mb-6">
+  {filters.city && (
+    <button
+      onClick={() => updateFilters({ city: "" })}
+      className="px-3 py-1 rounded-full bg-brand-50 text-brand-600 text-sm font-medium"
+    >
+      📍 {filters.city} ✕
+    </button>
+  )}
+
+  {filters.area && (
+    <button
+      onClick={() => updateFilters({ area: "" })}
+      className="px-3 py-1 rounded-full bg-brand-50 text-brand-600 text-sm font-medium"
+    >
+      🏠 {filters.area} ✕
+    </button>
+  )}
+
+  {filters.type && (
+    <button
+      onClick={() => updateFilters({ type: "" })}
+      className="px-3 py-1 rounded-full bg-brand-50 text-brand-600 text-sm font-medium"
+    >
+      🏢 {filters.type} ✕
+    </button>
+  )}
+
+  {filters.priceMax < 100000 && (
+    <button
+      onClick={() => updateFilters({ priceMax: 100000 })}
+      className="px-3 py-1 rounded-full bg-brand-50 text-brand-600 text-sm font-medium"
+    >
+      💰 Under ₹{filters.priceMax.toLocaleString()} ✕
+    </button>
+  )}
+</div>
 
         {/* Results Area */}
         {loading && listings.length === 0 ? (
@@ -345,14 +376,24 @@ export const Search = () => {
           </>
         ) : (
           <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">No properties found</h3>
-            <p className="text-gray-500 max-w-sm mx-auto mb-6">
-              We couldn't find any properties matching your current filters. Try adjusting your search criteria.
-            </p>
-            <Button variant="secondary" onClick={() => dispatch(resetFilters())}>
-              Clear all filters
-            </Button>
-          </div>
+  <div className="text-6xl mb-4">🏠</div>
+
+  <h3 className="text-2xl font-bold text-gray-900">
+    No Properties Found
+  </h3>
+
+  <p className="text-gray-500 mt-3 max-w-md mx-auto">
+    Try changing the city, property type or price range to discover more listings.
+  </p>
+
+  <Button
+    className="mt-8"
+    variant="primary"
+    onClick={() => dispatch(resetFilters())}
+  >
+    Clear Filters
+  </Button>
+</div>
         )}
       </div>
     </div>
