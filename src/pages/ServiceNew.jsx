@@ -107,8 +107,19 @@ export const ServiceNew = () => {
 
   const handleFileChange = e => {
     const files = Array.from(e.target.files)
+    
+    // 5MB Validation Check
+    const MAX_LIMIT = 5 * 1024 * 1024; // 5MB bytes mein
+    const hasLargeFile = files.some(file => file.size > MAX_LIMIT);
+
+    if (hasLargeFile) {
+        toast.error('File size exceeds the 5MB limit! Please upload smaller files.');
+        e.target.value = ''; // Input clear karne ke liye
+        return;
+    }
+
     setDocumentFiles(v => [...v, ...files])
-  }
+}
   const removeFile = (i) => setDocumentFiles(v => v.filter((_, idx) => idx !== i))
 
   const validateStep = () => {
