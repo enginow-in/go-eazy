@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
+import toast from 'react-hot-toast'
 import { MOCK_PROPERTIES } from '../utils/constants'
 import {
   setListings, appendListings, setFeatured, setCurrentProperty,
@@ -264,11 +265,14 @@ export const useProperties = () => {
     try {
       if (isFav) {
         await supabase.from('favorites').delete().eq('user_id', user.id).eq('property_id', propertyId)
+        toast.success('Removed from favorites', { icon: '💔' })
       } else {
         await supabase.from('favorites').insert({ user_id: user.id, property_id: propertyId })
+        toast.success('Added to favorites', { icon: '❤️' })
       }
     } catch (err) {
       dispatch(toggleFav(propertyId))
+      toast.error('Failed to update favorites')
     }
   }
 
