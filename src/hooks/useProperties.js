@@ -19,6 +19,21 @@ const PUBLIC_PROPERTY_FIELDS = `
 
 const PUBLIC_PROFILE_FIELDS = 'full_name, avatar_url, bio'
 
+const deterministicShuffle = (array, seed = 12345) => {
+  let currentSeed = seed;
+  const random = () => {
+    currentSeed = (currentSeed * 16807) % 2147483647;
+    return (currentSeed - 1) / 2147483646;
+  };
+  
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+};
+
 export const useProperties = () => {
   const dispatch = useDispatch()
   const { 
@@ -321,8 +336,9 @@ export const useProperties = () => {
       filtered = listings.filter(p => p.type === prefs.type).slice(0, 10)
     }
 
-    // Sort randomly and limit to 8 results for the section
-    return filtered.sort(() => 0.5 - Math.random()).slice(0, 8)
+    // Deterministic shuffle using profile ID as a seed to ensure stable memoization
+    const seed = profile?.id ? profile.id.charCodeAt(0) + profile.id.charCodeAt(profile.id.length - 1) : 12345
+    return deterministicShuffle(filtered, seed).slice(0, 8)
   }, [listings, profile])
 
   return {
