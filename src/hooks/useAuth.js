@@ -60,7 +60,9 @@ export const useAuth = () => {
         }
 
         const fullName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'
-        const userRole = user?.user_metadata?.role || null
+        // Security: Never read role from user_metadata — it is client-controlled.
+        // New OAuth users always start as 'user'; role can be changed later via settings.
+        const safeRole = 'user'
         
         const { data: newProfile, error: upsertError } = await supabase
           .from('profiles')
@@ -68,8 +70,8 @@ export const useAuth = () => {
             id: userId,
             email: user?.email,
             full_name: fullName,
-            role: userRole,
-            avatar_url: user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${fullName}`,
+            role: safeRole,
+            avatar_url: user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(fullName)}`,
             created_at: new Date().toISOString()
           })
           .select()
@@ -112,14 +114,23 @@ export const useAuth = () => {
     }
   }
 
+  // Roles a user is allowed to self-assign at signup.
+  // 'admin' is intentionally omitted — admins are provisioned server-side only.
+  const ALLOWED_SIGNUP_ROLES = ['user', 'landlord', 'service_provider']
+
   const signUp = async ({ email, password, name, role }) => {
+    // Validate role against allowlist to prevent privilege escalation.
+    // Any value not in the list (e.g. 'admin') is silently normalised to 'user'.
+    const safeRole = ALLOWED_SIGNUP_ROLES.includes(role) ? role : 'user'
+
     const { data, error } = await supabase.auth.signUp({
       email, password,
-      options: { 
-        data: { 
+      options: {
+        data: {
           full_name: name,
-          role: role 
-        } 
+          // Role is NOT stored in auth metadata — it lives only in the profiles
+          // table so it cannot be forged via a crafted signup payload.
+        },
       },
     })
     if (error) throw error
@@ -129,8 +140,8 @@ export const useAuth = () => {
         id: data.user.id,
         email,
         full_name: name,
-        role,
-        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
+        role: safeRole,
+        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
         created_at: new Date().toISOString(),
       })
     }
@@ -144,19 +155,22 @@ export const useAuth = () => {
   }
 
   const signInWithGoogle = async () => {
-    // Priority: Saved return path > Env variable > current origin
-    const savedPath = localStorage.getItem('sb_return_to')
-    const redirectUrl = savedPath 
-      ? `${window.location.origin}${savedPath}`
-      : (import.meta.env.VITE_REDIRECT_URL || `${window.location.origin}/search`)
-    
+    // Sanitise the stored return path to prevent open-redirect (CWE-601).
+    // Only accept paths that start with a single '/' and contain no protocol.
+    // This blocks: //evil.com, https://evil.com, javascript:alert(1), etc.
+    const rawPath = localStorage.getItem('sb_return_to')
+    const isSafe =
+      typeof rawPath === 'string' &&
+      rawPath.startsWith('/') &&
+      !rawPath.startsWith('//') &&
+      !rawPath.includes(':')
+    const redirectUrl = `${window.location.origin}${isSafe ? rawPath : '/search'}`
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { 
+      options: {
         redirectTo: redirectUrl,
-        queryParams: {
-          prompt: 'select_account'
-        }
+        queryParams: { prompt: 'select_account' },
       },
     })
     if (error) throw error
