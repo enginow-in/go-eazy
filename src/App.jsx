@@ -40,6 +40,36 @@ const PageSpinner = () => (
   </div>
 )
 
+/**
+ * Catches ChunkLoadError thrown when a lazy-imported route chunk is no longer
+ * available on the CDN (e.g. after a new Vercel deployment deletes old hashes).
+ * Instead of showing a blank white screen, it reloads the page once so the
+ * browser fetches the latest bundle.
+ */
+class ChunkErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = { errored: false }
+  }
+
+  static getDerivedStateFromError(error) {
+    const isChunkError =
+      error?.name === 'ChunkLoadError' ||
+      error?.message?.includes('Failed to fetch dynamically imported module') ||
+      error?.message?.includes('Importing a module script failed')
+    return isChunkError ? { errored: true } : null
+  }
+
+  componentDidCatch() {
+    if (this.state.errored) window.location.reload()
+  }
+
+  render() {
+    if (this.state.errored) return <PageSpinner />
+    return this.props.children
+  }
+}
+
 function App() {
   useAuth() 
   const { loading } = useSelector(s => s.auth)
@@ -59,8 +89,9 @@ function App() {
       <OnboardingQuiz />
       <RoleSelectionModal />
       <Layout>
-        <Suspense fallback={<PageSpinner />}>
-          <Routes>
+        <ChunkErrorBoundary>
+          <Suspense fallback={<PageSpinner />}>
+            <Routes>
           <Route path="/" element={<Navigate to="/search" replace />} />
           <Route path="/search" element={<Search />} />
           <Route path="/property/:id" element={<PropertyDetail />} />
@@ -132,8 +163,9 @@ function App() {
           } />
 
           <Route path="*" element={<NotFound />} />
-        </Routes>
-        </Suspense>
+            </Routes>
+          </Suspense>
+        </ChunkErrorBoundary>
       </Layout>
     </BrowserRouter>
   )
