@@ -15,6 +15,14 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   const { favorites, toggleFavorite } = useProperties()
   const [imgLoaded, setImgLoaded] = useState(false)
 
+  const handleNavigate = () => {
+    if (document.startViewTransition) {
+      document.startViewTransition(() => navigate(`/property/${property.id}`))
+    } else {
+      navigate(`/property/${property.id}`)
+    }
+  }
+
   const isFav = favorites.includes(property.id)
   const images = property.images || []
   const mainImage = images[0]
@@ -44,11 +52,12 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
     return (
       <div 
         className="group bg-white rounded-2xl border border-gray-100 flex gap-4 cursor-pointer shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
-        onClick={() => navigate(`/property/${property.id}`)}
+        onClick={handleNavigate}
       >
         <div className="relative w-32 h-32 sm:w-40 sm:h-40 flex-shrink-0 overflow-hidden bg-gray-50 rounded-r-2xl shadow-sm">
           <img 
             src={mainImage} 
+            style={{ viewTransitionName: `property-img-${property.id}` }}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
             onLoad={() => setImgLoaded(true)}
             loading="lazy"
@@ -109,10 +118,10 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
     return (
       <div 
         className="group bg-white rounded-2xl border border-gray-100 w-60 flex-shrink-0 overflow-hidden cursor-pointer shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
-        onClick={() => navigate(`/property/${property.id}`)}
+        onClick={handleNavigate}
       >
         <div className="relative aspect-[4/3] overflow-hidden rounded-b-xl">
-          <img src={mainImage} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <img src={mainImage} style={{ viewTransitionName: `property-img-${property.id}` }} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           <div className="absolute top-2 right-2 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-lg text-[8px] font-black text-brand-600 uppercase tracking-wider">
              {t(`property.types.${property.type}`) || property.type}
           </div>
@@ -142,11 +151,12 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         'group bg-white rounded-2xl border border-gray-100 shadow-md',
         'hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 cursor-pointer flex flex-col overflow-hidden'
       )}
-      onClick={() => navigate(`/property/${property.id}`)}
+      onClick={handleNavigate}
     >
       <div className="relative w-full aspect-[4/3] bg-gray-50 overflow-hidden rounded-b-2xl shadow-sm">
         <img
           src={mainImage}
+          style={{ viewTransitionName: `property-img-${property.id}` }}
           alt={property.title}
           className={cn(
             'w-full h-full object-cover group-hover:scale-110 transition-transform duration-700',

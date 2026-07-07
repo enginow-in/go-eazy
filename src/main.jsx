@@ -1,4 +1,7 @@
 import React from 'react'
+import { registerSW } from 'virtual:pwa-register'
+
+registerSW({ immediate: true })
 import ReactDOM from 'react-dom/client'
 import { Provider } from 'react-redux'
 import { store } from './store/store'
