@@ -9,6 +9,7 @@ import { closeAuthModal } from '../../store/authSlice'
 import { useAuth } from '../../hooks/useAuth'
 import { ForgotPassword } from './ForgotPassword'
 import toast from 'react-hot-toast'
+import { supabase } from '../../lib/supabase'
 
 const ROLE_OPTIONS = [
   { value: 'user',             label: 'Student / Professional', icon: <GraduationCap size={20} className="text-brand-500" /> },
@@ -32,6 +33,16 @@ export const AuthModal = () => {
   const [errors, setErrors] = useState({})
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState('')
 
+  const waitForSession = async () => {
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const { data } = await supabase.auth.getSession()
+      if (data?.session?.user) return true
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+
+    return false
+  }
+
   React.useEffect(() => { setTab(authModalTab) }, [authModalTab])
 
   const validate = () => {
@@ -51,6 +62,7 @@ export const AuthModal = () => {
       if (tab === 'login') {
         await signIn({ email: form.email, password: form.password })
         toast.success('Welcome back!')
+        await waitForSession()
         dispatch(closeAuthModal())
         
         const returnTo = localStorage.getItem('sb_return_to')

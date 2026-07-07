@@ -10,6 +10,7 @@ import { ForgotPassword } from '../components/auth/ForgotPassword'
 import { validateSignupForm, validateLoginForm } from '../utils/validation'
 import toast from 'react-hot-toast'
 import { AnimatePresence, motion } from 'framer-motion'
+import { supabase } from '../lib/supabase'
 
 const ROLE_OPTIONS = [
   { value: 'user',             label: 'Student / Professional', icon: <GraduationCap size={20} className="text-brand-500" />, desc: 'Find PGs, Hostels & Flats' },
@@ -30,6 +31,16 @@ export const AuthHome = () => {
   const [selectedRole, setSelectedRole] = useState('user')
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [errors, setErrors] = useState({})
+
+  const waitForSession = async () => {
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const { data } = await supabase.auth.getSession()
+      if (data?.session?.user) return true
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+
+    return false
+  }
 
   const validate = () => {
     if (tab === 'login') {
@@ -57,12 +68,14 @@ export const AuthHome = () => {
         const result = await signIn({ email: form.email, password: form.password })
         if (result?.user) {
           toast.success('Welcome back!')
+          await waitForSession()
           navigate('/dashboard')
         }
       } else {
         const result = await signUp({ email: form.email, password: form.password, name: form.name, role: selectedRole })
         if (result?.user) {
           toast.success('Account created!')
+          await waitForSession()
           navigate('/dashboard')
         }
       }
