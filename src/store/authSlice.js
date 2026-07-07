@@ -10,6 +10,11 @@ const authSlice = createSlice({
     initialized: false, // true once the first auth check completes
     authModalOpen: false,
     authModalTab: 'login', // 'login' | 'signup'
+    loginLockout: {
+      locked: false,
+      secondsRemaining: 0,
+      attemptsRemaining: 5, // counts down on each failed attempt
+    },
   },
   reducers: {
     setUser: (state, action) => {
@@ -40,8 +45,16 @@ const authSlice = createSlice({
       state.loading = false
       state.initialized = true
     },
+    setLoginLockout: (state, action) => {
+      // action.payload: { locked, secondsRemaining, attemptsRemaining }
+      state.loginLockout = {
+        locked:            action.payload.locked            ?? false,
+        secondsRemaining:  action.payload.secondsRemaining  ?? 0,
+        attemptsRemaining: action.payload.attemptsRemaining ?? 5,
+      }
+    },
   },
 })
 
-export const { setUser, setProfile, setLoading, openAuthModal, closeAuthModal, logout } = authSlice.actions
+export const { setUser, setProfile, setLoading, openAuthModal, closeAuthModal, logout, setLoginLockout } = authSlice.actions
 export default authSlice.reducer

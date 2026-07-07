@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useSelector } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Sparkles } from 'lucide-react'
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight, ShieldAlert, Clock } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -15,7 +15,7 @@ const ROLE_OPTIONS = [
 
 export const AuthGateModal = () => {
   const { user, signIn, signUp, signInWithGoogle } = useAuth()
-  const { loading } = useSelector(s => s.auth)
+  const { loading, loginLockout } = useSelector(s => s.auth)
 
   const [tab, setTab] = useState('login')
   const [formLoading, setFormLoading] = useState(false)
@@ -24,6 +24,29 @@ export const AuthGateModal = () => {
   const [selectedRole, setSelectedRole] = useState('user')
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [errors, setErrors] = useState({})
+  const [countdown, setCountdown] = useState(0)
+  const countdownRef = useRef(null)
+
+  // Sync countdown from Redux lockout state
+  useEffect(() => {
+    if (loginLockout.locked && loginLockout.secondsRemaining > 0) {
+      setCountdown(loginLockout.secondsRemaining)
+      clearInterval(countdownRef.current)
+      countdownRef.current = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) { clearInterval(countdownRef.current); return 0 }
+          return prev - 1
+        })
+      }, 1000)
+    } else {
+      clearInterval(countdownRef.current)
+      setCountdown(0)
+    }
+    return () => clearInterval(countdownRef.current)
+  }, [loginLockout.locked, loginLockout.secondsRemaining])
+
+  const isLocked = loginLockout.locked && countdown > 0
+  const warnAttempts = !isLocked && loginLockout.attemptsRemaining <= 2 && loginLockout.attemptsRemaining > 0
 
   if (user || loading) return null
 
@@ -38,6 +61,7 @@ export const AuthGateModal = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (isLocked) return
     if (!validate()) return
     setFormLoading(true)
     try {
@@ -112,6 +136,33 @@ export const AuthGateModal = () => {
               </button>
             ))}
           </div>
+
+          {/* Lockout Banner */}
+          {tab === 'login' && isLocked && (
+            <div className="flex items-start gap-2.5 p-2.5 mb-3 rounded-lg bg-red-50 border border-red-200">
+              <ShieldAlert size={15} className="text-red-500 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-xs font-bold text-red-700">Account temporarily locked</p>
+                <p className="text-[10px] text-red-600 mt-0.5">
+                  Try again in{' '}
+                  <span className="font-mono font-bold inline-flex items-center gap-0.5">
+                    <Clock size={9} />
+                    {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}
+                  </span>
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Remaining Attempts Warning */}
+          {tab === 'login' && warnAttempts && (
+            <div className="flex items-center gap-1.5 p-2 mb-3 rounded-lg bg-amber-50 border border-amber-200">
+              <ShieldAlert size={12} className="text-amber-500 shrink-0" />
+              <p className="text-[10px] font-semibold text-amber-700">
+                {loginLockout.attemptsRemaining} attempt{loginLockout.attemptsRemaining !== 1 ? 's' : ''} remaining before lockout
+              </p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit}>
             <AnimatePresence mode="wait">
@@ -192,10 +243,14 @@ export const AuthGateModal = () => {
               variant="primary"
               className="w-full mt-3 bg-[#CA3433] shadow-lg shadow-red-500/20 rounded-lg py-2.5 text-sm font-bold group"
               loading={formLoading}
+              disabled={isLocked}
             >
               <span className="flex items-center justify-center gap-1.5">
-                {tab === 'login' ? 'Sign In' : 'Create Account'}
-                <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
+                {isLocked
+                  ? `Locked · ${Math.floor(countdown / 60)}:${String(countdown % 60).padStart(2, '0')}`
+                  : tab === 'login' ? 'Sign In' : 'Create Account'
+                }
+                {!isLocked && <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />}
               </span>
             </Button>
           </form>
