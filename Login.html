@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign in — GoEazy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #10201A;
+    --bg-deep: #0A1712;
+    --paper: #E7E3D6;
+    --ink: #101614;
+    --pine-line: rgba(231,227,214,0.09);
+    --accent: #C24429;
+    --accent-soft: #E3C57B;
+    --muted: #9CA89E;
+    --mono: 'IBM Plex Mono', monospace;
+    --display: 'Space Grotesk', sans-serif;
+    --body: 'IBM Plex Sans', sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg); color:var(--paper); font-family:var(--body);
+    min-height:100vh; -webkit-font-smoothing:antialiased; overflow-x:hidden;
+  }
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important; animation:none !important;} }
+
+  .contour-bg{
+    position:fixed; inset:0; z-index:-2;
+    background:
+      radial-gradient(1000px 650px at 12% 90%, rgba(194,68,41,0.10), transparent 60%),
+      radial-gradient(800px 550px at 92% 10%, rgba(227,197,123,0.08), transparent 60%),
+      var(--bg-deep);
+  }
+  svg.contour-lines{position:fixed; inset:0; z-index:-1; pointer-events:none; width:100%; height:100%;}
+
+  .screen{
+    min-height:100vh; display:grid; grid-template-columns:1.1fr 1fr;
+  }
+  @media (max-width:900px){ .screen{grid-template-columns:1fr;} .brand-pane{display:none;} }
+
+  /* ---------- LEFT: brand / ascent panel ---------- */
+  .brand-pane{
+    position:relative; padding:56px 60px; display:flex; flex-direction:column; justify-content:space-between;
+    border-right:1px solid var(--pine-line);
+  }
+  .logo{
+    font-family:var(--display); font-weight:700; font-size:1.35rem; letter-spacing:-0.02em;
+    display:flex; align-items:center; gap:8px;
+  }
+  .logo .peak{color:var(--accent-soft);}
+
+  .brand-copy{max-width:420px;}
+  .eyebrow{
+    font-family:var(--mono); font-size:0.76rem; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--accent-soft); margin-bottom:18px; display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{content:"◢"; color:var(--accent);}
+  .brand-copy h1{
+    font-family:var(--display); font-weight:700; font-size:clamp(1.9rem,3vw,2.5rem);
+    letter-spacing:-0.02em; line-height:1.08;
+  }
+  .brand-copy p{margin-top:16px; color:#C9CFC7; font-size:0.98rem; max-width:380px;}
+
+  .brand-pane .ascent-mini svg{width:100%; height:auto; display:block; margin-top:10px;}
+  .camp-tag{font-family:var(--mono); font-size:10px; fill:var(--muted);}
+
+  .brand-foot{
+    font-family:var(--mono); font-size:0.78rem; color:var(--muted);
+    display:flex; justify-content:space-between; border-top:1px solid var(--pine-line); padding-top:18px;
+  }
+
+  /* ---------- RIGHT: form pane ---------- */
+  .form-pane{
+    display:flex; align-items:center; justify-content:center; padding:40px 24px; position:relative;
+  }
+  .form-card{width:100%; max-width:400px;}
+  .form-card .mobile-logo{display:none; margin-bottom:36px;}
+  @media (max-width:900px){ .form-card .mobile-logo{display:flex;} }
+
+  .form-head{margin-bottom:34px;}
+  .form-head .section-tag{
+    font-family:var(--mono); font-size:0.76rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent-soft);
+    margin-bottom:10px;
+  }
+  .form-head h2{font-family:var(--display); font-size:1.7rem; font-weight:600; letter-spacing:-0.02em;}
+  .form-head p{margin-top:8px; font-size:0.9rem; color:var(--muted);}
+
+  /* role switch */
+  .role-switch{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--pine-line);
+    border:1px solid var(--pine-line); margin-bottom:30px; border-radius:3px; overflow:hidden;
+  }
+  .role-switch button{
+    background:var(--bg-deep); color:var(--muted); border:none; padding:12px 6px;
+    font-family:var(--mono); font-size:0.72rem; letter-spacing:0.02em; cursor:pointer;
+    transition:color .15s ease, background .15s ease;
+  }
+  .role-switch button.active{background:var(--accent); color:var(--paper);}
+  .role-switch button:not(.active):hover{color:var(--paper);}
+
+  form{display:flex; flex-direction:column; gap:18px;}
+  .field label{
+    display:block; font-family:var(--mono); font-size:0.75rem; color:var(--muted);
+    letter-spacing:0.04em; margin-bottom:8px;
+  }
+  .field input{
+    width:100%; background:var(--bg-deep); border:1px solid var(--pine-line); color:var(--paper);
+    padding:13px 14px; font-family:var(--body); font-size:0.95rem; border-radius:2px;
+    outline:none; transition:border-color .15s ease;
+  }
+  .field input::placeholder{color:#5b625d;}
+  .field input:focus{border-color:var(--accent-soft);}
+  .field input:focus-visible{outline:2px solid var(--accent-soft); outline-offset:2px;}
+
+  .row-between{display:flex; justify-content:space-between; align-items:center; font-size:0.83rem;}
+  .remember{display:flex; align-items:center; gap:8px; color:var(--muted);}
+  .remember input{accent-color:var(--accent);}
+  .forgot{color:var(--accent-soft);}
+  .forgot:hover{text-decoration:underline;}
+
+  .btn{
+    font-family:var(--mono); font-size:0.88rem; padding:14px 20px; border-radius:2px;
+    border:none; cursor:pointer; letter-spacing:0.01em; transition:transform .15s ease;
+  }
+  .btn:hover{transform:translateY(-2px);}
+  .btn:focus-visible{outline:2px solid var(--accent-soft); outline-offset:2px;}
+  .btn-primary{background:var(--accent); color:var(--paper); width:100%;}
+
+  .divider{
+    display:flex; align-items:center; gap:14px; margin:26px 0; color:var(--muted);
+    font-family:var(--mono); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.1em;
+  }
+  .divider::before, .divider::after{content:""; flex:1; height:1px; background:var(--pine-line);}
+
+  .btn-oauth{
+    width:100%; background:transparent; border:1px solid var(--pine-line); color:var(--paper);
+    display:flex; align-items:center; justify-content:center; gap:10px; padding:12px 20px;
+  }
+  .btn-oauth:hover{border-color:var(--accent-soft);}
+  .btn-oauth svg{width:18px; height:18px;}
+
+  .switch-line{
+    margin-top:28px; text-align:center; font-size:0.87rem; color:var(--muted);
+  }
+  .switch-line a{color:var(--accent-soft); font-weight:500;}
+  .switch-line a:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+
+<div class="contour-bg"></div>
+<svg class="contour-lines" viewBox="0 0 1440 1000" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+  <g fill="none" stroke="rgba(231,227,214,0.05)" stroke-width="1">
+    <path d="M-50 200 C 220 150, 420 240, 640 170 S 1020 110, 1500 190"/>
+    <path d="M-50 280 C 240 240, 440 320, 660 250 S 1040 190, 1500 270"/>
+    <path d="M-50 780 C 220 730, 420 820, 640 750 S 1020 690, 1500 770"/>
+    <path d="M-50 860 C 240 820, 440 900, 660 830 S 1040 770, 1500 850"/>
+  </g>
+</svg>
+
+<div class="screen">
+
+  <!-- LEFT PANE -->
+  <div class="brand-pane">
+    <div class="logo">Go<span class="peak">▲</span>Eazy</div>
+
+    <div class="brand-copy">
+      <div class="eyebrow">Dehradun · Srinagar · Uttarakhand</div>
+      <h1>Welcome back to base camp.</h1>
+      <p>Sign in to pick up where you left off — verified listings, tracked visits, and a dashboard that never loses your place.</p>
+
+      <div class="ascent-mini">
+        <svg viewBox="0 0 420 130" xmlns="http://www.w3.org/2000/svg">
+          <path d="M 10 110 L 90 90 L 170 65 L 250 45 L 330 25 L 400 10"
+                fill="none" stroke="#3A5F4F" stroke-width="2.5"/>
+          <path d="M 10 110 L 90 90 L 170 65 L 250 45 L 330 25 L 400 10 L 400 120 L 10 120 Z"
+                fill="rgba(58,95,79,0.18)" stroke="none"/>
+          <circle cx="400" cy="10" r="5" fill="#C24429"/>
+          <text x="400" y="-6" text-anchor="end" class="camp-tag" style="fill:#E3C57B">v3.2.0 · you are here</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="brand-foot">
+      <span>Broker-free housing</span>
+      <span>ES256 · HMAC-verified</span>
+    </div>
+  </div>
+
+  <!-- RIGHT PANE -->
+  <div class="form-pane">
+    <div class="form-card">
+      <div class="logo mobile-logo">Go<span class="peak">▲</span>Eazy</div>
+
+      <div class="form-head">
+        <div class="section-tag">Sign in</div>
+        <h2>Continue to your dashboard</h2>
+        <p>Choose the role you signed up with.</p>
+      </div>
+
+      <div class="role-switch" role="tablist" aria-label="Account type">
+        <button type="button" class="active" role="tab" aria-selected="true" data-role="tenant">TENANT</button>
+        <button type="button" role="tab" aria-selected="false" data-role="landlord">LANDLORD</button>
+        <button type="button" role="tab" aria-selected="false" data-role="service">SERVICE PRO</button>
+      </div>
+
+      <form>
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" required>
+        </div>
+        <div class="row-between">
+          <label class="remember"><input type="checkbox"> Keep me signed in</label>
+          <a class="forgot" href="#">Forgot password?</a>
+        </div>
+        <button type="submit" class="btn btn-primary">Sign in</button>
+      </form>
+
+      <div class="divider">or</div>
+
+      <button type="button" class="btn btn-oauth">
+        <svg viewBox="0 0 24 24"><path fill="#E3C57B" d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12s3.36-7.27 7.19-7.27c3.08 0 4.9 1.97 4.9 1.97L19 4.72S16.56 2 12.19 2C6.42 2 2.03 6.8 2.03 12s4.39 10 10.16 10c5.05 0 9.09-3.47 9.09-9.6 0-1.16-.13-1.94-.13-1.3Z"/></svg>
+        Continue with Google
+      </button>
+
+      <p class="switch-line">New to GoEazy? <a href="#">Create an account</a></p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  document.querySelectorAll('.role-switch button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.role-switch button').forEach(b=>{
+        b.classList.remove('active'); b.setAttribute('aria-selected','false');
+      });
+      btn.classList.add('active'); btn.setAttribute('aria-selected','true');
+    });
+  });
+</script>
+
+</body>
+</html>
