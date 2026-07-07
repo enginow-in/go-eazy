@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { Mail, Lock, User, Eye, EyeOff, Home, GraduationCap, Utensils, CheckCircle2, Sparkles, ArrowRight } from 'lucide-react'
@@ -17,7 +17,13 @@ const ROLE_OPTIONS = [
 export const AuthHome = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const { signIn, signUp, signInWithGoogle } = useAuth()
+  const { user, signIn, signUp, signInWithGoogle } = useAuth()
+
+  useEffect(() => {
+    if (user) {
+      navigate('/search')
+    }
+  }, [user, navigate])
 
   const [tab, setTab] = useState('login')
   const [loading, setLoading] = useState(false)
