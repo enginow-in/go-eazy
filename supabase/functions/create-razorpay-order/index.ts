@@ -23,7 +23,6 @@ function getCorsHeaders(req: Request) {
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
   }
 }
-
 // ── MAIN HANDLER ──────────────────────────────────────────────────────────────
 serve(async (req: Request) => {
   const corsHeaders = getCorsHeaders(req)
