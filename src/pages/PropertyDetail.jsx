@@ -162,9 +162,30 @@ export const PropertyDetail = () => {
     toggleFavorite(p.id)
   }
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href)
-    toast.success(t('property.sections.linkCopied'))
+  const handleShare = async () => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(window.location.href)
+        toast.success(t('property.sections.linkCopied'))
+      } else {
+        throw new Error('Clipboard API not available')
+      }
+    } catch (err) {
+      console.warn('Clipboard write failed, using fallback')
+      // Fallback for older browsers or non-secure contexts
+      const textArea = document.createElement("textarea")
+      textArea.value = window.location.href
+      document.body.appendChild(textArea)
+      textArea.focus()
+      textArea.select()
+      try {
+        document.execCommand('copy')
+        toast.success(t('property.sections.linkCopied'))
+      } catch (err) {
+        toast.error('Failed to copy link')
+      }
+      document.body.removeChild(textArea)
+    }
   }
 
   const submitSiteVisit = async () => {
