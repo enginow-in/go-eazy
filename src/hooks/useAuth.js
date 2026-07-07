@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { setUser, setProfile, logout, setLoading } from '../store/authSlice'
@@ -8,14 +8,15 @@ import { getAuthErrorMessage } from '../utils/authErrors'
 export const useAuth = () => {
   const dispatch = useDispatch()
   const { user, profile, role, loading, authModalOpen, authModalTab } = useSelector(s => s.auth)
+  const initCompleteRef = useRef(false)
 
   useEffect(() => {
     let mounted = true
-    let initComplete = false
+    initCompleteRef.current = false
 
     // Timeout to prevent infinite loading (15 seconds)
     const loadingTimeout = setTimeout(() => {
-      if (mounted && !initComplete) {
+      if (mounted && !initCompleteRef.current) {
         console.error('⏰ Auth initialization timeout - forcing app to load')
         dispatch(setLoading(false))
       }
@@ -33,7 +34,7 @@ export const useAuth = () => {
         
         if (error) {
           console.error('❌ Session error:', error)
-          initComplete = true
+          initCompleteRef.current = true
           dispatch(setLoading(false))
           return
         }
@@ -44,13 +45,13 @@ export const useAuth = () => {
           await loadProfile(session.user.id)
         } else {
           console.log('❌ No user session found')
-          initComplete = true
+          initCompleteRef.current = true
           dispatch(setLoading(false))
         }
       } catch (err) {
         console.error('❌ Auth init error:', err)
         if (mounted) {
-          initComplete = true
+          initCompleteRef.current = true
           dispatch(setLoading(false))
         }
       }
@@ -58,7 +59,7 @@ export const useAuth = () => {
 
     // Auth state changes - only listen for changes, not initial state
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!mounted || !initComplete) return
+      if (!mounted || !initCompleteRef.current) return
       
       console.log('🔐 Auth state change:', event, !!session?.user)
 
@@ -74,7 +75,7 @@ export const useAuth = () => {
 
     return () => {
       mounted = false
-      initComplete = true
+      initCompleteRef.current = true
       clearTimeout(loadingTimeout)
       subscription?.unsubscribe()
     }
@@ -144,7 +145,7 @@ export const useAuth = () => {
       }))
     } finally {
       dispatch(setLoading(false))
-      initComplete = true
+      initCompleteRef.current = true
     }
   }
 
