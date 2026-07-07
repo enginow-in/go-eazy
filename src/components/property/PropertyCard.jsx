@@ -1,4 +1,5 @@
 import React, { useState, useMemo, memo } from 'react'
+import { flushSync } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { Bookmark, Star, Home, Eye } from 'lucide-react'
@@ -17,7 +18,11 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
 
   const handleNavigate = () => {
     if (document.startViewTransition) {
-      document.startViewTransition(() => navigate(`/property/${property.id}`))
+      document.startViewTransition(() => {
+        flushSync(() => {
+          navigate(`/property/${property.id}`)
+        })
+      })
     } else {
       navigate(`/property/${property.id}`)
     }
@@ -57,6 +62,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         <div className="relative w-32 h-32 sm:w-40 sm:h-40 flex-shrink-0 overflow-hidden bg-gray-50 rounded-r-2xl shadow-sm">
           <img 
             src={mainImage} 
+            alt={property.title}
             style={{ viewTransitionName: `property-img-${property.id}` }}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
             onLoad={() => setImgLoaded(true)}
@@ -121,7 +127,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         onClick={handleNavigate}
       >
         <div className="relative aspect-[4/3] overflow-hidden rounded-b-xl">
-          <img src={mainImage} style={{ viewTransitionName: `property-img-${property.id}` }} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <img src={mainImage} alt={property.title} style={{ viewTransitionName: `property-img-${property.id}` }} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           <div className="absolute top-2 right-2 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-lg text-[8px] font-black text-brand-600 uppercase tracking-wider">
              {t(`property.types.${property.type}`) || property.type}
           </div>
