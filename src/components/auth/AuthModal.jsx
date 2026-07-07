@@ -28,8 +28,12 @@ export const AuthModal = () => {
   const [selectedRole, setSelectedRole] = useState('user')
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [errors, setErrors] = useState({})
+  const [verificationPending, setVerificationPending] = useState(false)
 
-  React.useEffect(() => { setTab(authModalTab) }, [authModalTab])
+  React.useEffect(() => {
+    setTab(authModalTab)
+    setVerificationPending(false)
+  }, [authModalTab, authModalOpen])
 
   const validate = () => {
     const e = {}
@@ -63,8 +67,15 @@ export const AuthModal = () => {
           localStorage.removeItem('sb_return_to')
         }
       } else {
-        await signUp({ email: form.email, password: form.password, name: form.name, role: selectedRole })
-        toast.success('Account created! Check your email to confirm.')
+        const data = await signUp({ email: form.email, password: form.password, name: form.name, role: selectedRole })
+        
+        if (!data?.session) {
+          setVerificationPending(true)
+          toast.success('Account created! Verification link sent.')
+          return
+        }
+
+        toast.success('Account created!')
         const returnTo = localStorage.getItem('sb_return_to')
         dispatch(closeAuthModal())
         if (selectedRole === 'landlord') {
@@ -79,7 +90,11 @@ export const AuthModal = () => {
         }
       }
     } catch (err) {
-      toast.error(err.message || 'Something went wrong')
+      if (err.message?.toLowerCase().includes('confirm')) {
+        toast.error('Please verify your email address before signing in.')
+      } else {
+        toast.error(err.message || 'Something went wrong')
+      }
     } finally {
       setLoading(false)
     }
@@ -96,6 +111,37 @@ export const AuthModal = () => {
       toast.error(err.message || 'Google sign-in failed')
       setGoogleLoading(false)
     }
+  }
+
+  if (verificationPending) {
+    return (
+      <Modal open={authModalOpen} onClose={() => dispatch(closeAuthModal())} size="sm">
+        <div className="text-center py-6">
+          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-[#CA3433]">
+            <Mail size={32} />
+          </div>
+          <h3 className="text-2xl font-black text-gray-900 mb-2">Verify Your Email</h3>
+          <p className="text-sm text-gray-500 mb-6 leading-relaxed px-4">
+            We have sent a verification link to <span className="font-bold text-gray-800">{form.email}</span>. Please click the link in your email to activate your account.
+          </p>
+          <div className="bg-[#F9F8F6] p-4 rounded-xl border border-gray-200 text-xs text-gray-600 mb-6">
+            <p className="font-bold mb-1">Local Testing Tip 💡</p>
+            You can verify this signup using your local mail dashboard:
+            <a 
+              href="http://localhost:54324" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="block mt-1 font-bold text-[#CA3433] hover:underline"
+            >
+              http://localhost:54324
+            </a>
+          </div>
+          <Button variant="secondary" className="w-full rounded-xl" onClick={() => dispatch(closeAuthModal())}>
+            Close
+          </Button>
+        </div>
+      </Modal>
+    )
   }
 
   return (
