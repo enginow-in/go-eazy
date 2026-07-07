@@ -161,12 +161,29 @@ export const PropertyDetail = () => {
     if (!user) { dispatch(openAuthModal('signup')); return }
     toggleFavorite(p.id)
   }
+const handleShare = () => {
+    const shareUrl = window.location.href;
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href)
-    toast.success(t('property.sections.linkCopied'))
-  }
-
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareUrl)
+            .then(() => toast.success(t('property.sections.linkCopied')))
+            .catch(() => toast.error('Failed to copy link'));
+    } else {
+        // Fallback for non-secure HTTP contexts
+        try {
+            const textArea = document.createElement('textarea');
+            textArea.value = shareUrl;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            toast.success(t('property.sections.linkCopied'));
+        } catch (err) {
+            toast.error('Failed to copy link');
+        }
+    }
+}
+  
   const submitSiteVisit = async () => {
     if (!user) { dispatch(openAuthModal('login')); return }
     if (p.landlord_id === user.id) { toast.error('You cannot book a visit for your own property'); return }
