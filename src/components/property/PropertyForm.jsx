@@ -9,6 +9,8 @@ import { useSelector } from 'react-redux'
 import { supabase } from '../../lib/supabase'
 import toast from 'react-hot-toast'
 import { LocationPicker } from '../map/LocationPicker'
+import { useFileUpload } from '../../hooks/useFileUpload'
+import { FileUploadList } from '../ui/FileUploadList'
 
 // ── Success Overlay ───────────────────────────────────────────────────────────
 const ListingSuccessOverlay = () => (
@@ -93,9 +95,20 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   const [loading, setLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [step, setStep] = useState(1)
-  const [images, setImages] = useState([])
+  // previewUrls tracks both existing (remote) URLs and blob URLs for new files
   const [previewUrls, setPreviewUrls] = useState(initialData?.images || [])
-  const [uploads, setUploads] = useState([])
+
+  // useFileUpload manages XHR-backed uploads with real progress events.
+  // We only pass userId when it is available; the hook will fetch the session token internally.
+  const {
+    fileStates,
+    uploadFiles,
+    retryFile,
+    removeFile: removeUploadEntry,
+    successUrls,
+    hasErrors,
+    hasUploading,
+  } = useFileUpload('property-images', user?.id ?? 'anon')
 
   const [form, setForm] = useState({
     title:             initialData?.title || '',
@@ -128,44 +141,25 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
     for (const file of files) {
       if (file.size > 7 * 1024 * 1024) { toast.error(`Image ${file.name} exceeds 7MB limit`); return }
     }
-    setImages(prev => [...prev, ...files])
-
-setPreviewUrls(prev => [
-  ...prev,
-  ...files.map(file => URL.createObjectURL(file))
-])
-
-const newUploads = files.map(file => ({
-  file,
-  name: file.name,
-  progress: 0,
-  status: "pending"
-}))
-
-setUploads(prev => [...prev, ...newUploads])
+    // Show blob previews immediately
+    setPreviewUrls(prev => [...prev, ...files.map(f => URL.createObjectURL(f))])
+    // Kick off XHR uploads right away — progress is tracked in fileStates
+    uploadFiles(files)
+    // Reset input so the same file can be re-selected if needed
+    e.target.value = ''
   }
 
   const removeImage = (index) => {
+    const existingCount = initialData?.images?.length || 0
+    const url = previewUrls[index]
     setPreviewUrls(prev => prev.filter((_, i) => i !== index))
-    if (index >= (initialData?.images?.length || 0)) {
-      setImages(prev => prev.filter((_, i) => i !== index - (initialData?.images?.length || 0)))
+    if (index >= existingCount) {
+      // It's a new file — find the matching upload entry by blob URL and remove it
+      const newFileIndex = index - existingCount
+      const entry = fileStates.filter(f => f.file !== null)[newFileIndex]
+      if (entry) removeUploadEntry(entry.id)
     }
   }
-  const retryUpload = async (upload) => {
-  setUploads(prev =>
-    prev.map(u =>
-      u.name === upload.name
-        ? {
-            ...u,
-            progress: 0,
-            status: "pending"
-          }
-        : u
-    )
-  )
-
-  // Upload again when the user clicks Go Live
-}
   const toggleAmenity = (id) => {
     setForm(f => ({
       ...f,
@@ -219,58 +213,31 @@ setUploads(prev => [...prev, ...newUploads])
   const handlePayToGoLive = async () => {
     if (!validateForm()) return
     if (loading) return
+
+    // Guard: don't proceed if uploads are still in flight or have failures
+    if (hasUploading) {
+      toast.error('Please wait for all photos to finish uploading')
+      return
+    }
+    if (hasErrors) {
+      toast.error('Some photos failed to upload. Please retry them before going live.')
+      return
+    }
+
     setLoading(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
       if (!token) { toast.error('Session expired — please log in again'); setLoading(false); return }
 
-      const uploadedUrls = []
-      for (const file of images) {
-        const ext = file.name.split('.').pop()
-        const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${ext}`
-        const uploadItem = uploads.find(u => u.file === file)
+      // Merge pre-existing remote URLs with newly uploaded URLs
+      const existingUrls = (initialData?.images || []).filter(u => previewUrls.includes(u))
+      const uploadedUrls = [...existingUrls, ...successUrls]
 
-setUploads(prev =>
-  prev.map(u =>
-    u.file === file
-      ? { ...u, status: "uploading", progress: 10 }
-      : u
-  )
-)
-
-const { data: uploadData, error: uploadError } =
-await supabase.storage
-.from("property-images")
-.upload(`${session.user.id}/${fileName}`, file, {
-  upsert: false
-})
-
-if (uploadError) {
-  setUploads(prev =>
-    prev.map(u =>
-      u.file === file
-        ? { ...u, status: "error" }
-        : u
-    )
-  )
-
-  throw new Error(uploadError.message)
-}
-
-setUploads(prev =>
-  prev.map(u =>
-    u.file === file
-      ? {
-          ...u,
-          progress: 100,
-          status: "success"
-        }
-      : u
-  )
-)
-        const { data: { publicUrl } } = supabase.storage.from('property-images').getPublicUrl(uploadData.path)
-        uploadedUrls.push(publicUrl)
+      if (uploadedUrls.length < 1) {
+        toast.error('Please upload at least 1 photo')
+        setLoading(false)
+        return
       }
 
       const loadRazorpay = () => new Promise(resolve => {
@@ -459,38 +426,8 @@ setUploads(prev =>
               </label>
             )}
           </div>
-          <div className="space-y-3">
-  {uploads.map(upload => (
-    <div
-      key={upload.name}
-      className="border rounded-lg p-3"
-    >
-      <div className="flex justify-between text-sm">
-        <span>{upload.name}</span>
-        <span>{upload.progress}%</span>
-      </div>
-
-      <progress
-        value={upload.progress}
-        max="100"
-        className="w-full mt-2"
-      />
-
-      <div className="mt-1 text-xs">
-        {upload.status}
-      </div>
-
-      {upload.status === "error" && (
-        <button
-          className="text-red-500 text-sm mt-2"
-          onClick={() => retryUpload(upload)}
-        >
-          Retry
-        </button>
-      )}
-    </div>
-  ))}
-</div>
+          {/* ── Upload progress list ───────────────────────────────────── */}
+          <FileUploadList fileStates={fileStates} onRetry={retryFile} />
           {/* Availability toggle */}
           <label htmlFor="property-availability" className="flex items-center gap-3 cursor-pointer p-3 rounded-xl bg-gray-50 border border-gray-100">
             <input id="property-availability" type="checkbox" className="w-5 h-5 rounded border-gray-300 text-[#CA3433] focus:ring-[#CA3433] accent-[#CA3433]"
