@@ -220,9 +220,8 @@ export const useAuth = () => {
         throw new Error(getAuthErrorMessage(error))
       }
 
-      // If signup was successful but user needs email verification
-      if (data.user && !data.user.email_confirmed_at) {
-        // Pre-create profile for better UX
+      // If signup was successful, create profile immediately
+      if (data.user) {
         try {
           await supabase.from('profiles').upsert({
             id: data.user.id,
@@ -233,8 +232,7 @@ export const useAuth = () => {
             created_at: new Date().toISOString(),
           })
         } catch (profileError) {
-          // Profile creation failed but signup succeeded - not critical
-          console.warn('Profile pre-creation failed:', profileError)
+          console.warn('Profile creation failed:', profileError)
         }
       }
       
@@ -276,12 +274,6 @@ export const useAuth = () => {
         
         // Throw user-friendly error message
         throw new Error(getAuthErrorMessage(error))
-      }
-      
-      // Check if email is verified
-      if (data.user && !data.user.email_confirmed_at) {
-        await supabase.auth.signOut()
-        throw new Error('Please verify your email before logging in. Check your inbox for the verification link.')
       }
       
       // Clear rate limiting on successful login

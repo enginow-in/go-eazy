@@ -56,7 +56,7 @@ export const AuthGateModal = () => {
         toast.success('Welcome back!')
       } else {
         await signUp({ email: form.email, password: form.password, name: form.name, role: selectedRole })
-        toast.success('Account created!')
+        toast.success('Welcome to GoEazy!')
       }
     } catch (err) {
       toast.error(err.message || 'Something went wrong')

@@ -59,9 +59,8 @@ export const AuthHome = () => {
         navigate('/search')
       } else {
         await signUp({ email: form.email, password: form.password, name: form.name, role: selectedRole })
-        setPendingVerificationEmail(form.email)
-        toast.success('Account created! Please check your email to verify your account.')
-        setView('verification-sent')
+        toast.success('Account created successfully!')
+        navigate('/search')
       }
     } catch (err) {
       // Handle specific error messages
