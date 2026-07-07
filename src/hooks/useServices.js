@@ -32,7 +32,8 @@ export const useServices = () => {
         // Use * to avoid 400 from PostgREST stale schema cache rejecting specific column names.
         // profiles!provider_id uses column-name hint (more portable than FK constraint name).
         .select(`*, profiles!provider_id(${PUBLIC_PROFILE_FIELDS})`)
-        .eq('verification_status', 'verified') // Admin approval is the public gate
+        .eq('verification_status', 'verified')
+        .eq('payment_status', 'paid')
 
       if (filters.category) query = query.eq('category', filters.category)
       if (filters.state)    query = query.ilike('state', `%${filters.state}%`)
