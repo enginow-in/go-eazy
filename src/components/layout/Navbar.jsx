@@ -83,20 +83,25 @@ export const Navbar = () => {
         <div className="flex items-center justify-between h-20 relative">
           
           {/* Logo Section (Centered on mobile) */}
-          <div className="absolute left-1/2 md:static -translate-x-1/2 md:translate-x-0 whitespace-nowrap z-20">
-            <Link to="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-xl bg-white border-2 border-[#CA3433] shadow-md flex items-center justify-center font-bold font-display rotate-3 group-hover:rotate-0 transition-all duration-300 overflow-hidden">
-                <div className="-rotate-3 flex items-center justify-center translate-y-0.5">
-                  <span className="text-[#CA3433] text-[22px] font-black leading-none">G</span>
-                  <span className="text-[#CA3433] text-[15px] font-black leading-none -ml-0.5 mb-2">E</span>
-                </div>
-              </div>
-              <span className="font-display font-black text-[22px] sm:text-2xl text-gray-900 tracking-tight leading-none pt-1">
-                Go<span className="text-[#CA3433]">Eazy</span>
-              </span>
-            </Link>
+         <div className="absolute left-1/2 md:static -translate-x-1/2 md:translate-x-0 whitespace-nowrap flex items-center gap-6">
+        <Link 
+          to="/" 
+          className={`flex items-center gap-1 group font-medium transition-colors ${
+            location.pathname === '/' 
+              ? 'text-[#CA3433]' 
+              : 'text-gray-600 hover:text-[#CA3433]'
+          }`}
+        >
+          <div className={`w-10 h-10 rounded-xl bg-white border-2 flex items-center justify-center shadow-md transition-all ${
+            location.pathname === '/' ? 'border-[#CA3433]' : 'border-gray-200 group-hover:border-[#CA3433]'
+          }`}>
+            <Home size={20} className={location.pathname === '/' ? 'text-[#CA3433]' : 'text-gray-500 group-hover:text-[#CA3433]'} />
           </div>
-            
+          <span className="font-display font-black text-[22px] sm:text-2xl tracking-tight">
+            Go<span className="text-[#CA3433]">Eazy</span>
+          </span>
+        </Link>
+      </div>
           {/* Language Picker (Left side) */}
           <div className="relative z-30">
             <button 
@@ -143,14 +148,44 @@ export const Navbar = () => {
           </div>
 
           {/* Right Links & Auth */}
-          <div className="hidden md:flex items-center gap-6">
-            <div className="flex items-center space-x-6 text-sm font-medium text-gray-500">
-              <Link to="/search" className="px-3 py-1 bg-brand-lime text-gray-900 rounded-md font-semibold hover:bg-lime-400 transition-colors">{t('nav.home')}</Link>
-              <Link to="/nearby" className="hover:text-gray-900 transition-colors py-2">{t('nav.nearby')}</Link>
-              <button onClick={() => user ? navigate('/landlord') : dispatch(openAuthModal('login'))} className="hover:text-gray-900 transition-colors">{t('nav.list')}</button>
-              <Link to="/about" className="hover:text-gray-900 transition-colors py-2">{t('nav.about')}</Link>
-            </div>
-            
+         <div className="hidden md:flex items-center gap-6">
+  <div className="flex items-center space-x-6 text-sm font-medium text-gray-500">
+    <Link 
+      to="/search" 
+      className={`px-3 py-1 rounded-md transition-colors ${
+        location.pathname === '/search' 
+          ? 'bg-brand-lime text-gray-900 font-semibold' 
+          : 'hover:text-gray-900 hover:bg-gray-100'
+      }`}
+    >
+      {t('nav.search')}
+    </Link>
+    <Link 
+      to="/nearby" 
+      className={`transition-colors py-2 ${
+        location.pathname === '/nearby' ? 'text-gray-900 font-semibold' : 'hover:text-gray-900'
+      }`}
+    >
+      {t('nav.nearby')}
+    </Link>
+    <button 
+      onClick={() => user ? navigate('/landlord') : dispatch(openAuthModal('login'))} 
+      className={`transition-colors py-2 ${
+        location.pathname === '/landlord' ? 'text-gray-900 font-semibold' : 'hover:text-gray-900'
+      }`}
+    >
+      {t('nav.landlord')}
+    </button>
+    <Link 
+      to="/about" 
+      className={`transition-colors py-2 ${
+        location.pathname === '/about' ? 'text-gray-900 font-semibold' : 'hover:text-gray-900'
+      }`}
+    >
+      {t('nav.about')}
+    </Link>
+  </div>
+</div>
             <div className="w-px h-6 bg-gray-200"></div>
 
             <button className="flex items-center gap-2 text-sm font-semibold text-gray-700">
