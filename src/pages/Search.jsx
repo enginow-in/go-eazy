@@ -11,7 +11,6 @@ import { resetFilters } from '../store/propertySlice'
 import { PROPERTY_TYPES, AMENITIES, SORT_OPTIONS } from '../utils/constants'
 import { AMENITY_ICONS, cn } from '../utils/helpers'
 import { Skeleton } from '../components/ui/Skeleton'
-import { useAuth } from '../hooks/useAuth'
 import { RecommendedSection } from '../components/property/RecommendedSection'
 
 export const Search = () => {
@@ -209,7 +208,7 @@ export const Search = () => {
                     onClick={() => setViewMode('list')} 
                     className={`p-2 transition-all rounded-lg ${viewMode === 'list' ? 'bg-brand-50 text-brand-600 ring-1 ring-brand-100' : 'text-gray-400'}`}
                   >
-                    <ListIcon size={18} className="rotate-90" />
+                    <ListIcon size={18} />
                   </button>
                 </div>
 
@@ -242,7 +241,7 @@ export const Search = () => {
                  <Grid size={20} />
                </button>
                <button onClick={() => setViewMode('list')} className={`hover:text-gray-900 transition-colors ${viewMode === 'list' ? 'text-gray-900 border border-gray-200 rounded p-1 shadow-sm' : 'p-1'}`}>
-                  <ListIcon size={22} className="rotate-90" />
+                  <ListIcon size={22} />
                </button>
              </div>
              
