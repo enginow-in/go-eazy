@@ -140,7 +140,9 @@ export const Navbar = () => {
                 className="w-full bg-gray-50 border border-transparent focus:border-[#CA3433] focus:ring-2 focus:ring-[#CA3433]/10 rounded-full py-2.5 pl-12 pr-12 text-sm font-medium focus:outline-none transition-all"
               />
               <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
-                <span className="text-[10px] font-bold text-gray-400 bg-gray-200 px-1.5 py-0.5 rounded-md">⌘K</span>
+                <span className="text-[10px] font-bold text-gray-400 bg-gray-200 px-1.5 py-0.5 rounded-md">
+                  {typeof window !== 'undefined' && window.navigator.userAgent.includes('Mac') ? '⌘K' : 'Ctrl+K'}
+                </span>
               </div>
             </div>
           </div>
