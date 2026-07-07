@@ -39,6 +39,7 @@ export const BannerSlider = () => {
             const img = new Image();
             img.src = banners[0];
             img.onload = () => setIsLoaded(true);
+            img.onerror = () => setIsLoaded(true);
           }}
         >
           {banners.map((src, index) => (
@@ -50,6 +51,7 @@ export const BannerSlider = () => {
                   className="w-full h-auto block transition-opacity duration-500"
                   loading={index === 0 ? "eager" : "lazy"}
                   onLoad={index === 0 ? () => setIsLoaded(true) : undefined}
+                  onError={index === 0 ? () => setIsLoaded(true) : undefined}
                 />
               </div>
             </SwiperSlide>

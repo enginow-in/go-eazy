@@ -3,9 +3,8 @@ import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { setUser, setProfile, logout, setLoading } from '../store/authSlice'
 
-export const useAuth = () => {
+export const useInitializeAuth = () => {
   const dispatch = useDispatch()
-  const { user, profile, role, loading, authModalOpen, authModalTab } = useSelector(s => s.auth)
 
   useEffect(() => {
     // Get initial session
@@ -111,6 +110,11 @@ export const useAuth = () => {
       dispatch(setLoading(false))
     }
   }
+}
+
+export const useAuth = () => {
+  const dispatch = useDispatch()
+  const { user, profile, role, loading, authModalOpen, authModalTab } = useSelector(s => s.auth)
 
   const signUp = async ({ email, password, name, role }) => {
     const { data, error } = await supabase.auth.signUp({

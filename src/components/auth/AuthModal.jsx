@@ -40,6 +40,10 @@ export const AuthModal = () => {
     return !Object.keys(e).length
   }
 
+  const getReturnTo = () => { try { return localStorage.getItem('sb_return_to') } catch { return null } }
+  const clearReturnTo = () => { try { localStorage.removeItem('sb_return_to') } catch {} }
+  const setReturnTo = (val) => { try { localStorage.setItem('sb_return_to', val) } catch {} }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validate()) return
@@ -50,15 +54,15 @@ export const AuthModal = () => {
         toast.success('Welcome back!')
         dispatch(closeAuthModal())
         
-        const returnTo = localStorage.getItem('sb_return_to')
+        const returnTo = getReturnTo()
         if (returnTo) {
           navigate(returnTo)
-          localStorage.removeItem('sb_return_to')
+          clearReturnTo()
         }
       } else {
         await signUp({ email: form.email, password: form.password, name: form.name, role: selectedRole })
         toast.success('Account created! Check your email to confirm.')
-        const returnTo = localStorage.getItem('sb_return_to')
+        const returnTo = getReturnTo()
         dispatch(closeAuthModal())
         if (selectedRole === 'landlord') {
           navigate('/landlord')
@@ -66,7 +70,7 @@ export const AuthModal = () => {
           navigate('/service-provider')
         } else if (returnTo) {
           navigate(returnTo)
-          localStorage.removeItem('sb_return_to')
+          clearReturnTo()
         } else {
           navigate('/dashboard')
         }
@@ -80,7 +84,7 @@ export const AuthModal = () => {
 
   const handleGoogle = async () => {
     // Save current path to return back after OAuth redirect
-    localStorage.setItem('sb_return_to', window.location.pathname + window.location.search)
+    setReturnTo(window.location.pathname + window.location.search)
     
     setGoogleLoading(true)
     try {
