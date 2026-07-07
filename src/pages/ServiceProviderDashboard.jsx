@@ -34,7 +34,7 @@ const StatusBadge = ({ status }) => {
 
 export const ServiceProviderDashboard = () => {
   const navigate = useNavigate()
-  const { profile } = useSelector(s => s.auth)
+ const { user, profile } = useSelector(s => s.auth)
   const { getMyServices, deleteService, payServiceListing } = useServices()
 
   const [myServices, setMyServices] = useState([])
@@ -52,7 +52,12 @@ export const ServiceProviderDashboard = () => {
     }
   }
 
-  useEffect(() => { loadMyServices() }, [])
+useEffect(() => {
+  if (!user?.id) return
+
+  loadMyServices()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [user?.id])
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this listing?')) return
