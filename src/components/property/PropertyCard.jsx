@@ -1,10 +1,11 @@
 import React, { useState, useMemo, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { Bookmark, Star, Home, Eye } from 'lucide-react'
+import { Bookmark, Star, Home, Eye ,Share2 } from 'lucide-react'
 import { openAuthModal } from '../../store/authSlice'
 import { useProperties } from '../../hooks/useProperties'
 import { cn } from '../../utils/helpers'
+import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 
 const PropertyCardComponent = ({ property, layout = 'grid', compact = false, condensed = false, badge = null }) => {
@@ -23,6 +24,14 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
     e.stopPropagation()
     if (!user) { dispatch(openAuthModal('signup')); return }
     toggleFavorite(property.id)
+  }
+
+  const handleShare = (e) => {
+    e.stopPropagation()
+    navigator.clipboard.writeText(`${window.location.origin}/property/${property.id}`)
+        .then(() => toast.success(t('property.sections.linkCopied')))
+        .catch(() => toast.error('Failed to copy link'))
+    toast.success(t('property.sections.linkCopied'))
   }
 
   // Memoize values with deterministic calculation
@@ -190,7 +199,6 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           {property.title}
         </h3>
         
-        
         <div className="mt-auto pt-1.5 border-t border-gray-50 flex items-center justify-between">
           <p className="flex flex-col">
             <span className="text-[8px] font-bold text-gray-400 uppercase leading-none">{t('property.labels.from')}</span>
@@ -199,9 +207,14 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
               condensed ? "text-sm" : "text-base"
             )}>₹{formatPrice(property.price)}</span>
           </p>
-          <button className="text-[#CA3433] hover:text-brand-800 transition-colors">
-            <Eye size={condensed ? 14 : 18} />
+          <div className="flex items-center gap-2">
+            <button onClick={handleShare} className="text-gray-500 hover:text-[#CA3433] transition-colors">
+             <Share2 size={condensed ? 14 : 18} />
           </button>
+          <button className="text-[#CA3433] hover:text-brand-800 transition-colors">
+             <Eye size={condensed ? 14 : 18} />
+          </button>
+          </div>
         </div>
       </div>
     </div>
