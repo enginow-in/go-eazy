@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useServices } from '../hooks/useServices'
@@ -22,16 +22,7 @@ export const SystemAdmin = () => {
   const [selectedDoc, setSelectedDoc] = useState(null)
   const [showApprovals, setShowApprovals] = useState(false)
 
-
-  useEffect(() => {
-    // Only load stats if authorized
-    if (user && role === 'admin') {
-      loadStats()
-      loadProviders()
-    }
-  }, [user])
-
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const [uRes, pRes, sRes] = await Promise.all([
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
@@ -49,9 +40,9 @@ export const SystemAdmin = () => {
     } finally {
       setLoadingStats(false)
     }
-  }
+  }, [])
 
-  const loadProviders = async () => {
+  const loadProviders = useCallback(async () => {
     try {
       const data = await getAdminPendingServices()
       setProviders(data)
@@ -60,7 +51,15 @@ export const SystemAdmin = () => {
     } finally {
       setLoadingProviders(false)
     }
-  }
+  }, [getAdminPendingServices])
+
+  useEffect(() => {
+    // Only load stats if authorized
+    if (user && role === 'admin') {
+      loadStats()
+      loadProviders()
+    }
+  }, [user, role, loadStats, loadProviders])
 
   const handleAction = async (id, newStatus) => {
     const toastId = toast.loading(`Marking as ${newStatus}...`)
