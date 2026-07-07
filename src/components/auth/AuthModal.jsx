@@ -21,7 +21,7 @@ export const AuthModal = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { authModalOpen, authModalTab } = useSelector(s => s.auth)
-  const { signIn, signUp, signInWithGoogle, resendVerification } = useAuth()
+  const { signIn, signUp, signInWithGoogle, resendVerification, role } = useAuth()
 
   const [tab, setTab] = useState(authModalTab)
   const [view, setView] = useState('auth') // 'auth', 'forgot-password', 'resend-verification'
@@ -41,6 +41,13 @@ export const AuthModal = () => {
     }
 
     return false
+  }
+
+  const getDashboardPath = () => {
+    if (role === 'admin') return '/systemadmin'
+    if (role === 'landlord') return '/landlord'
+    if (role === 'service_provider') return '/service-provider'
+    return '/dashboard'
   }
 
   React.useEffect(() => { setTab(authModalTab) }, [authModalTab])
@@ -64,12 +71,8 @@ export const AuthModal = () => {
         toast.success('Welcome back!')
         await waitForSession()
         dispatch(closeAuthModal())
-        
-        const returnTo = localStorage.getItem('sb_return_to')
-        if (returnTo) {
-          navigate(returnTo)
-          localStorage.removeItem('sb_return_to')
-        }
+        localStorage.removeItem('sb_return_to')
+        navigate(getDashboardPath(), { replace: true })
       } else {
         await signUp({ email: form.email, password: form.password, name: form.name, role: selectedRole })
         setPendingVerificationEmail(form.email)
