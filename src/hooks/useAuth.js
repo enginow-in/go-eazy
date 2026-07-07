@@ -60,7 +60,9 @@ export const useAuth = () => {
         }
 
         const fullName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'
-        const userRole = user?.user_metadata?.role || null
+        // SECURITY FIX: Do NOT read role from user_metadata — that's client-controlled.
+        // New OAuth users start as 'user' and can change role via the onboarding quiz.
+        const safeRole = 'user'
         
         const { data: newProfile, error: upsertError } = await supabase
           .from('profiles')
@@ -68,8 +70,8 @@ export const useAuth = () => {
             id: userId,
             email: user?.email,
             full_name: fullName,
-            role: userRole,
-            avatar_url: user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${fullName}`,
+            role: safeRole,
+            avatar_url: user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(fullName)}`,
             created_at: new Date().toISOString()
           })
           .select()
@@ -112,13 +114,23 @@ export const useAuth = () => {
     }
   }
 
+  // SECURITY: Allowlist for roles a user can self-assign at signup.
+  // 'admin' is intentionally excluded — admins must be created server-side.
+  const ALLOWED_SIGNUP_ROLES = ['user', 'landlord', 'service_provider']
+
   const signUp = async ({ email, password, name, role }) => {
+    // SECURITY FIX: Validate role against allowlist to prevent privilege escalation.
+    // If a malicious actor passes role: 'admin', it will be sanitized to 'user'.
+    const safeRole = ALLOWED_SIGNUP_ROLES.includes(role) ? role : 'user'
+
     const { data, error } = await supabase.auth.signUp({
       email, password,
       options: { 
         data: { 
           full_name: name,
-          role: role 
+          // SECURITY FIX: Do NOT pass role in metadata.
+          // Role is derived from the profiles table (server-controlled), NOT from user metadata.
+          // Passing it in metadata allowed anyone to forge admin/landlord roles.
         } 
       },
     })
@@ -129,8 +141,8 @@ export const useAuth = () => {
         id: data.user.id,
         email,
         full_name: name,
-        role,
-        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
+        role: safeRole, // Safe, validated role
+        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
         created_at: new Date().toISOString(),
       })
     }
@@ -144,12 +156,19 @@ export const useAuth = () => {
   }
 
   const signInWithGoogle = async () => {
-    // Priority: Saved return path > Env variable > current origin
-    const savedPath = localStorage.getItem('sb_return_to')
-    const redirectUrl = savedPath 
-      ? `${window.location.origin}${savedPath}`
-      : (import.meta.env.VITE_REDIRECT_URL || `${window.location.origin}/search`)
-    
+    // SECURITY FIX: Sanitize the saved return path to prevent open-redirect attacks.
+    // Accept only relative paths starting with a single '/'. Reject:
+    //   - protocol-relative paths like //evil.com
+    //   - absolute URLs like https://evil.com
+    //   - any non-string values
+    const rawPath = localStorage.getItem('sb_return_to')
+    const isSafePath = typeof rawPath === 'string' &&
+      rawPath.startsWith('/') &&
+      !rawPath.startsWith('//') &&
+      !rawPath.includes(':') // blocks http:, https:, javascript:, etc.
+    const savedPath = isSafePath ? rawPath : '/search'
+    const redirectUrl = `${window.location.origin}${savedPath}`
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { 

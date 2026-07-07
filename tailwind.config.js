@@ -4,6 +4,7 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class', // Enable class-based dark mode toggling via <html class="dark">
   theme: {
     extend: {
       fontFamily: {
@@ -46,3 +47,4 @@ export default {
   },
   plugins: [],
 }
+

@@ -40,6 +40,47 @@ const PageSpinner = () => (
   </div>
 )
 
+/**
+ * ChunkErrorBoundary — catches lazy-load failures caused by stale chunk URLs
+ * after a production redeploy. Instead of a blank screen, it reloads the page once.
+ */
+class ChunkErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false, retried: false }
+  }
+
+  static getDerivedStateFromError(error) {
+    // Only catch chunk load errors; let all others propagate normally.
+    const isChunkError = error?.name === 'ChunkLoadError' ||
+      error?.message?.includes('Failed to fetch dynamically imported module') ||
+      error?.message?.includes('Loading chunk') ||
+      error?.message?.includes('Importing a module script failed')
+    if (isChunkError) return { hasError: true }
+    return null // re-throw non-chunk errors
+  }
+
+  componentDidCatch(error, info) {
+    if (this.state.hasError && !this.state.retried) {
+      this.setState({ retried: true })
+      // Force a hard reload to pull fresh chunks from the server.
+      window.location.reload()
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-gray-50">
+          <div className="w-10 h-10 border-4 border-[#CA3433] border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-gray-500 font-medium">Refreshing app…</p>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
 function App() {
   useAuth() 
   const { loading } = useSelector(s => s.auth)
@@ -59,6 +100,7 @@ function App() {
       <OnboardingQuiz />
       <RoleSelectionModal />
       <Layout>
+        <ChunkErrorBoundary>
         <Suspense fallback={<PageSpinner />}>
           <Routes>
           <Route path="/" element={<Navigate to="/search" replace />} />
@@ -134,6 +176,7 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
         </Suspense>
+        </ChunkErrorBoundary>
       </Layout>
     </BrowserRouter>
   )

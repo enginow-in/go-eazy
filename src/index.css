@@ -2,6 +2,307 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   GO-EAZY DESIGN SYSTEM — Light & Dark Mode Token Foundation
+   Tokens control the entire visual language. Toggling dark mode changes
+   only these tokens; all components update automatically.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Light Mode Color Tokens ── */
+  --clr-bg-base:       hsl(0, 0%, 100%);
+  --clr-bg-elevated:   hsl(210, 20%, 98%);
+  --clr-bg-overlay:    hsl(210, 15%, 95%);
+  --clr-surface:       hsl(0, 0%, 100%);
+  --clr-border:        hsl(214, 32%, 91%);
+
+  --clr-text-primary:   hsl(220, 20%, 10%);
+  --clr-text-secondary: hsl(220, 14%, 40%);
+  --clr-text-muted:     hsl(220, 10%, 60%);
+
+  --clr-brand:         #CA3433;
+  --clr-brand-light:   #fff5f5;
+  --clr-brand-dark:    #ac2d2c;
+
+  /* ── Navbar / Glass Specific ── */
+  --clr-nav-bg:        hsl(0, 0%, 100%);
+  --clr-nav-border:    hsl(214, 32%, 91%);
+  --clr-input-bg:      hsl(210, 20%, 97%);
+  --clr-card-bg:       hsl(0, 0%, 100%);
+  --clr-card-border:   hsl(214, 32%, 91%);
+
+  /* ── Skeleton shimmer ── */
+  --clr-skeleton-from: #f1f5f9;
+  --clr-skeleton-to:   #e2e8f0;
+
+  /* ── Scrollbar ── */
+  --clr-scrollbar:     #cbd5e1;
+  --clr-scrollbar-hov: #94a3b8;
+
+  /* ── Transitions ── */
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-spring:    cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth:    cubic-bezier(0.4, 0, 0.2, 1);
+
+  --dur-fast:   150ms;
+  --dur-normal: 300ms;
+  --dur-slow:   500ms;
+}
+
+/* ── Dark Mode Overrides ── */
+html.dark {
+  --clr-bg-base:       hsl(222, 20%, 8%);
+  --clr-bg-elevated:   hsl(222, 18%, 12%);
+  --clr-bg-overlay:    hsl(222, 16%, 16%);
+  --clr-surface:       hsl(222, 18%, 13%);
+  --clr-border:        hsla(220, 20%, 100%, 0.10);
+
+  --clr-text-primary:   hsl(220, 20%, 94%);
+  --clr-text-secondary: hsl(220, 14%, 65%);
+  --clr-text-muted:     hsl(220, 10%, 45%);
+
+  --clr-brand:         #e05c5b;
+  --clr-brand-light:   hsla(0, 60%, 60%, 0.12);
+  --clr-brand-dark:    #CA3433;
+
+  --clr-nav-bg:        hsl(222, 20%, 10%);
+  --clr-nav-border:    hsla(220, 20%, 100%, 0.08);
+  --clr-input-bg:      hsl(222, 18%, 14%);
+  --clr-card-bg:       hsl(222, 18%, 12%);
+  --clr-card-border:   hsla(220, 20%, 100%, 0.08);
+
+  --clr-skeleton-from: hsl(222, 18%, 16%);
+  --clr-skeleton-to:   hsl(222, 18%, 20%);
+
+  --clr-scrollbar:     hsl(220, 14%, 28%);
+  --clr-scrollbar-hov: hsl(220, 14%, 40%);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE RESET
+   ═══════════════════════════════════════════════════════════════════════════ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Smooth background-color transition when theme changes */
+  transition: background-color var(--dur-normal) var(--ease-smooth),
+              color var(--dur-normal) var(--ease-smooth);
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: var(--clr-bg-base);
+  color: var(--clr-text-primary);
+  line-height: 1.6;
+  transition: background-color var(--dur-normal) var(--ease-smooth),
+              color var(--dur-normal) var(--ease-smooth);
+}
+
+/* ── Image & Content Protection ── */
+img {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+body {
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  -moz-user-select: none;
+}
+
+input, textarea, [contenteditable="true"] {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -ms-user-select: text !important;
+  -moz-user-select: text !important;
+}
+
+/* ── Tactile Interactions ── */
+button:active,
+.btn:active,
+[role="button"]:active {
+  transform: scale(0.96);
+  transition: transform 0.1s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DARK-MODE-AWARE COMPONENT OVERRIDES
+   These override the hardcoded bg-white / bg-gray-* / text-gray-* classes
+   used in JSX that can't easily be changed to use CSS vars.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Navbar */
+html.dark nav {
+  background-color: var(--clr-nav-bg) !important;
+  border-color: var(--clr-nav-border) !important;
+}
+
+/* Cards, panels, modals */
+html.dark .bg-white {
+  background-color: var(--clr-card-bg) !important;
+}
+
+html.dark .bg-gray-50,
+html.dark .bg-gray-50\/50 {
+  background-color: var(--clr-bg-elevated) !important;
+}
+
+html.dark .bg-gray-100 {
+  background-color: var(--clr-bg-overlay) !important;
+}
+
+html.dark .border-gray-100,
+html.dark .border-gray-200 {
+  border-color: var(--clr-border) !important;
+}
+
+/* Text */
+html.dark .text-gray-900 {
+  color: var(--clr-text-primary) !important;
+}
+
+html.dark .text-gray-700 {
+  color: var(--clr-text-secondary) !important;
+}
+
+html.dark .text-gray-500,
+html.dark .text-gray-400 {
+  color: var(--clr-text-muted) !important;
+}
+
+/* Inputs */
+html.dark input:not([type="range"]),
+html.dark textarea,
+html.dark select {
+  background-color: var(--clr-input-bg) !important;
+  border-color: var(--clr-border) !important;
+  color: var(--clr-text-primary) !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: var(--clr-text-muted) !important;
+}
+
+/* Dropdowns */
+html.dark [class*="absolute"][class*="bg-white"],
+html.dark [class*="absolute"][class*="rounded"] {
+  background-color: var(--clr-card-bg) !important;
+  border-color: var(--clr-border) !important;
+}
+
+/* Dividers */
+html.dark .h-px,
+html.dark [class*="bg-gray-200"] {
+  background-color: var(--clr-border) !important;
+}
+
+/* min-h-screen with bg-gray-50 pages */
+html.dark .min-h-screen.bg-gray-50,
+html.dark .bg-gray-50.min-h-screen {
+  background-color: var(--clr-bg-base) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCROLLBAR
+   ═══════════════════════════════════════════════════════════════════════════ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--clr-scrollbar);
+  border-radius: 9999px;
+  transition: background var(--dur-fast);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--clr-scrollbar-hov); }
+
+/* ── Horizontal scroll sections ── */
+.scroll-row {
+  display: flex;
+  gap: 1.25rem;
+  overflow-x: auto;
+  padding-bottom: 1rem;
+  scrollbar-width: none;
+}
+.scroll-row::-webkit-scrollbar { display: none; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GLASS & UTILITY CLASSES
+   ═══════════════════════════════════════════════════════════════════════════ */
+.glass {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+html.dark .glass {
+  background: hsla(222, 20%, 14%, 0.80);
+  border: 1px solid hsla(220, 20%, 100%, 0.10);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+.animate-fadeInUp { animation: fadeInUp 0.6s cubic-bezier(0.25, 1, 0.5, 1) both; }
+.animate-float    { animation: float 4s ease-in-out infinite; }
+
+/* ── Skeleton ── */
+.skeleton {
+  background: linear-gradient(90deg,
+    var(--clr-skeleton-from) 25%,
+    var(--clr-skeleton-to)   50%,
+    var(--clr-skeleton-from) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 0.5rem;
+}
+
+/* ── Hero gradient ── */
+.hero-gradient {
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, #dbeeff 0%, #f8fafc 60%, #fff 100%);
+}
+
+html.dark .hero-gradient {
+  background: radial-gradient(ellipse 80% 60% at 50% 0%,
+    hsla(220, 70%, 30%, 0.20) 0%,
+    var(--clr-bg-base) 60%,
+    var(--clr-bg-base) 100%
+  );
+}
+
+/* ── Swiper overrides for premium aesthetic ── */
+.swiper-pagination-bullet-active { background: #CA3433 !important; }
+
+
 * {
   box-sizing: border-box;
   margin: 0;

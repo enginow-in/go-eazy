@@ -134,30 +134,20 @@ export const useProperties = () => {
   const fetchGatedData = useCallback(async (id) => {
     if (!user) return null
     try {
-      // 1. Try the RPC first
+      // SECURITY FIX: Only use the RPC function to fetch gated data.
+      // Previously, a direct table query was used as a fallback which exposed
+      // contact_phone, contact_email, and exact_location to ANY authenticated user
+      // regardless of payment status. The RPC function enforces payment checks.
+      // The 'properties' table RLS should also deny direct reads of these columns.
       const rpcResult = await supabase.rpc('get_unlocked_property_details', { prop_id: id })
-      const rpcData = rpcResult.data?.[0] || {}
-
-      // 2. ALWAYS also directly fetch contact_phone + contact_email from properties table
-      //    (the RPC may not include these fields, and landlords can always read their own data)
-      const { data: directData } = await supabase
-        .from('properties')
-        .select('contact_phone, contact_email, exact_location')
-        .eq('id', id)
-        .maybeSingle()
-
-      // 3. Merge — RPC fields take priority, direct fields fill any gaps
-      return {
-        ...rpcData,
-        contact_phone: rpcData?.contact_phone || directData?.contact_phone || null,
-        contact_email: rpcData?.contact_email || directData?.contact_email || null,
-        exact_location: rpcData?.exact_location || directData?.exact_location || null,
-      }
+      if (rpcResult.error) throw rpcResult.error
+      return rpcResult.data?.[0] || null
     } catch (err) {
       console.error('Error fetching gated data:', err)
       return null
     }
   }, [user])
+
 
   const fetchReviews = useCallback(async (propertyId) => {
     dispatch(setReviewsLoading(true))
