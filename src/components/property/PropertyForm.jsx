@@ -95,6 +95,7 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   const [step, setStep] = useState(1)
   const [images, setImages] = useState([])
   const [previewUrls, setPreviewUrls] = useState(initialData?.images || [])
+  const [uploads, setUploads] = useState([])
 
   const [form, setForm] = useState({
     title:             initialData?.title || '',
@@ -128,7 +129,20 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
       if (file.size > 7 * 1024 * 1024) { toast.error(`Image ${file.name} exceeds 7MB limit`); return }
     }
     setImages(prev => [...prev, ...files])
-    setPreviewUrls(prev => [...prev, ...files.map(f => URL.createObjectURL(f))])
+
+setPreviewUrls(prev => [
+  ...prev,
+  ...files.map(file => URL.createObjectURL(file))
+])
+
+const newUploads = files.map(file => ({
+  file,
+  name: file.name,
+  progress: 0,
+  status: "pending"
+}))
+
+setUploads(prev => [...prev, ...newUploads])
   }
 
   const removeImage = (index) => {
@@ -137,7 +151,21 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
       setImages(prev => prev.filter((_, i) => i !== index - (initialData?.images?.length || 0)))
     }
   }
+  const retryUpload = async (upload) => {
+  setUploads(prev =>
+    prev.map(u =>
+      u.name === upload.name
+        ? {
+            ...u,
+            progress: 0,
+            status: "pending"
+          }
+        : u
+    )
+  )
 
+  // Upload again when the user clicks Go Live
+}
   const toggleAmenity = (id) => {
     setForm(f => ({
       ...f,
@@ -201,9 +229,46 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
       for (const file of images) {
         const ext = file.name.split('.').pop()
         const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${ext}`
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('property-images').upload(`${session.user.id}/${fileName}`, file, { upsert: false })
-        if (uploadError) throw new Error('Image upload failed: ' + uploadError.message)
+        const uploadItem = uploads.find(u => u.file === file)
+
+setUploads(prev =>
+  prev.map(u =>
+    u.file === file
+      ? { ...u, status: "uploading", progress: 10 }
+      : u
+  )
+)
+
+const { data: uploadData, error: uploadError } =
+await supabase.storage
+.from("property-images")
+.upload(`${session.user.id}/${fileName}`, file, {
+  upsert: false
+})
+
+if (uploadError) {
+  setUploads(prev =>
+    prev.map(u =>
+      u.file === file
+        ? { ...u, status: "error" }
+        : u
+    )
+  )
+
+  throw new Error(uploadError.message)
+}
+
+setUploads(prev =>
+  prev.map(u =>
+    u.file === file
+      ? {
+          ...u,
+          progress: 100,
+          status: "success"
+        }
+      : u
+  )
+)
         const { data: { publicUrl } } = supabase.storage.from('property-images').getPublicUrl(uploadData.path)
         uploadedUrls.push(publicUrl)
       }
@@ -394,7 +459,38 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
               </label>
             )}
           </div>
+          <div className="space-y-3">
+  {uploads.map(upload => (
+    <div
+      key={upload.name}
+      className="border rounded-lg p-3"
+    >
+      <div className="flex justify-between text-sm">
+        <span>{upload.name}</span>
+        <span>{upload.progress}%</span>
+      </div>
 
+      <progress
+        value={upload.progress}
+        max="100"
+        className="w-full mt-2"
+      />
+
+      <div className="mt-1 text-xs">
+        {upload.status}
+      </div>
+
+      {upload.status === "error" && (
+        <button
+          className="text-red-500 text-sm mt-2"
+          onClick={() => retryUpload(upload)}
+        >
+          Retry
+        </button>
+      )}
+    </div>
+  ))}
+</div>
           {/* Availability toggle */}
           <label htmlFor="property-availability" className="flex items-center gap-3 cursor-pointer p-3 rounded-xl bg-gray-50 border border-gray-100">
             <input id="property-availability" type="checkbox" className="w-5 h-5 rounded border-gray-300 text-[#CA3433] focus:ring-[#CA3433] accent-[#CA3433]"
