@@ -14,6 +14,7 @@ export const SavedProperties = () => {
   const { favorites } = useProperties()
   const [favProps, setFavProps] = useState([])
   const [loading, setLoading] = useState(true)
+  const [sortBy, setSortBy] = useState('newest')
 
   useEffect(() => {
     if (user) {
@@ -52,7 +53,34 @@ export const SavedProperties = () => {
       setLoading(false)
     }
   }
+const sortedProperties = [...favProps].sort((a, b) => {
+  switch (sortBy) {
+    case 'priceLow':
+    return Number(a.price) - Number(b.price)
 
+    case 'priceHigh':
+    return Number(b.price) - Number(a.price)
+
+    case 'oldest':
+    return new Date(a.created_at) - new Date(b.created_at)
+
+    case 'type':
+    return a.type.localeCompare(b.type)
+
+    case 'newest':
+    default:
+    return new Date(b.created_at) - new Date(a.created_at)
+  }
+})
+const stats = {
+  total: favProps.length,
+  cheapest:
+    favProps.length > 0
+      ? Math.min(...favProps.map((p) => Number(p.price)))
+      : 0,
+  cities: [...new Set(favProps.map((p) => p.city))].length,
+  types: [...new Set(favProps.map((p) => p.type))].length,
+}
   return (
     <div className="pt-24 pb-20 bg-gray-50 min-h-screen">
       <div className="max-w-4xl mx-auto px-4 sm:px-6">
@@ -65,17 +93,52 @@ export const SavedProperties = () => {
           >
             <ChevronLeft size={20} strokeWidth={2.5} />
           </button>
-          <div>
-            <h1 className="text-2xl font-black text-gray-900 font-display flex items-center gap-2">
-              Saved Properties
-              <Heart size={24} className="text-brand-500 fill-brand-500 animate-pulse" />
-            </h1>
-            <p className="text-sm font-medium text-gray-500">
-              {favProps.length} listings saved to your collection
-            </p>
-          </div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-4">
+  <div>
+    <h1 className="text-2xl font-black text-gray-900 font-display flex items-center gap-2">
+      Saved Properties
+      <Heart size={24} className="text-brand-500 fill-brand-500 animate-pulse" />
+    </h1>
+    <p className="text-sm font-medium text-gray-500">
+      {favProps.length} listings saved to your collection
+    </p>
+  </div>
+  <select
+    value={sortBy}
+    onChange={(e) => setSortBy(e.target.value)}
+    className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-sm font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+  >
+    <option value="newest">Newest</option>
+    <option value="oldest">Oldest</option>
+    <option value="priceLow">Price: Low → High</option>
+    <option value="priceHigh">Price: High → Low</option>
+    <option value="type">Property Type</option>
+  </select>
+</div>
         </div>
+<div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+  <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+    <p className="text-xs text-gray-500">Saved</p>
+    <h3 className="text-2xl font-bold">{stats.total}</h3>
+  </div>
 
+  <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+    <p className="text-xs text-gray-500">Cheapest</p>
+    <h3 className="text-lg font-bold">
+      ₹{stats.cheapest.toLocaleString()}
+    </h3>
+  </div>
+
+  <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+    <p className="text-xs text-gray-500">Cities</p>
+    <h3 className="text-2xl font-bold">{stats.cities}</h3>
+  </div>
+
+  <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+    <p className="text-xs text-gray-500">Types</p>
+    <h3 className="text-2xl font-bold">{stats.types}</h3>
+  </div>
+</div>
         {/* Content */}
         {loading ? (
           <div className="space-y-4">
@@ -112,7 +175,7 @@ export const SavedProperties = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4">
-            {favProps.map(p => (
+            {sortedProperties.map(p => (
               <PropertyCard key={p.id} property={p} layout="list" />
             ))}
           </div>
