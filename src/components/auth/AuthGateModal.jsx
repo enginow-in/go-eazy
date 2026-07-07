@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Sparkles } from 'lucide-react'
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -14,6 +14,7 @@ const ROLE_OPTIONS = [
 ]
 
 export const AuthGateModal = () => {
+  const MotionDiv = motion.div
   const { user, signIn, signUp, signInWithGoogle } = useAuth()
   const { loading } = useSelector(s => s.auth)
 
@@ -68,7 +69,7 @@ export const AuthGateModal = () => {
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center">
       {/* Backdrop */}
-      <motion.div 
+      <MotionDiv 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.1 }}
@@ -76,7 +77,7 @@ export const AuthGateModal = () => {
       />
 
       {/* Modal */}
-      <motion.div
+      <MotionDiv
         initial={{ opacity: 0, scale: 0.96, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.35, ease: 'easeOut' }}
@@ -115,7 +116,7 @@ export const AuthGateModal = () => {
 
           <form onSubmit={handleSubmit}>
             <AnimatePresence mode="wait">
-              <motion.div
+              <MotionDiv
                 key={tab}
                 initial={{ opacity: 0, x: 8 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -184,7 +185,7 @@ export const AuthGateModal = () => {
                     </div>
                   </div>
                 )}
-              </motion.div>
+              </MotionDiv>
             </AnimatePresence>
 
             <Button
@@ -230,7 +231,7 @@ export const AuthGateModal = () => {
             By continuing, you agree to our <span className="text-[#CA3433] font-semibold">Terms</span> & <span className="text-[#CA3433] font-semibold">Privacy Policy</span>
           </p>
         </div>
-      </motion.div>
+      </MotionDiv>
     </div>
   )
 }

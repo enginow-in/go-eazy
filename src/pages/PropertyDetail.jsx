@@ -280,7 +280,7 @@ export const PropertyDetail = () => {
                  setVisitDate('')
               }
             }
-          } catch (vErr) {
+          } catch {
             toast.error('Payment verification failed')
           } finally {
             setUnlocking(false)
@@ -308,8 +308,6 @@ export const PropertyDetail = () => {
   }
 
   const images = p.images || []
-  const otherImages = images.slice(1, 5)
-
   const renderSlider = (prefix) => (
     <div className="relative w-full aspect-square md:aspect-[4/3] bg-gray-100 rounded-xl sm:rounded-2xl overflow-hidden shadow-md group border border-gray-200/50">
       <Swiper
