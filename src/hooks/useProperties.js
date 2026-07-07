@@ -248,6 +248,15 @@ export const useProperties = () => {
     return count > 0
   }
 
+  const toggleAvailability = async (id, currentAvailability) => {
+    const { error } = await supabase
+      .from('properties')
+      .update({ availability: !currentAvailability })
+      .eq('id', id)
+      .eq('landlord_id', user.id)
+    if (error) throw error
+  }
+
   const fetchFavorites = useCallback(async () => {
     if (!user) return
     try {
@@ -329,7 +338,7 @@ export const useProperties = () => {
     listings, featured, currentProperty, favorites, recentlyViewed, filters,
     loading, hasMore, page, totalCount,
     fetchProperties, fetchFeatured, fetchByType, fetchPropertyById,
-    createProperty, updateProperty, deleteProperty,
+    createProperty, updateProperty, deleteProperty, toggleAvailability,
     fetchFavorites, toggleFavorite, fetchRecentlyViewed, getLandlordProperties,
     updateFilters: useCallback((f) => dispatch(setFilters(f)), [dispatch]),
     resetFilters: useCallback(() => dispatch(resetFilters()), [dispatch]),
