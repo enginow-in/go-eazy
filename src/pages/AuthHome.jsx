@@ -54,13 +54,17 @@ export const AuthHome = () => {
     setLoading(true)
     try {
       if (tab === 'login') {
-        await signIn({ email: form.email, password: form.password })
-        toast.success('Welcome back!')
-        navigate('/search')
+        const result = await signIn({ email: form.email, password: form.password })
+        if (result?.user) {
+          toast.success('Welcome back!')
+          navigate('/dashboard')
+        }
       } else {
-        await signUp({ email: form.email, password: form.password, name: form.name, role: selectedRole })
-        toast.success('Account created successfully!')
-        navigate('/search')
+        const result = await signUp({ email: form.email, password: form.password, name: form.name, role: selectedRole })
+        if (result?.user) {
+          toast.success('Account created!')
+          navigate('/dashboard')
+        }
       }
     } catch (err) {
       // Handle specific error messages
