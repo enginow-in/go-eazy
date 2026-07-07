@@ -99,7 +99,7 @@ export const AuthGateModal = () => {
         initial={{ opacity: 0, scale: 0.96, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.35, ease: 'easeOut' }}
-        className="relative w-full max-w-sm mx-4 bg-white rounded-xl shadow-2xl overflow-hidden"
+        className="relative w-full max-w-sm mx-4 bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto"
       >
         {/* Top gradient bar */}
         <div className="h-1 w-full bg-gradient-to-r from-[#CA3433] to-rose-400" />
@@ -110,7 +110,7 @@ export const AuthGateModal = () => {
             <div className="w-8 h-8 rounded-lg bg-white border-2 border-[#CA3433] shadow-md flex items-center justify-center font-bold rotate-3 overflow-hidden">
                 <div className="-rotate-3 flex items-center justify-center translate-y-0.5">
                   <span className="text-[#CA3433] text-[16px] font-black leading-none">G</span>
-                  <span className="text-[#CA3433] text-[11px] font-black leading-none -ml-0.5 mb-1.5">E</span>
+                  <span className="text-[#CA3433] text-[11px] font-black leading-none -ml-0.5">E</span>
                 </div>
             </div>
             <span className="text-base font-black text-gray-900 tracking-tight">GoEazy<span className="text-[#CA3433]">.</span></span>
@@ -209,20 +209,20 @@ export const AuthGateModal = () => {
                     {tab === 'signup' && (
                       <div>
                         <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">I am a...</p>
-                        <div className="flex gap-1.5">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                           {ROLE_OPTIONS.map(opt => (
                             <button
                               key={opt.value}
                               type="button"
                               onClick={() => setSelectedRole(opt.value)}
-                              className={`flex-1 flex flex-col items-center gap-0.5 py-1 px-1 rounded-lg border-2 text-center transition-all ${
+                              className={`flex flex-row sm:flex-col items-center justify-start sm:justify-center gap-2 py-2 px-3 rounded-lg border-2 text-left sm:text-center transition-all ${
                                 selectedRole === opt.value
                                   ? 'border-[#CA3433] bg-red-50'
                                   : 'border-gray-100 hover:border-gray-200'
                               }`}
                             >
                               <span className="text-base leading-none">{opt.emoji}</span>
-                              <span className={`text-[9px] font-bold leading-tight ${selectedRole === opt.value ? 'text-[#CA3433]' : 'text-gray-500'}`}>
+                              <span className={`text-[11px] sm:text-[9px] font-bold leading-tight ${selectedRole === opt.value ? 'text-[#CA3433]' : 'text-gray-500'}`}>
                                 {opt.label}
                               </span>
                             </button>
