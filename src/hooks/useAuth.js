@@ -205,8 +205,8 @@ export const useAuth = () => {
           data: { 
             full_name: name.trim(),
             role: role 
-          },
-          emailRedirectTo: `${window.location.origin}/auth-callback`
+          }
+          // Completely remove emailRedirectTo to prevent email sending
         },
       })
       
@@ -220,7 +220,7 @@ export const useAuth = () => {
         throw new Error(getAuthErrorMessage(error))
       }
 
-      // If signup was successful, create profile immediately
+      // Create profile immediately regardless of email confirmation status
       if (data.user) {
         try {
           await supabase.from('profiles').upsert({
@@ -233,6 +233,13 @@ export const useAuth = () => {
           })
         } catch (profileError) {
           console.warn('Profile creation failed:', profileError)
+        }
+
+        // If user is not automatically signed in due to email confirmation being required,
+        // we'll handle this gracefully by showing a different message
+        if (!data.session && data.user.email_confirmed_at === null) {
+          // Email confirmation is required by the server
+          return { ...data, requiresEmailConfirmation: true }
         }
       }
       
