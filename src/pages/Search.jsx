@@ -13,6 +13,40 @@ import { AMENITY_ICONS, cn } from '../utils/helpers'
 import { Skeleton } from '../components/ui/Skeleton'
 import { RecommendedSection } from '../components/property/RecommendedSection'
 
+const SEARCH_HISTORY_KEY = 'goeazy_search_history'
+
+const saveSearchHistory = (entry) => {
+  try {
+    const currentHistory = JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY) || '[]')
+    const normalized = {
+      city: entry.city || '',
+      area: entry.area || '',
+      type: entry.type || '',
+      priceMin: Number(entry.priceMin || 0),
+      priceMax: Number(entry.priceMax || 100000),
+      sortBy: entry.sortBy || 'created_at',
+      sortOrder: entry.sortOrder || 'desc',
+      createdAt: new Date().toISOString(),
+    }
+
+    const deduped = currentHistory.filter(item => {
+      return !(
+        item.city === normalized.city &&
+        item.area === normalized.area &&
+        item.type === normalized.type &&
+        item.priceMin === normalized.priceMin &&
+        item.priceMax === normalized.priceMax &&
+        item.sortBy === normalized.sortBy &&
+        item.sortOrder === normalized.sortOrder
+      )
+    })
+
+    localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify([normalized, ...deduped].slice(0, 10)))
+  } catch {
+    // Ignore storage errors in private/incognito contexts.
+  }
+}
+
 export const Search = () => {
   const { t } = useTranslation()
   const dispatch = useDispatch()
@@ -56,6 +90,10 @@ export const Search = () => {
   }, [filters])
 
   const applyFilters = () => {
+    saveSearchHistory({
+      ...localFilters,
+      type: filters.type || searchParams.get('type') || '',
+    })
     updateFilters(localFilters)
     setShowFilters(false)
   }
