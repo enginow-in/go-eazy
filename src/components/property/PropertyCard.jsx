@@ -46,14 +46,20 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         className="group bg-white rounded-2xl border border-gray-100 flex gap-4 cursor-pointer shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
         onClick={() => navigate(`/property/${property.id}`)}
       >
-        <div className="relative w-32 h-32 sm:w-40 sm:h-40 flex-shrink-0 overflow-hidden bg-gray-50 rounded-r-2xl shadow-sm">
-          <img 
-            src={mainImage} 
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
-            onLoad={() => setImgLoaded(true)}
-            loading="lazy"
-          />
-          {!imgLoaded && <div className="skeleton absolute inset-0" />}
+        <div className="relative w-32 h-32 sm:w-40 sm:h-40 flex-shrink-0 overflow-hidden bg-gray-50 rounded-r-2xl shadow-sm flex items-center justify-center">
+          {mainImage ? (
+            <>
+              <img 
+                src={mainImage} 
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                onLoad={() => setImgLoaded(true)}
+                loading="lazy"
+              />
+              {!imgLoaded && <div className="skeleton absolute inset-0" />}
+            </>
+          ) : (
+            <Home size={32} className="text-gray-300" />
+          )}
           {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
           <button
             onClick={handleFav}
@@ -111,8 +117,12 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         className="group bg-white rounded-2xl border border-gray-100 w-60 flex-shrink-0 overflow-hidden cursor-pointer shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
         onClick={() => navigate(`/property/${property.id}`)}
       >
-        <div className="relative aspect-[4/3] overflow-hidden rounded-b-xl">
-          <img src={mainImage} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        <div className="relative aspect-[4/3] overflow-hidden rounded-b-xl flex items-center justify-center bg-gray-50">
+          {mainImage ? (
+            <img src={mainImage} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          ) : (
+            <Home size={32} className="text-gray-300" />
+          )}
           <div className="absolute top-2 right-2 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-lg text-[8px] font-black text-brand-600 uppercase tracking-wider">
              {t(`property.types.${property.type}`) || property.type}
           </div>
@@ -144,18 +154,24 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
       )}
       onClick={() => navigate(`/property/${property.id}`)}
     >
-      <div className="relative w-full aspect-[4/3] bg-gray-50 overflow-hidden rounded-b-2xl shadow-sm">
-        <img
-          src={mainImage}
-          alt={property.title}
-          className={cn(
-            'w-full h-full object-cover group-hover:scale-110 transition-transform duration-700',
-            imgLoaded ? 'opacity-100' : 'opacity-0'
-          )}
-          onLoad={() => setImgLoaded(true)}
-          loading="lazy"
-        />
-        {!imgLoaded && <div className="skeleton absolute inset-0" />}
+      <div className="relative w-full aspect-[4/3] bg-gray-50 overflow-hidden rounded-b-2xl shadow-sm flex items-center justify-center">
+        {mainImage ? (
+          <>
+            <img
+              src={mainImage}
+              alt={property.title}
+              className={cn(
+                'w-full h-full object-cover group-hover:scale-110 transition-transform duration-700',
+                imgLoaded ? 'opacity-100' : 'opacity-0'
+              )}
+              onLoad={() => setImgLoaded(true)}
+              loading="lazy"
+            />
+            {!imgLoaded && <div className="skeleton absolute inset-0" />}
+          </>
+        ) : (
+          <Home size={48} className="text-gray-300" />
+        )}
         {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
         <button
           onClick={handleFav}
