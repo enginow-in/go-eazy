@@ -108,3 +108,54 @@ button:active,
 
 /* Swiper overrides for premium aesthetic */
 .swiper-pagination-bullet-active { background: #CA3433 !important; }
+/* ==========================================
+   Accessibility Improvements
+========================================== */
+
+/* Visible keyboard focus */
+:focus-visible {
+  outline: 2px solid #CA3433;
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Better button transitions */
+button,
+a,
+input,
+textarea,
+select {
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Better image rendering */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Improve text selection where allowed */
+::selection {
+  background: rgba(202, 52, 51, 0.2);
+  color: inherit;
+}

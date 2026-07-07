@@ -237,7 +237,7 @@ const resources = {
         providersFound_one: '{{count}} provider found',
         providersFound_other: '{{count}} providers found',
         searching: 'Searching...',
-        noFound: 'No services found',
+        noFound: 'Service not found',
         noFoundDesc: 'Try adjusting your search query or filters to find what you\'re looking for.',
         loadMore: 'Load More Services',
         filters: 'Filters',
@@ -534,10 +534,21 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
+
     fallbackLng: 'en',
+
+    detection: {
+      order: ['localStorage', 'navigator'],
+      caches: ['localStorage'],
+    },
+
     interpolation: {
-      escapeValue: false
-    }
+      escapeValue: false,
+    },
+
+    react: {
+      useSuspense: false,
+    },
   })
 
 export default i18n
