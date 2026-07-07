@@ -33,6 +33,7 @@ export const useServices = () => {
         // profiles!provider_id uses column-name hint (more portable than FK constraint name).
         .select(`*, profiles!provider_id(${PUBLIC_PROFILE_FIELDS})`)
         .eq('verification_status', 'verified') // Admin approval is the public gate
+        .eq('payment_status', 'paid') // Only show paid listings to the public
 
       if (filters.category) query = query.eq('category', filters.category)
       if (filters.state)    query = query.ilike('state', `%${filters.state}%`)
