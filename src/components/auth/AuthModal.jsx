@@ -45,28 +45,37 @@ export const AuthModal = () => {
     if (!validate()) return
     setLoading(true)
     try {
+      // Safe localStorage helpers to prevent private/incognito mode crashes
+      const getSafeItem = (key) => {
+        try { return localStorage.getItem(key); } catch { return null; }
+      };
+      const removeSafeItem = (key) => {
+        try { localStorage.removeItem(key); } catch { return; }
+      };
+
       if (tab === 'login') {
         await signIn({ email: form.email, password: form.password })
         toast.success('Welcome back!')
         dispatch(closeAuthModal())
-        
-        const returnTo = localStorage.getItem('sb_return_to')
+
+        const returnTo = getSafeItem('sb_return_to')
         if (returnTo) {
           navigate(returnTo)
-          localStorage.removeItem('sb_return_to')
+          removeSafeItem('sb_return_to')
         }
       } else {
         await signUp({ email: form.email, password: form.password, name: form.name, role: selectedRole })
         toast.success('Account created! Check your email to confirm.')
-        const returnTo = localStorage.getItem('sb_return_to')
+        const returnTo = getSafeItem('sb_return_to')
         dispatch(closeAuthModal())
+        
         if (selectedRole === 'landlord') {
           navigate('/landlord')
         } else if (selectedRole === 'service_provider') {
           navigate('/service-provider')
         } else if (returnTo) {
           navigate(returnTo)
-          localStorage.removeItem('sb_return_to')
+          removeSafeItem('sb_return_to')
         } else {
           navigate('/dashboard')
         }
@@ -79,14 +88,19 @@ export const AuthModal = () => {
   }
 
   const handleGoogle = async () => {
-    // Save current path to return back after OAuth redirect
-    localStorage.setItem('sb_return_to', window.location.pathname + window.location.search)
-    
+    // Safe localStorage check for Google redirect path
+    try {
+      localStorage.setItem('sb_return_to', window.location.pathname + window.location.search);
+    } catch (err) {
+      console.warn("localStorage is blocked, proceeding without saving redirect path", err);
+    }
+
     setGoogleLoading(true)
     try {
       await signInWithGoogle()
     } catch (err) {
       toast.error(err.message || 'Google sign-in failed')
+    } finally {
       setGoogleLoading(false)
     }
   }
