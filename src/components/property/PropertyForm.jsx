@@ -190,7 +190,8 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
         const ext = file.name.split('.').pop()
         const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${ext}`
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('property-images').upload(`${session.user.id}/${fileName}`, file, { upsert: false })
+          // Align path with useProperties to satisfy storage UPDATE/DELETE RLS policies.
+          .from('property-images').upload(`properties/${session.user.id}/${fileName}`, file, { upsert: false })
         if (uploadError) throw new Error('Image upload failed: ' + uploadError.message)
         const { data: { publicUrl } } = supabase.storage.from('property-images').getPublicUrl(uploadData.path)
         uploadedUrls.push(publicUrl)
