@@ -10,14 +10,20 @@ const ALLOWED_ORIGINS = [
 ]
 
 function getCorsHeaders(req: Request) {
-  const origin = req.headers.get('origin') || ''
-  const isLocalhost = origin.startsWith('http://localhost:')
-  const allowed = (ALLOWED_ORIGINS.includes(origin) || isLocalhost) ? origin : ALLOWED_ORIGINS[0]
-  return {
-    'Access-Control-Allow-Origin': allowed,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  const origin = req.headers.get("origin") || "";
+  const isLocalhost = origin.startsWith("http://localhost:");
+
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
+
+  if (origin && (ALLOWED_ORIGINS.includes(origin) || isLocalhost)) {   
+    headers["Access-Control-Allow-Origin"] = origin;                     //// Only set Access-Control-Allow-Origin for valid requests with an Origin header
   }
+
+  return headers;
 }
 
 serve(async (req: Request) => {
