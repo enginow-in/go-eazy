@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+// eslint-disable-next-line no-unused-vars -- motion is used via JSX member expression (motion.div/motion.main)
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   ChevronRight, User, Briefcase, 

@@ -51,10 +51,10 @@ export const ServiceDetail = () => {
   const dispatch = useDispatch()
   const { user, profile } = useSelector(s => s.auth)
 
-  const { 
-    currentService, reviews, reviewsLoading, 
+  const {
+    currentService, reviews,
     fetchServiceById, fetchReviews, submitReview, deleteReview,
-    fetchServiceGatedData 
+    fetchServiceGatedData
   } = useServices()
   const { t } = useTranslation()
 
@@ -99,7 +99,7 @@ export const ServiceDetail = () => {
   useEffect(() => {
     const checkStatus = async () => {
       if (!user || !service || !id) return
-      
+
       const isProvider = service?.provider_id === user.id
       if (isProvider) {
         setContactUnlocked(true)

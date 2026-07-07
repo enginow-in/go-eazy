@@ -13,7 +13,7 @@ import {
 const PAGE_SIZE = 12
 
 const PUBLIC_PROPERTY_FIELDS = `
-  id, landlord_id, type, title, description, price, city, area, pincode, 
+  id, landlord_id, type, title, description, price, city, area, pincode,
   amenities, images, availability, views, created_at
 `
 
@@ -21,11 +21,11 @@ const PUBLIC_PROFILE_FIELDS = 'full_name, avatar_url, bio'
 
 export const useProperties = () => {
   const dispatch = useDispatch()
-  const { 
-    listings, featured, currentProperty, 
-    favorites, recentlyViewed, filters, 
+  const {
+    listings, featured, currentProperty,
+    favorites, recentlyViewed, filters,
     loading, hasMore, page, totalCount,
-    reviews, reviewsLoading 
+    reviews, reviewsLoading
   } = useSelector(s => s.property)
   const { user, profile } = useSelector(s => s.auth)
 
@@ -40,7 +40,7 @@ export const useProperties = () => {
       if (filters.type) query = query.eq('type', filters.type)
       if (filters.priceMin > 0) query = query.gte('price', filters.priceMin)
       if (filters.priceMax < 100000) query = query.lte('price', filters.priceMax)
-      
+
       if (filters.amenities?.length > 0) {
         query = query.contains('amenities', filters.amenities)
       }
@@ -119,7 +119,7 @@ export const useProperties = () => {
         .maybeSingle()
       if (error) throw error
       dispatch(setCurrentProperty(data))
-      
+
       if (user && data) {
         dispatch(addRecentlyViewed(id))
         await supabase.from('recently_viewed').upsert({ user_id: user.id, property_id: id, viewed_at: new Date().toISOString() })
@@ -267,7 +267,7 @@ export const useProperties = () => {
       } else {
         await supabase.from('favorites').insert({ user_id: user.id, property_id: propertyId })
       }
-    } catch (err) {
+    } catch {
       dispatch(toggleFav(propertyId))
     }
   }
@@ -278,7 +278,7 @@ export const useProperties = () => {
       const seventyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString()
       const { data } = await supabase.from('recently_viewed').select('property_id').eq('user_id', user.id).gte('viewed_at', seventyTwoHoursAgo).order('viewed_at', { ascending: false }).limit(20)
       dispatch(setRecentlyViewed(data?.map(r => r.property_id) || []))
-    } catch {}
+    } catch { /* silent */ }
   }, [user, dispatch])
 
   const getLandlordProperties = async () => {
@@ -302,10 +302,10 @@ export const useProperties = () => {
     if (prefs?.type) {
       filtered = filtered.filter(p => p.type === prefs.type)
     }
-    
+
     if (prefs?.city) {
-      filtered = filtered.filter(p => 
-        p.city?.toLowerCase() === prefs.city.toLowerCase() || 
+      filtered = filtered.filter(p =>
+        p.city?.toLowerCase() === prefs.city.toLowerCase() ||
         p.address?.toLowerCase().includes(prefs.city.toLowerCase())
       )
     }
