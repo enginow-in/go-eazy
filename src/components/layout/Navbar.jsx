@@ -82,13 +82,13 @@ export const Navbar = () => {
       <div className="w-full px-2 sm:px-4">
         <div className="flex items-center justify-between h-20 relative">
           
-          {/* Logo Section (Centered on mobile) */}
-          <div className="absolute left-1/2 md:static -translate-x-1/2 md:translate-x-0 whitespace-nowrap z-20">
+          {/* Logo Section */}
+          <div className="whitespace-nowrap z-20">
             <Link to="/" className="flex items-center gap-3 group">
               <div className="w-10 h-10 rounded-xl bg-white border-2 border-[#CA3433] shadow-md flex items-center justify-center font-bold font-display rotate-3 group-hover:rotate-0 transition-all duration-300 overflow-hidden">
                 <div className="-rotate-3 flex items-center justify-center translate-y-0.5">
                   <span className="text-[#CA3433] text-[22px] font-black leading-none">G</span>
-                  <span className="text-[#CA3433] text-[15px] font-black leading-none -ml-0.5 mb-2">E</span>
+                  <span className="text-[#CA3433] text-[15px] font-black leading-none -ml-0.5">E</span>
                 </div>
               </div>
               <span className="font-display font-black text-[22px] sm:text-2xl text-gray-900 tracking-tight leading-none pt-1">
@@ -96,35 +96,8 @@ export const Navbar = () => {
               </span>
             </Link>
           </div>
-            
-          {/* Language Picker (Left side) */}
-          <div className="relative z-30">
-            <button 
-              onClick={() => setLangMenuOpen(!langMenuOpen)}
-              className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-700 hover:text-[#CA3433] transition-colors uppercase px-1 py-2"
-            >
-              {currentLang.short} <ChevronDown size={14} className={`transition-transform duration-200 ${langMenuOpen ? 'rotate-180 text-[#CA3433]' : ''}`} />
-            </button>
 
-            {langMenuOpen && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setLangMenuOpen(false)} />
-                <div className="absolute left-0 top-full mt-2 w-32 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden py-1">
-                  {languages.map(l => (
-                    <button
-                      key={l.code}
-                      onClick={() => changeLanguage(l.code)}
-                      className={`w-full text-left px-4 py-3 text-sm font-bold transition-colors ${currentLang.code === l.code ? 'bg-[#fff5f5] text-[#CA3433]' : 'text-gray-700 hover:bg-gray-50'}`}
-                    >
-                      {l.label} ({l.short})
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Search Bar */}
+          {/* Search Bar (desktop only) */}
           <div className="hidden md:flex flex-1 max-w-md mx-8">
             <div className="relative w-full">
               <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
@@ -142,88 +115,119 @@ export const Navbar = () => {
             </div>
           </div>
 
-          {/* Right Links & Auth */}
-          <div className="hidden md:flex items-center gap-6">
-            <div className="flex items-center space-x-6 text-sm font-medium text-gray-500">
-              <Link to="/search" className="px-3 py-1 bg-brand-lime text-gray-900 rounded-md font-semibold hover:bg-lime-400 transition-colors">{t('nav.home')}</Link>
-              <Link to="/nearby" className="hover:text-gray-900 transition-colors py-2">{t('nav.nearby')}</Link>
-              <button onClick={() => user ? navigate('/landlord') : dispatch(openAuthModal('login'))} className="hover:text-gray-900 transition-colors">{t('nav.list')}</button>
-              <Link to="/about" className="hover:text-gray-900 transition-colors py-2">{t('nav.about')}</Link>
-            </div>
-            
-            <div className="w-px h-6 bg-gray-200"></div>
-
-            <button className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-              <div className="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center text-xs overflow-hidden border border-brand-100">
-                <img src="/INR.webp" alt="INR" className="w-full h-full object-cover" />
-              </div>
-              INR <ChevronDown size={14} />
-            </button>
-
-            {loading ? (
-              <Skeleton className="h-10 w-28 rounded-full" />
-            ) : user ? (
-              <div className="relative">
-                <button
-                  onClick={() => setUserMenuOpen(v => !v)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#0B0F19] text-white text-sm font-semibold hover:bg-[#CA3433] transition-all duration-300 transform hover:scale-105"
-                >
-                  {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt="Avatar" className="w-5 h-5 rounded-full object-cover" />
-                  ) : (
-                    <User size={16} />
-                  )}
-                  <span>{role === 'admin' ? 'Admin Panel' : (profile?.full_name?.split(' ')[0] || 'Dashboard')}</span>
-                </button>
-
-                {userMenuOpen && (
-                  <>
-                    <div className="fixed inset-0 z-10" onClick={() => setUserMenuOpen(false)} />
-                    <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-xl border border-gray-100 z-20 overflow-hidden">
-                      <div className="py-1">
-                        <button
-                          onClick={() => { 
-                            const dest = role === 'admin' ? '/systemadmin' : role === 'landlord' ? '/landlord' : role === 'service_provider' ? '/service-provider' : '/dashboard'
-                            navigate(dest); setUserMenuOpen(false) 
-                          }}
-                          className="w-full flex flex-col items-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                        >
-                          {role === 'admin' ? 'Admin Panel' : t('nav.dashboard')}
-                        </button>
-                        <button
-                          onClick={() => { navigate('/settings'); setUserMenuOpen(false) }}
-                          className="w-full flex flex-col items-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-100"
-                        >
-                          {t('nav.settings')}
-                        </button>
-                        <button
-                          onClick={handleSignOut}
-                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
-                        >
-                           {t('nav.signOut')}
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            ) : (
+          {/* Right Actions Container (Language + Links + Hamburger) */}
+          <div className="flex items-center gap-2 sm:gap-6 z-30">
+            {/* Language Picker */}
+            <div className="relative">
               <button 
-                onClick={() => dispatch(openAuthModal('login'))}
-                className="px-6 py-2.5 rounded-full bg-[#0B0F19] text-white text-sm font-semibold hover:bg-[#CA3433] transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-xl shadow-black/20"
+                onClick={() => setLangMenuOpen(!langMenuOpen)}
+                className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-700 hover:text-[#CA3433] transition-colors uppercase px-1 py-2"
               >
-                {t('nav.login')}
+                {currentLang.short} <ChevronDown size={14} className={`transition-transform duration-200 ${langMenuOpen ? 'rotate-180 text-[#CA3433]' : ''}`} />
               </button>
-            )}
+
+              {langMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setLangMenuOpen(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-32 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden py-1">
+                    {languages.map(l => (
+                      <button
+                        key={l.code}
+                        onClick={() => changeLanguage(l.code)}
+                        className={`w-full text-left px-4 py-3 text-sm font-bold transition-colors ${currentLang.code === l.code ? 'bg-[#fff5f5] text-[#CA3433]' : 'text-gray-700 hover:bg-gray-50'}`}
+                      >
+                        {l.label} ({l.short})
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Right Links & Auth (desktop only) */}
+            <div className="hidden md:flex items-center gap-6">
+              <div className="flex items-center space-x-6 text-sm font-medium text-gray-500">
+                <Link to="/" className="px-3 py-1 bg-brand-lime text-gray-900 rounded-md font-semibold hover:bg-lime-400 transition-colors">{t('nav.home')}</Link>
+                <Link to="/search" className="hover:text-gray-900 transition-colors py-2">{t('nav.search')}</Link>
+                <Link to="/nearby" className="hover:text-gray-900 transition-colors py-2">{t('nav.nearby')}</Link>
+                <button onClick={() => user ? navigate('/landlord') : dispatch(openAuthModal('login'))} className="hover:text-gray-900 transition-colors">{t('nav.list')}</button>
+                <Link to="/about" className="hover:text-gray-900 transition-colors py-2">{t('nav.about')}</Link>
+              </div>
+              
+              <div className="w-px h-6 bg-gray-200"></div>
+
+              <button className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                <div className="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center text-xs overflow-hidden border border-brand-100">
+                  <img src="/INR.webp" alt="INR" className="w-full h-full object-cover" />
+                </div>
+                INR <ChevronDown size={14} />
+              </button>
+
+              {loading ? (
+                <Skeleton className="h-10 w-28 rounded-full" />
+              ) : user ? (
+                <div className="relative">
+                  <button
+                    onClick={() => setUserMenuOpen(v => !v)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#0B0F19] text-white text-sm font-semibold hover:bg-[#CA3433] transition-all duration-300 transform hover:scale-105"
+                  >
+                    {profile?.avatar_url ? (
+                      <img src={profile.avatar_url} alt="Avatar" className="w-5 h-5 rounded-full object-cover" />
+                    ) : (
+                      <User size={16} />
+                    )}
+                    <span>{role === 'admin' ? 'Admin Panel' : (profile?.full_name?.split(' ')[0] || 'Dashboard')}</span>
+                  </button>
+
+                  {userMenuOpen && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setUserMenuOpen(false)} />
+                      <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-xl border border-gray-100 z-20 overflow-hidden">
+                        <div className="py-1">
+                          <button
+                            onClick={() => { 
+                              const dest = role === 'admin' ? '/systemadmin' : role === 'landlord' ? '/landlord' : role === 'service_provider' ? '/service-provider' : '/dashboard'
+                              navigate(dest); setUserMenuOpen(false) 
+                            }}
+                            className="w-full flex flex-col items-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          >
+                            {role === 'admin' ? 'Admin Panel' : t('nav.dashboard')}
+                          </button>
+                          <button
+                            onClick={() => { navigate('/settings'); setUserMenuOpen(false) }}
+                            className="w-full flex flex-col items-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-100"
+                          >
+                            {t('nav.settings')}
+                          </button>
+                          <button
+                            onClick={handleSignOut}
+                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                          >
+                             {t('nav.signOut')}
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <button 
+                  onClick={() => dispatch(openAuthModal('login'))}
+                  className="px-6 py-2.5 rounded-full bg-[#0B0F19] text-white text-sm font-semibold hover:bg-[#CA3433] transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-xl shadow-black/20"
+                >
+                  {t('nav.login')}
+                </button>
+              )}
+            </div>
+
+            {/* Mobile hamburger */}
+            <button
+              className="md:hidden p-2 rounded-xl text-gray-900"
+              onClick={() => dispatch(toggleMobileMenu())}
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
           </div>
-          
-           {/* Mobile hamburger */}
-           <button
-            className="md:hidden p-2 rounded-xl text-gray-900"
-            onClick={() => dispatch(toggleMobileMenu())}
-          >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
         </div>
       </div>
 
@@ -388,7 +392,8 @@ export const Navbar = () => {
         <div className="md:hidden absolute top-20 left-0 right-0 bg-white border-b border-gray-100 shadow-xl overflow-y-auto max-h-[80vh] z-50">
           <div className="px-4 py-4 space-y-4">
             
-            <Link to="/search" onClick={() => dispatch(closeMobileMenu())} className="block font-semibold text-gray-700 py-2">{t('nav.home')}</Link>
+            <Link to="/" onClick={() => dispatch(closeMobileMenu())} className="block font-semibold text-gray-700 py-2">{t('nav.home')}</Link>
+            <Link to="/search" onClick={() => dispatch(closeMobileMenu())} className="block font-semibold text-gray-700 py-2">{t('nav.search')}</Link>
             <Link to="/nearby" onClick={() => dispatch(closeMobileMenu())} className="block w-full text-left font-semibold text-gray-700 py-2">{t('nav.nearby')}</Link>
             <button onClick={() => { dispatch(closeMobileMenu()); user ? navigate(role === 'landlord' ? '/landlord' : role === 'service_provider' ? '/service-provider' : '/landlord') : dispatch(openAuthModal('login')) }} className="block w-full text-left font-semibold text-gray-700 py-2">{t('nav.list')}</button>
             <Link to="/about" onClick={() => dispatch(closeMobileMenu())} className="block w-full text-left font-semibold text-gray-700 py-2">{t('nav.about')}</Link>

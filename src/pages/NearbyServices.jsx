@@ -187,7 +187,7 @@ export const NearbyServices = () => {
             <div className="relative shrink-0 flex items-center">
               <button
                 onClick={() => setShowCityDropdown(v => !v)}
-                className={`flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-1.5 sm:py-2 bg-white border border-[#CA3433] sm:border-gray-200 rounded-full sm:rounded-2xl transition-all shadow-sm group h-[46px] ${showCityDropdown ? 'border-[#CA3433] ring-4 ring-[#CA3433]/5' : 'hover:border-[#CA3433]'}`}
+                className={`flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-1.5 sm:py-2 bg-white border border-gray-200 rounded-full sm:rounded-2xl transition-all shadow-sm group h-[46px] ${showCityDropdown ? 'border-[#CA3433] ring-4 ring-[#CA3433]/5' : 'hover:border-[#CA3433]'}`}
               >
                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-[#CA3433] overflow-hidden bg-gray-50 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                   <img src="/1.webp" alt="Map" className="w-full h-full object-cover" />
@@ -237,7 +237,7 @@ export const NearbyServices = () => {
                 placeholder={t('nearby.searchPlaceholder')}
                 value={searchInput}
                 onChange={handleSearch}
-                className="w-full pl-11 pr-4 py-3 bg-white border border-[#CA3433] sm:border-gray-200 rounded-full sm:rounded-2xl text-sm focus:outline-none focus:border-[#CA3433] focus:ring-4 focus:ring-[#CA3433]/5 transition-all shadow-sm"
+                className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-full sm:rounded-2xl text-sm focus:outline-none focus:border-[#CA3433] focus:ring-4 focus:ring-[#CA3433]/5 transition-all shadow-sm"
               />
             </div>
           </div>
@@ -251,7 +251,7 @@ export const NearbyServices = () => {
                 placeholder={t('nearby.areaSearchPlaceholder')}
                 value={filters.area || ''}
                 onChange={e => updateFilters({ area: e.target.value })}
-                className="w-full pl-11 pr-4 py-3 bg-white border border-[#CA3433] sm:border-gray-200 rounded-full sm:rounded-2xl text-sm focus:outline-none focus:border-[#CA3433] focus:ring-4 focus:ring-[#CA3433]/5 transition-all shadow-sm"
+                className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-full sm:rounded-2xl text-sm focus:outline-none focus:border-[#CA3433] focus:ring-4 focus:ring-[#CA3433]/5 transition-all shadow-sm"
               />
             </div>
 
@@ -259,7 +259,7 @@ export const NearbyServices = () => {
             <div className="relative">
               <button 
                 onClick={() => setShowFilters(!showFilters)} 
-                className={`flex items-center gap-2 px-6 py-3 bg-white border rounded-full sm:rounded-2xl text-sm font-bold transition-all ${showFilters ? 'border-[#CA3433] text-[#CA3433] shadow-md ring-4 ring-red-50' : 'border-[#CA3433] sm:border-gray-200 text-gray-700 hover:shadow-sm'}`}
+                className={`flex items-center gap-2 px-6 py-3 bg-white border rounded-full sm:rounded-2xl text-sm font-bold transition-all ${showFilters ? 'border-[#CA3433] text-[#CA3433] shadow-md ring-4 ring-red-50' : 'border-gray-200 hover:border-[#CA3433] text-gray-700 hover:shadow-sm'}`}
               >
                 <Filter size={16} />
                 <span className="hidden sm:inline">{t('nearby.filters')}</span>
