@@ -119,10 +119,12 @@ serve(async (req: Request) => {
     }
 
     // 4. All checks pass — create the property using the same admin client
+    const { contact_phone, contact_email, exact_location, ...mainPropertyData } = property_data
+
     const { data: property, error: insertError } = await supabaseAdmin
       .from('properties')
       .insert({
-        ...property_data,
+        ...mainPropertyData,
         landlord_id: user.id,
       })
       .select()
@@ -131,6 +133,25 @@ serve(async (req: Request) => {
     if (insertError) {
       console.error('Failed to insert property:', insertError)
       return new Response(JSON.stringify({ error: 'Failed to create listing: ' + insertError.message }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500,
+      })
+    }
+
+    // 5. Insert contact details into property_contacts table
+    const { error: contactError } = await supabaseAdmin
+      .from('property_contacts')
+      .insert({
+        property_id: property.id,
+        contact_phone: contact_phone || '',
+        contact_email: contact_email || '',
+        exact_location: exact_location || '',
+      })
+
+    if (contactError) {
+      console.error('Failed to insert property contacts:', contactError)
+      // Rollback: delete the created property to keep database consistent
+      await supabaseAdmin.from('properties').delete().eq('id', property.id)
+      return new Response(JSON.stringify({ error: 'Failed to create listing contacts: ' + contactError.message }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500,
       })
     }

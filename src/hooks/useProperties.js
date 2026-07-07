@@ -141,9 +141,9 @@ export const useProperties = () => {
       // 2. ALWAYS also directly fetch contact_phone + contact_email from properties table
       //    (the RPC may not include these fields, and landlords can always read their own data)
       const { data: directData } = await supabase
-        .from('properties')
+        .from('property_contacts')
         .select('contact_phone, contact_email, exact_location')
-        .eq('id', id)
+        .eq('property_id', id)
         .maybeSingle()
 
       // 3. Merge — RPC fields take priority, direct fields fill any gaps
@@ -220,8 +220,19 @@ export const useProperties = () => {
       const { data: { publicUrl } } = supabase.storage.from('property-images').getPublicUrl(path)
       imageUrls.push(publicUrl)
     }
-    const { data, error } = await supabase.from('properties').insert({ ...propertyData, landlord_id: user.id, images: imageUrls, views: 0 }).select().maybeSingle()
+    const { contact_phone, contact_email, exact_location, ...mainPropertyData } = propertyData;
+    const { data, error } = await supabase.from('properties').insert({ ...mainPropertyData, landlord_id: user.id, images: imageUrls, views: 0 }).select().maybeSingle()
     if (error) throw error
+
+    if (data) {
+      const { error: contactError } = await supabase.from('property_contacts').insert({
+        property_id: data.id,
+        contact_phone: contact_phone || '',
+        contact_email: contact_email || '',
+        exact_location: exact_location || '',
+      })
+      if (contactError) throw contactError
+    }
     return data
   }
 
@@ -237,8 +248,19 @@ export const useProperties = () => {
         imageUrls.push(publicUrl)
       }
     }
-    const { data, error } = await supabase.from('properties').update({ ...updates, images: imageUrls }).eq('id', id).eq('landlord_id', user.id).select().maybeSingle()
+    const { contact_phone, contact_email, exact_location, ...mainUpdates } = updates;
+    const { data, error } = await supabase.from('properties').update({ ...mainUpdates, images: imageUrls }).eq('id', id).eq('landlord_id', user.id).select().maybeSingle()
     if (error) throw error
+
+    if (data) {
+      const { error: contactError } = await supabase.from('property_contacts').upsert({
+        property_id: id,
+        contact_phone: contact_phone || '',
+        contact_email: contact_email || '',
+        exact_location: exact_location || '',
+      }, { onConflict: 'property_id' })
+      if (contactError) throw contactError
+    }
     return data
   }
 

@@ -7,11 +7,18 @@ import { useProperties } from '../hooks/useProperties'
 export const PropertyEdit = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { fetchPropertyById, currentProperty } = useProperties()
+  const { fetchPropertyById, currentProperty, fetchGatedData } = useProperties()
   const [loading, setLoading] = useState(true)
+  const [fullData, setFullData] = useState(null)
 
   useEffect(() => {
-    fetchPropertyById(id).then(() => setLoading(false))
+    const load = async () => {
+      await fetchPropertyById(id)
+      const gated = await fetchGatedData(id)
+      setFullData(gated || {})
+      setLoading(false)
+    }
+    load()
   }, [id])
 
   if (loading) {
@@ -41,7 +48,7 @@ export const PropertyEdit = () => {
           <h1 className="text-3xl font-bold text-gray-900 font-display">Edit Property</h1>
           <p className="text-gray-500 mt-2">Update information for "{currentProperty.title}"</p>
         </div>
-        <PropertyForm initialData={currentProperty} isEdit={true} />
+        <PropertyForm initialData={{ ...currentProperty, ...fullData }} isEdit={true} />
       </div>
     </div>
   )
