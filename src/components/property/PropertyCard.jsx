@@ -29,6 +29,8 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   const handleShare = (e) => {
     e.stopPropagation()
     navigator.clipboard.writeText(`${window.location.origin}/property/${property.id}`)
+        .then(() => toast.success(t('property.sections.linkCopied')))
+        .catch(() => toast.error('Failed to copy link'))
     toast.success(t('property.sections.linkCopied'))
   }
 
