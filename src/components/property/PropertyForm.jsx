@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, X, Image as ImageIcon, Zap, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react'
 import { Input, Textarea, Select } from '../ui/Input'
@@ -115,6 +115,39 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
     map_address:       initialData?.map_address || '',
   })
 
+  // ── Draft auto-save (create mode only) ────────────────────────────────────
+  // We scope the draft key by user id and route so different users / forms
+  // don't clobber each other's drafts. Edit mode never reads/writes drafts —
+  // initialData already represents the source of truth in that case.
+  const DRAFT_KEY = `listing-draft-${user?.id || 'guest'}-new-property`
+
+  // Restore a saved draft once, on first mount.
+  useEffect(() => {
+    if (isEdit) return
+    const saved = localStorage.getItem(DRAFT_KEY)
+    if (saved) {
+      try {
+        const { form: savedForm, step: savedStep } = JSON.parse(saved)
+        setForm(savedForm)
+        setStep(savedStep || 1)
+        toast.success('Draft restored from your last session')
+      } catch (e) {
+        // Corrupted draft — don't let it break the form, just drop it.
+        localStorage.removeItem(DRAFT_KEY)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Debounced auto-save whenever the form or step changes.
+  useEffect(() => {
+    if (isEdit) return
+    const timeout = setTimeout(() => {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, step }))
+    }, 500)
+    return () => clearTimeout(timeout)
+  }, [form, step, isEdit])
+
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }))
 
   const handleLocationChange = ({ latitude, longitude, map_address }) => {
@@ -143,6 +176,21 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
       ...f,
       amenities: f.amenities.includes(id) ? f.amenities.filter(a => a !== id) : [...f.amenities, id]
     }))
+  }
+
+  // Blank form used when discarding a draft.
+  const emptyForm = {
+    title: '', description: '', price: '', city: '', area: '', pincode: '',
+    type: PROPERTY_TYPES[0], amenities: [], nearby_landmarks: '', exact_location: '',
+    contact_phone: '', contact_email: '', availability: true,
+    latitude: null, longitude: null, map_address: '',
+  }
+
+  const discardDraft = () => {
+    localStorage.removeItem(DRAFT_KEY)
+    setForm(emptyForm)
+    setStep(1)
+    toast.success('Draft discarded')
   }
 
   // ── Per-step validation ────────────────────────────────────────────────────
@@ -232,6 +280,7 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
             })
             if (!verifyResp.ok) { const e = await verifyResp.json().catch(() => ({})); throw new Error(e.error || 'Payment verification failed') }
             setShowSuccess(true)
+            localStorage.removeItem(DRAFT_KEY)
             setTimeout(() => navigate('/landlord'), 2800)
           } catch (vErr) { toast.error('Payment verification failed: ' + vErr.message) }
           finally { setLoading(false) }
@@ -422,6 +471,13 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
               <button type="button" onClick={() => navigate(-1)}
                 className="flex items-center gap-1.5 px-5 py-3 rounded-xl border border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition-colors">
                 Cancel
+              </button>
+            )}
+
+            {!isEdit && (
+              <button type="button" onClick={discardDraft}
+                className="px-4 py-3 rounded-xl border border-gray-200 text-gray-400 font-bold text-sm hover:bg-gray-50 hover:text-red-500 transition-colors">
+                Discard Draft
               </button>
             )}
 
