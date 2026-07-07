@@ -46,6 +46,21 @@ export const AuthHome = () => {
         toast.success('Welcome back!')
         navigate('/search')
       } else {
+        // Temp-mail / Disposable Email Block Logic
+        const disposableDomains = [
+          'yopmail.com', 'mailinator.com', '10minutemail.com', 
+          'tempmail.com', 'sharklasers.com', 'guerrillamail.com', 
+          'dispostable.com', 'getairmail.com', 'burnemail.com'
+        ];
+        
+        const emailDomain = form.email.split('@')[1]?.toLowerCase();
+        
+        if (disposableDomains.includes(emailDomain)) {
+          toast.error('Disposable or temporary email addresses are not allowed!');
+          setLoading(false);
+          return;
+        }
+
         await signUp({ email: form.email, password: form.password, name: form.name, role: selectedRole })
         toast.success('Account created!')
         if (selectedRole === 'landlord') navigate('/landlord')
@@ -57,6 +72,7 @@ export const AuthHome = () => {
     } finally {
       setLoading(false)
     }
+}
   }
 
   const handleGoogle = async () => {
