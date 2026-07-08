@@ -21,6 +21,16 @@
          "Cannot access X before initialization" TDZ error in Vite/Rolldown
          caused by mapbox-gl's internal circular dependencies in its Web Worker -->
     <link href='https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css' rel='stylesheet' />
+    <link href='https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css' rel='stylesheet' />
+    <script src='https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js'></script>
+    
+    <script>
+      if (typeof mapboxgl !== 'undefined') {
+        mapboxgl.accessToken = window._env_?.VITE_MAPBOX_ACCESS_TOKEN || 'placeholder_mapbox_token';
+      }
+    </script>
+    
+    <meta http-equiv="Permissions-Policy" content="accelerometer=(self), gyroscope=(self)...>
     <script src='https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js'></script>
     
     <!-- Console Cleanup & Permissions Policy -->
