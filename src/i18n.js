@@ -140,7 +140,8 @@ const resources = {
           aboutFallback: 'Premium service provider committed to quality and reliability in the GoEazy marketplace.',
           experienceFallback: 'Experienced Provider',
           specialityFallback: 'General Services',
-          loginPrompt: 'Login to View Contact'
+          loginPrompt: 'Login to View Contact',
+          unlockBtn: 'Unlock Contact Details'
         },
         reviews: {
           header: 'Customer Reviews',
@@ -402,7 +403,8 @@ const resources = {
           aboutFallback: 'GoEazy मार्केटप्लेस में गुणवत्ता और विश्वसनीयता के लिए प्रतिबद्ध प्रीमियम सेवा प्रदाता।',
           experienceFallback: 'अनुभवी प्रदाता',
           specialityFallback: 'सामान्य सेवाएँ',
-          loginPrompt: 'संपर्क देखने के लिए लॉगिन करें'
+          loginPrompt: 'संपर्क देखने के लिए लॉगिन करें',
+          unlockBtn: 'संपर्क विवरण अनलॉक करें'
         },
         reviews: {
           header: 'ग्राहक रिव्यु',
