@@ -46,6 +46,7 @@ const serviceSlice = createSlice({
       state.filters = { ...state.filters, ...action.payload }
       state.page = 0
       state.services = []
+      state.hasMore = true // Fix: Unlock pagination for new filter context
     },
     resetServiceFilters: (state) => {
       state.filters = { 
@@ -59,6 +60,7 @@ const serviceSlice = createSlice({
       }
       state.page = 0
       state.services = []
+      state.hasMore = true // Fix: Unlock pagination for new filter context
     },
     setServiceLoading: (state, action) => { state.loading = action.payload },
     setReviewsLoading: (state, action) => { state.reviewsLoading = action.payload },
