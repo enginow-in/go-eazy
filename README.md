@@ -175,3 +175,159 @@ Happy Contributing ❤️
 --
 
 © 2026 GoEazy Platform. **Simplifying. Seamlessly.**
+
+
+## 🚀 Features
+
+- 🔍 Smart property search and filtering
+- 🏠 Landlord dashboard for property management
+- 👤 Tenant dashboard
+- 🛠️ Service provider dashboard
+- 🛡️ System administrator panel
+- 💳 Razorpay payment integration
+- 🔐 Secure authentication with Supabase
+- 📱 Mobile-first responsive design
+- 🎨 Modern UI built with React and Tailwind CSS
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+
+- React 19
+- Vite
+- React Router
+- Redux Toolkit
+- Tailwind CSS
+- Framer Motion
+
+### Backend
+
+- Supabase
+- PostgreSQL
+- Supabase Edge Functions
+
+### Other Tools
+
+- Razorpay
+- Swiper
+- i18next
+
+---
+
+# Prerequisites
+
+Before running the project, ensure the following are installed:
+
+- Node.js (v20 or later recommended)
+- npm
+- Git
+- A Supabase account
+
+---
+
+# Installation
+
+## 1. Fork the Repository
+
+Fork this repository to your GitHub account.
+
+## 2. Clone Your Fork
+
+```bash
+git clone https://github.com/<your-github-username>/go-eazy.git
+```
+
+## 3. Navigate to the Project
+
+```bash
+cd go-eazy
+```
+
+## 4. Install Dependencies
+
+```bash
+npm install
+```
+
+---
+
+# Environment Variables
+
+Create a `.env` file in the project root.
+
+Add the following variables:
+
+```env
+VITE_SUPABASE_URL=YOUR_SUPABASE_PROJECT_URL
+VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+```
+
+You can obtain these values from:
+
+**Supabase Dashboard → Settings → API**
+
+---
+
+# Running the Project
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+Open your browser and visit:
+
+```
+http://localhost:5173
+```
+
+---
+
+# Project Structure
+
+```text
+go-eazy/
+│
+├── public/
+├── src/
+│   ├── components/
+│   ├── pages/
+│   ├── hooks/
+│   ├── store/
+│   ├── assets/
+│   └── styles/
+│
+├── supabase/
+│   ├── migrations/
+│   ├── functions/
+│   ├── schema.sql
+│   └── seed.sql
+│
+├── package.json
+└── README.md
+```
+
+---
+
+# Local Development
+
+1. Create a Supabase project.
+2. Add the required environment variables.
+3. Install project dependencies.
+4. Start the development server.
+5. Register a new account.
+6. Begin developing.
+
+---
+
+# Contributing
+
+Please read **CONTRIBUTING.md** before submitting Issues or Pull Requests.
+
+---
+
+
+Made with ❤️ by the GoEazy Team.
