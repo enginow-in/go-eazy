@@ -40,7 +40,8 @@ const PageSpinner = () => (
   </div>
 )
 
-function App() {
+// Inner component allows useAuth to access Router context safely and prevents DOM wiping
+function AppContent() {
   useAuth() 
   const { loading } = useSelector(s => s.auth)
 
@@ -53,7 +54,7 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
+    <>
       <ScrollToTop />
       <AppInitializer />
       <OnboardingQuiz />
@@ -132,12 +133,19 @@ function App() {
           } />
 
           <Route path="*" element={<NotFound />} />
-        </Routes>
+          </Routes>
         </Suspense>
       </Layout>
-    </BrowserRouter>
+    </>
   )
 }
 
+function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
+  )
+}
 
 export default App
