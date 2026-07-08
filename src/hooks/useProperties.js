@@ -243,8 +243,21 @@ export const useProperties = () => {
   }
 
   const deleteProperty = async (id) => {
+    const { data: prop } = await supabase.from('properties').select('images').eq('id', id).single()
     const { count, error } = await supabase.from('properties').delete({ count: 'exact' }).eq('id', id).eq('landlord_id', user.id)
     if (error) throw error
+    
+    if (count > 0 && prop?.images?.length) {
+      const filePaths = prop.images.map(url => {
+        const parts = url.split('/property-images/')
+        return parts.length > 1 ? parts[1] : null
+      }).filter(Boolean)
+      
+      if (filePaths.length > 0) {
+        await supabase.storage.from('property-images').remove(filePaths)
+      }
+    }
+    
     return count > 0
   }
 
