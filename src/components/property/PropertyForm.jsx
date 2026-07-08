@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Plus, X, Image as ImageIcon, Zap, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react'
 import { Input, Textarea, Select } from '../ui/Input'
 import { Button } from '../ui/Button'
-import { PROPERTY_TYPES, AMENITIES } from '../../utils/constants'
+import { PROPERTY_TYPES, AMENITIES, CITIES } from '../../utils/constants'
 import { useProperties } from '../../hooks/useProperties'
 import { useSelector } from 'react-redux'
 import { supabase } from '../../lib/supabase'
@@ -279,7 +279,7 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Select id="property-city" label="City *" value={form.city} onChange={e => set('city', e.target.value)} required>
               <option value="" disabled>Select city</option>
-              {['Dehradun','Srinagar','Rishikesh','Haldwani','Nainital','Haridwar','Roorkee','Rudrapur'].map(c => (
+              {CITIES.map(c => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </Select>
