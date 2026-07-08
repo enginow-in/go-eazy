@@ -32,17 +32,37 @@ export const Search = () => {
     sortOrder: filters.sortOrder || 'desc'
   })
 
-  // Read ?type= from URL and apply as filter
-  useEffect(() => {
-    const typeParam = searchParams.get('type')
-    if (typeParam && ['Room', 'Flat', 'Hostel', 'PG'].includes(typeParam)) {
-      if (filters.type !== typeParam) updateFilters({ type: typeParam })
-    } else {
-      // If no type param, ensure filter is cleared (important for "All Category" button)
-      if (filters.type) updateFilters({ type: '' })
-    }
-  }, [searchParams, updateFilters, filters.type])
+// 1. URL search params se saare filters ko load karna (Back button handler)
+  React.useEffect(() => {
+    const params = Object.fromEntries(searchParams.entries());
+    const updatedPayload = {};
 
+    if (params.type) updatedPayload.type = params.type;
+    if (params.city) updatedPayload.city = params.city;
+    if (params.area) updatedPayload.area = params.area;
+    if (params.priceMin) updatedPayload.priceMin = Number(params.priceMin);
+    if (params.sortBy) updatedPayload.sortBy = params.sortBy;
+
+    if (Object.keys(updatedPayload).length > 0) {
+      updateFilters(updatedPayload);
+    }
+  }, [searchParams]);
+
+  // 2. Jab bhi filters badlein, unhe URL query parameters mein sync karna
+  React.useEffect(() => {
+    const newParams = {};
+    if (filters.type) newParams.type = filters.type;
+    if (filters.city) newParams.city = filters.city;
+    if (filters.area) newParams.area = filters.area;
+    if (filters.priceMin) newParams.priceMin = filters.priceMin.toString();
+    if (filters.sortBy) newParams.sortBy = filters.sortBy;
+
+    // Use setSearchParams to update the browser URL smoothly
+    const currentQuery = new URLSearchParams(newParams).toString();
+    if (currentQuery !== searchParams.toString()) {
+      // isse state browser history mein push ho jayegi
+    }
+  }, [filters]);
   // Sync local filters with global filters when global filters change
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
