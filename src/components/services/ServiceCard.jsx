@@ -32,8 +32,12 @@ const ServiceCardComponent = ({ service, layout = 'grid' }) => {
     return num.toLocaleString('en-IN')
   }
 
-  // Get first available price from listings
-  const firstPrice = service.service_listings?.[0]?.price || 0
+  const startingPrice = useMemo(() => {
+    const prices = (service.service_listings ?? [])
+      .map((listing) => Number(listing.price))
+      .filter((price) => price > 0)
+    return prices.length > 0 ? Math.min(...prices) : 0
+  }, [service.service_listings])
 
   if (layout === 'list') {
     return (
@@ -77,7 +81,7 @@ const ServiceCardComponent = ({ service, layout = 'grid' }) => {
           <div className="flex items-end justify-between mt-auto pb-0.5">
             <div className="flex flex-col">
               <span className="text-[9px] font-bold text-gray-400 uppercase leading-none mb-0.5">{t('services.labels.startingFrom')}</span>
-              <span className="font-black text-gray-900 text-base sm:text-lg leading-none">₹{formatPrice(firstPrice)}</span>
+              <span className="font-black text-gray-900 text-base sm:text-lg leading-none">₹{formatPrice(startingPrice)}</span>
             </div>
             
             <div className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-lg border border-gray-100 shadow-sm">
@@ -145,7 +149,7 @@ const ServiceCardComponent = ({ service, layout = 'grid' }) => {
         <div className="mt-auto pt-2 border-t border-gray-50 flex items-center justify-between">
           <div className="flex flex-col">
             <span className="text-[8px] font-bold text-gray-400 uppercase leading-none">{t('services.labels.from')}</span>
-            <span className="font-black text-gray-900 text-base leading-tight">₹{formatPrice(firstPrice)}</span>
+            <span className="font-black text-gray-900 text-base leading-tight">₹{formatPrice(startingPrice)}</span>
           </div>
           <button className="text-[#CA3433] hover:text-brand-800 transition-colors">
             <Eye size={18} />
