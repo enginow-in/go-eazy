@@ -214,3 +214,27 @@ export const CAROUSEL_SLIDES = [
     image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1400&q=80',
   },
 ]
+
+export const ROLE_OPTIONS = [
+  { 
+    value: 'user', 
+    label: 'Student / Professional', 
+    shortLabel: 'Tenant',
+    emoji: '🎓', 
+    desc: 'Find PGs, Hostels & Flats' 
+  },
+  { 
+    value: 'landlord', 
+    label: 'Landlord / Owner', 
+    shortLabel: 'Landlord',
+    emoji: '🏠', 
+    desc: 'List & Manage Properties' 
+  },
+  { 
+    value: 'service_provider', 
+    label: 'Service Provider', 
+    shortLabel: 'Provider',
+    emoji: '🍱', 
+    desc: 'Offer Tiffin or Laundry' 
+  },
+]

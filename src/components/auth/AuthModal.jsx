@@ -8,12 +8,13 @@ import { Input } from '../ui/Input'
 import { closeAuthModal } from '../../store/authSlice'
 import { useAuth } from '../../hooks/useAuth'
 import toast from 'react-hot-toast'
+import { ROLE_OPTIONS } from '../../utils/constants'
 
-const ROLE_OPTIONS = [
-  { value: 'user',             label: 'Student / Professional', icon: <GraduationCap size={20} className="text-brand-500" /> },
-  { value: 'landlord',         label: 'Landlord / Owner',        icon: <Home size={20} className="text-brand-500" /> },
-  { value: 'service_provider', label: 'Service Provider 🍱',    icon: <Utensils size={20} className="text-brand-500" /> },
-]
+const ROLE_ICONS = {
+  user: <GraduationCap size={20} className="text-brand-500" />,
+  landlord: <Home size={20} className="text-brand-500" />,
+  service_provider: <Utensils size={20} className="text-brand-500" />,
+}
 
 export const AuthModal = () => {
   const dispatch = useDispatch()
@@ -195,7 +196,7 @@ export const AuthModal = () => {
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
-                  <span className="text-lg">{opt.icon}</span>
+                  <span className="text-lg">{ROLE_ICONS[opt.value]}</span>
                   <p className="text-sm font-semibold text-gray-900">{opt.label}</p>
                 </button>
               ))}

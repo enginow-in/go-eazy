@@ -6,12 +6,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import toast from 'react-hot-toast'
-
-const ROLE_OPTIONS = [
-  { value: 'user',             label: 'Tenant',           emoji: '🎓' },
-  { value: 'landlord',         label: 'Landlord',         emoji: '🏠' },
-  { value: 'service_provider', label: 'Service Provider', emoji: '🍱' },
-]
+import { ROLE_OPTIONS } from '../../utils/constants'
 
 export const AuthGateModal = () => {
   const { user, signIn, signUp, signInWithGoogle } = useAuth()
@@ -177,7 +172,7 @@ export const AuthGateModal = () => {
                         >
                           <span className="text-base leading-none">{opt.emoji}</span>
                           <span className={`text-[9px] font-bold leading-tight ${selectedRole === opt.value ? 'text-[#CA3433]' : 'text-gray-500'}`}>
-                            {opt.label}
+                            {opt.shortLabel || opt.label}
                           </span>
                         </button>
                       ))}

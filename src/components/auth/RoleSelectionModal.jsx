@@ -4,13 +4,7 @@ import { Button } from '../ui/Button'
 import { useAuth } from '../../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { Home, GraduationCap } from 'lucide-react'
-
-const ROLE_OPTIONS = [
-  { value: 'user',             label: 'Student / Professional' },
-  { value: 'landlord',         label: 'Landlord / Owner'        },
-  { value: 'service_provider', label: 'Service Provider 🍱'    },
-]
+import { ROLE_OPTIONS } from '../../utils/constants'
 
 export const RoleSelectionModal = () => {
   const navigate = useNavigate()

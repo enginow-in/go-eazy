@@ -13,6 +13,7 @@ import { OnboardingQuiz } from './components/common/OnboardingQuiz'
 import { useSelector } from 'react-redux'
 import { useAuth } from './hooks/useAuth'
 import ScrollToTop from './components/common/ScrollToTop'
+import { Spinner } from './components/ui/Spinner'
 
 // Heavy pages: lazy-loaded into separate chunks to prevent
 // "Cannot access X before initialization" TDZ errors from
@@ -33,12 +34,6 @@ const PrivacyPolicy = lazy(() => import('./pages/legal/PrivacyPolicy'))
 const TermsOfService = lazy(() => import('./pages/legal/TermsOfService'))
 const CookiePolicy = lazy(() => import('./pages/legal/CookiePolicy'))
 const RefundPolicy = lazy(() => import('./pages/legal/RefundPolicy'))
-
-const PageSpinner = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-50">
-    <div className="w-10 h-10 border-4 border-[#CA3433] border-t-transparent rounded-full animate-spin" />
-  </div>
-)
 
 function App() {
   // Enable to check whether Error Boundary is working or not.
@@ -62,7 +57,7 @@ function App() {
       <OnboardingQuiz />
       <RoleSelectionModal />
       <Layout>
-        <Suspense fallback={<PageSpinner />}>
+        <Suspense fallback={<Spinner page />}>
           <Routes>
             <Route path="/" element={<Navigate to="/search" replace />} />
             <Route path="/search" element={<Search />} />

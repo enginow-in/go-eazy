@@ -7,12 +7,13 @@ import { Input } from '../components/ui/Input'
 import { useAuth } from '../hooks/useAuth'
 import toast from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
+import { ROLE_OPTIONS } from '../utils/constants'
 
-const ROLE_OPTIONS = [
-  { value: 'user',             label: 'Student / Professional', icon: <GraduationCap size={20} className="text-brand-500" />, desc: 'Find PGs, Hostels & Flats' },
-  { value: 'landlord',         label: 'Landlord / Owner',        icon: <Home size={20} className="text-brand-500" />, desc: 'List & Manage Properties' },
-  { value: 'service_provider', label: 'Service Provider 🍱',    icon: <Utensils size={20} className="text-brand-500" />, desc: 'Offer Tiffin or Laundry' },
-]
+const ROLE_ICONS = {
+  user: <GraduationCap size={20} className="text-brand-500" />,
+  landlord: <Home size={20} className="text-brand-500" />,
+  service_provider: <Utensils size={20} className="text-brand-500" />,
+}
 
 export const AuthHome = () => {
   const dispatch = useDispatch()
@@ -210,7 +211,7 @@ export const AuthHome = () => {
                           }`}
                         >
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${selectedRole === opt.value ? 'bg-[#CA3433] text-white' : 'bg-gray-50 text-gray-400'}`}>
-                            {opt.icon}
+                            {ROLE_ICONS[opt.value]}
                           </div>
                           <div>
                             <h4 className="font-bold text-sm text-gray-900">{opt.label}</h4>
