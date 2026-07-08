@@ -32,10 +32,10 @@ img {
 }
 
 body {
-  user-select: none;
-  -webkit-user-select: none;
-  -ms-user-select: none;
-  -moz-user-select: none;
+  user-select: auto;
+  -webkit-user-select: auto;
+  -ms-user-select: auto;
+  -moz-user-select: auto;
 }
 
 input, textarea, [contenteditable="true"] {
