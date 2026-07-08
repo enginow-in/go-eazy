@@ -1,13 +1,56 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { cn } from '../../utils/helpers'
 import { X } from 'lucide-react'
 
 export const Modal = ({ open, onClose, children, title, size = 'md', className = '' }) => {
+  const modalRef = useRef(null)
+  const previousFocusRef = useRef(null)
+
   useEffect(() => {
-    if (open) document.body.style.overflow = 'hidden'
-    else document.body.style.overflow = ''
+    if (open) {
+      document.body.style.overflow = 'hidden'
+      previousFocusRef.current = document.activeElement
+      setTimeout(() => {
+        if (modalRef.current) {
+          modalRef.current.focus()
+        }
+      }, 10)
+    } else {
+      document.body.style.overflow = ''
+      if (previousFocusRef.current) {
+        previousFocusRef.current.focus()
+      }
+    }
     return () => { document.body.style.overflow = '' }
   }, [open])
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      onClose()
+      return
+    }
+    if (e.key === 'Tab' && modalRef.current) {
+      const focusableElements = modalRef.current.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+      if (focusableElements.length === 0) return
+      
+      const firstElement = focusableElements[0]
+      const lastElement = focusableElements[focusableElements.length - 1]
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement || document.activeElement === modalRef.current) {
+          lastElement.focus()
+          e.preventDefault()
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          firstElement.focus()
+          e.preventDefault()
+        }
+      }
+    }
+  }
 
   if (!open) return null
 
@@ -29,10 +72,16 @@ export const Modal = ({ open, onClose, children, title, size = 'md', className =
 
       {/* Modal */}
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? "modal-title" : undefined}
+        tabIndex={-1}
+        onKeyDown={handleKeyDown}
         className={cn(
           'relative w-full bg-white rounded-xl shadow-2xl',
           'max-h-[90vh] overflow-y-auto',
-          'animate-fadeInUp',
+          'animate-fadeInUp focus:outline-none',
           sizes[size],
           className
         )}
@@ -41,10 +90,11 @@ export const Modal = ({ open, onClose, children, title, size = 'md', className =
         {/* Header */}
         {title && (
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-            <h2 className="text-lg font-bold text-gray-900">{title}</h2>
+            <h2 id="modal-title" className="text-lg font-bold text-gray-900">{title}</h2>
             <button
               onClick={onClose}
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500"
+              aria-label="Close modal"
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <X size={18} />
             </button>
@@ -53,7 +103,8 @@ export const Modal = ({ open, onClose, children, title, size = 'md', className =
         {!title && (
           <button
             onClick={onClose}
-            className="absolute top-2 right-2 z-10 p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600 sm:top-3 sm:right-3"
+            aria-label="Close modal"
+            className="absolute top-2 right-2 z-10 p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600 sm:top-3 sm:right-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <X size={20} />
           </button>

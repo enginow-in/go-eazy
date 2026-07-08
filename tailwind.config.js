@@ -11,6 +11,12 @@ export default {
         display: ['Sora', 'sans-serif'],
       },
       colors: {
+        primary: '#CA3433',
+        'primary-hover': '#ac2d2c',
+        main: '#F9F8F6',
+        notification: '#fffcf0',
+        'error-soft': '#fdf2f2',
+        'error-lighter': '#fff5f5',
         brand: {
           50: '#fff5f5',
           100: '#ffe3e3',
