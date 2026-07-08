@@ -94,7 +94,11 @@ export const PropertyDetail = () => {
   }, [id, user, fetchPropertyById, fetchReviews])
 
   const checkUnlockStatus = async () => {
-    if (!user || !id) return
+    if (!user || !id) {
+      setHasUnlocked(false)
+      setGatedData(null)
+      return
+    }
     const { data } = await supabase
       .from('unlocked_properties')
       .select('id')
