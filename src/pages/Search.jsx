@@ -11,8 +11,10 @@ import { resetFilters } from '../store/propertySlice'
 import { PROPERTY_TYPES, AMENITIES, SORT_OPTIONS } from '../utils/constants'
 import { AMENITY_ICONS, cn } from '../utils/helpers'
 import { Skeleton } from '../components/ui/Skeleton'
-import { useAuth } from '../hooks/useAuth'
+
 import { RecommendedSection } from '../components/property/RecommendedSection'
+import { DrawMap } from '../components/map/DrawMap'
+import { Map as MapIcon } from 'lucide-react'
 
 export const Search = () => {
   const { t } = useTranslation()
@@ -44,7 +46,6 @@ export const Search = () => {
   }, [searchParams, updateFilters, filters.type])
 
   // Sync local filters with global filters when global filters change
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setLocalFilters({
       city: filters.city || '', 
@@ -172,8 +173,7 @@ export const Search = () => {
     </div>
   )
 
-  // Memoize Filter UI to prevent unnecessary re-calculation during typing
-  const filterContent = useMemo(() => renderFilterContent(), [localFilters, t, dispatch, showFilters])
+  const filterContent = renderFilterContent()
 
   return (
     <div className="pt-4 pb-12 min-h-screen bg-gray-50/50">
@@ -199,6 +199,12 @@ export const Search = () => {
               {/* Mobile Actions (View Toggles + Filter) */}
               <div className="md:hidden flex items-center gap-3 relative z-30">
                 <div className="flex items-center gap-2 pr-2 border-r border-gray-200 mr-1">
+                  <button 
+                    onClick={() => setViewMode('map')} 
+                    className={`p-2 transition-all rounded-lg ${viewMode === 'map' ? 'bg-brand-50 text-brand-600 ring-1 ring-brand-100' : 'text-gray-400'}`}
+                  >
+                    <MapIcon size={18} />
+                  </button>
                   <button 
                     onClick={() => setViewMode('grid')} 
                     className={`p-2 transition-all rounded-lg ${viewMode === 'grid' ? 'bg-brand-50 text-brand-600 ring-1 ring-brand-100' : 'text-gray-400'}`}
@@ -238,6 +244,9 @@ export const Search = () => {
           <div className="hidden md:flex items-center gap-4">
              {/* View Toggles */}
              <div className="flex items-center gap-3 text-gray-400 mr-2">
+               <button onClick={() => setViewMode('map')} className={`hover:text-gray-900 transition-colors ${viewMode === 'map' ? 'text-gray-900 border border-gray-200 rounded p-1 shadow-sm' : 'p-1'}`}>
+                 <MapIcon size={20} />
+               </button>
                <button onClick={() => setViewMode('grid')} className={`hover:text-gray-900 transition-colors ${viewMode === 'grid' ? 'text-gray-900 border border-gray-200 rounded p-1 shadow-sm' : 'p-1'}`}>
                  <Grid size={20} />
                </button>
@@ -267,10 +276,43 @@ export const Search = () => {
         </div>
 
         {/* Recommendation Section (if quiz done) */}
-        <RecommendedSection viewMode={viewMode} />
+        {viewMode !== 'map' && <RecommendedSection viewMode={viewMode} />}
 
         {/* Results Area */}
-        {loading && listings.length === 0 ? (
+        {viewMode === 'map' ? (
+          <div className="flex flex-col lg:flex-row gap-6">
+            <div className="w-full lg:w-2/3 xl:w-3/4">
+              <DrawMap 
+                listings={listings} 
+                onPolygonChange={(polygon) => updateFilters({ polygon })} 
+              />
+            </div>
+            <div className="w-full lg:w-1/3 xl:w-1/4 max-h-[600px] overflow-y-auto pr-2 space-y-4">
+              {loading && listings.length === 0 ? (
+                [1, 2, 3].map(i => (
+                  <div key={i} className="bg-white rounded-xl border border-gray-100/50 shadow-sm p-4">
+                    <Skeleton className="h-32 w-full rounded-lg mb-3" />
+                    <Skeleton className="h-4 w-2/3 mb-2" />
+                    <Skeleton className="h-4 w-1/3" />
+                  </div>
+                ))
+              ) : listings.length > 0 ? (
+                <>
+                  {listings.map(p => <PropertyCard key={p.id} property={p} layout="list" />)}
+                  {hasMore && (
+                    <Button variant="secondary" className="w-full" onClick={() => fetchProperties(false)} loading={loading}>
+                      Load More
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-10 bg-white rounded-xl border border-gray-100">
+                  <p className="text-gray-500 font-medium">No properties found in this area.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : loading && listings.length === 0 ? (
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-6 xl:gap-8">
             {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
               <div key={i} className="bg-white rounded-xl border border-gray-100/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-4 overflow-hidden">

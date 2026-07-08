@@ -32,10 +32,21 @@ export const useProperties = () => {
   const fetchProperties = useCallback(async (reset = false) => {
     dispatch(setLoading(true))
     try {
-      let query = supabase
-        .from('properties')
-        .select(`${PUBLIC_PROPERTY_FIELDS}, profiles!properties_landlord_id_fkey(${PUBLIC_PROFILE_FIELDS})`, { count: 'exact' })
-        .eq('availability', true)
+      let query;
+      
+      if (filters.polygon) {
+        // Use the RPC for polygon search
+        query = supabase.rpc('search_properties_in_polygon', { polygon_geojson: filters.polygon })
+        
+        // Since RPC doesn't support exact count easily with complex joins in the same way, we might just get all results
+        // or we use standard select if we need joins, but wait, the RPC returns SETOF properties.
+        // We can chain .select to it.
+        query = query.select(`${PUBLIC_PROPERTY_FIELDS}, profiles!properties_landlord_id_fkey(${PUBLIC_PROFILE_FIELDS})`, { count: 'exact' })
+      } else {
+        query = supabase.from('properties').select(`${PUBLIC_PROPERTY_FIELDS}, profiles!properties_landlord_id_fkey(${PUBLIC_PROFILE_FIELDS})`, { count: 'exact' })
+      }
+
+      query = query.eq('availability', true)
 
       if (filters.type) query = query.eq('type', filters.type)
       if (filters.priceMin > 0) query = query.gte('price', filters.priceMin)
