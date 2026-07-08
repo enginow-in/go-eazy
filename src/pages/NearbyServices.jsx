@@ -372,7 +372,7 @@ export const NearbyServices = () => {
             {hasMore && (
               <div className="mt-12 text-center pb-10">
                 <Button variant="secondary" onClick={() => fetchServices(false)} loading={loading} className="px-10 rounded-2xl border-gray-200">
-                  {t('nearby.loadMore')}
+                  {t('nearby.loadMore', 'Load More')}
                 </Button>
               </div>
             )}
@@ -382,7 +382,7 @@ export const NearbyServices = () => {
             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
                <Search className="text-gray-300" size={32} />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">{t('nearby.noFound')}</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">{t('nearby.noFound', 'No services found')}</h3>
             <p className="text-gray-500 max-w-xs mx-auto mb-8">{t('nearby.noFoundDesc')}</p>
             <Button variant="secondary" onClick={() => { dispatch(resetServiceFilters()); setSearchInput('') }} className="rounded-xl border-gray-200">
               {t('nearby.reset')}
