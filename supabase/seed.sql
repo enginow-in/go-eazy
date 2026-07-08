@@ -23,11 +23,41 @@ END $$;
 -- Actually, landlord_id has a CONSTRAINT on profiles(id).
 -- So we MUST have a profile.
 
--- We can't easily create an auth.user via SQL without knowing the schema of supabase auth.
--- But we can create a profile for a dummy ID.
+-- We must create an auth.user first to satisfy the foreign key constraint on profiles(id)
+INSERT INTO auth.users (
+  id,
+  instance_id,
+  aud,
+  role,
+  email,
+  encrypted_password,
+  email_confirmed_at,
+  created_at,
+  updated_at,
+  confirmation_token,
+  email_change,
+  email_change_token_new,
+  recovery_token
+)
+VALUES (
+  '00000000-0000-0000-0000-000000000000',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'admin@goeazy.com',
+  crypt('password123', gen_salt('bf')),
+  current_timestamp,
+  current_timestamp,
+  current_timestamp,
+  '',
+  '',
+  '',
+  ''
+)
+ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.profiles (id, email, full_name, role)
-VALUES ('00000000-0000-0000-0000-000000000000', 'admin@goeazy.com', 'System Admin', 'landlord')
+VALUES ('00000000-0000-0000-0000-000000000000', 'admin@goeazy.com', 'System Admin', 'admin')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.properties (id, landlord_id, title, description, price, city, area, type, amenities, images, availability, views)
