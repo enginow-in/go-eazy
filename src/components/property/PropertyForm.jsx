@@ -132,10 +132,15 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   }
 
   const removeImage = (index) => {
-    setPreviewUrls(prev => prev.filter((_, i) => i !== index))
-    if (index >= (initialData?.images?.length || 0)) {
-      setImages(prev => prev.filter((_, i) => i !== index - (initialData?.images?.length || 0)))
+    const isNew = previewUrls[index].startsWith('blob:')
+    if (isNew) {
+      let newImageIndex = 0
+      for (let i = 0; i < index; i++) {
+        if (previewUrls[i].startsWith('blob:')) newImageIndex++
+      }
+      setImages(prev => prev.filter((_, i) => i !== newImageIndex))
     }
+    setPreviewUrls(prev => prev.filter((_, i) => i !== index))
   }
 
   const toggleAmenity = (id) => {
