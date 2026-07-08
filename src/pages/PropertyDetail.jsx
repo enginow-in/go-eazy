@@ -48,11 +48,11 @@ export const PropertyDetail = () => {
   const { t } = useTranslation()
   const { user } = useSelector(s => s.auth)
   
-  const { 
-    currentProperty, fetchPropertyById, fetchGatedData, 
-    favorites, toggleFavorite, loading,
-    reviews, fetchReviews, submitReview, deleteReview
-  } = useProperties()
+  const {
+  currentProperty, fetchPropertyById, fetchGatedData,
+  favorites, toggleFavorite, loading, error,
+  reviews, fetchReviews, submitReview, deleteReview
+} = useProperties()
 
   const [showScrollToTop, setShowScrollToTop] = useState(false)
   const [gatedData, setGatedData] = useState(null)
@@ -120,7 +120,9 @@ export const PropertyDetail = () => {
     setInitialSlideIndex(index)
     setIsGalleryOpen(true)
   }
-
+if (error || (!loading && !currentProperty)) {
+    return <NotFound />;
+  }
   if (loading || !currentProperty) {
     return (
       <div className="pt-8 pb-20 bg-[#F9F8F6] min-h-screen">
