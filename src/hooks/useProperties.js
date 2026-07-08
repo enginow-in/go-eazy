@@ -243,10 +243,61 @@ export const useProperties = () => {
   }
 
   const deleteProperty = async (id) => {
-    const { count, error } = await supabase.from('properties').delete({ count: 'exact' }).eq('id', id).eq('landlord_id', user.id)
-    if (error) throw error
+    // Step 1: Fetch the property's image URLs before deleting the DB row.
+    // We need these to clean up the storage bucket afterwards.
+    const { data: property, error: fetchError } = await supabase
+      .from('properties')
+      .select('images')
+      .eq('id', id)
+      .eq('landlord_id', user.id)
+      .maybeSingle()
+
+    if (fetchError) throw fetchError
+
+    // Step 2: Delete the database row first (authoritative source of truth).
+    const { count, error: deleteError } = await supabase
+      .from('properties')
+      .delete({ count: 'exact' })
+      .eq('id', id)
+      .eq('landlord_id', user.id)
+
+    if (deleteError) throw deleteError
+
+    // Step 3: Purge associated images from the storage bucket.
+    // Images are stored as full public URLs. We derive the bucket-relative path
+    // by stripping everything up to and including '/property-images/'.
+    // Example URL:
+    //   https://<project>.supabase.co/storage/v1/object/public/property-images/properties/<uid>/img.jpg
+    //   -> path: properties/<uid>/img.jpg
+    if (property?.images?.length) {
+      const filePaths = property.images
+        .map((url) => {
+          try {
+            const marker = '/property-images/'
+            const idx = url.indexOf(marker)
+            return idx !== -1 ? url.slice(idx + marker.length) : null
+          } catch {
+            return null
+          }
+        })
+        .filter(Boolean)
+
+      if (filePaths.length) {
+        const { error: storageError } = await supabase.storage
+          .from('property-images')
+          .remove(filePaths)
+
+        // Non-fatal: log the error but do not re-throw. The DB row is already
+        // gone; failing storage cleanup should not revert a successful delete.
+        if (storageError) {
+          console.error('Storage cleanup failed for deleted property:', id, storageError)
+        }
+      }
+    }
+
     return count > 0
   }
+
 
   const fetchFavorites = useCallback(async () => {
     if (!user) return
