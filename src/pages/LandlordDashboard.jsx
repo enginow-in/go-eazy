@@ -80,23 +80,34 @@ export const LandlordDashboard = () => {
   const handleVisitAction = async (visitId, userId, propertyTitle, action) => {
     setActioningVisitId(visitId)
     try {
-      const { error } = await supabase
+      // Update the site visit status first.
+      const { error: visitError } = await supabase
         .from('site_visits')
         .update({ status: action })
         .eq('id', visitId)
-      if (error) throw error
 
+      if (visitError) {
+        throw new Error(`Visit update failed: ${visitError.message}`)
+      }
+
+      // Insert the notification only after the visit update succeeds.
       const msg = `Your site visit request for "${propertyTitle || 'Property'}" has been ${action}.`
-      await supabase.from('notifications').insert({
-        user_id: userId,
-        message: msg
-      })
+      const { error: notifError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: userId,
+          message: msg
+        })
+
+      if (notifError) {
+        throw new Error(`Notification failed: ${notifError.message}`)
+      }
 
       toast.success(`Visit ${action} successfully`)
       setSiteVisits(prev => prev.filter(v => v.id !== visitId))
     } catch (err) {
-      console.error(err)
-      toast.error('Failed to update visit status')
+      console.error('handleVisitAction error:', err)
+      toast.error(err.message || 'Failed to process visit request')
     } finally {
       setActioningVisitId(null)
     }
