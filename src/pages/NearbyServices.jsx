@@ -151,11 +151,16 @@ export const NearbyServices = () => {
   // eslint-disable-next-line
   const filterContent = useMemo(() => renderFilterContent(), [localFilters, showFilters, dispatch, t, CATEGORIES, serviceSortOptions])
 
+  const debounceRef = React.useRef(null)
+
   // Live search handler
   const handleSearch = (e) => {
     const val = e.target.value
     setSearchInput(val)
-    updateFilters({ query: val })
+    clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      updateFilters({ query: val })
+    }, 400)
   }
 
   return (
