@@ -5,6 +5,7 @@ import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Sparkles } from 'lucide-reac
 import { useAuth } from '../../hooks/useAuth'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
+import { ForgotPasswordModal } from './ForgotPasswordModal'
 import toast from 'react-hot-toast'
 import { ROLE_OPTIONS } from '../../utils/constants'
 
@@ -19,6 +20,7 @@ export const AuthGateModal = () => {
   const [selectedRole, setSelectedRole] = useState('user')
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [errors, setErrors] = useState({})
+  const [forgotOpen, setForgotOpen] = useState(false)
 
   if (user || loading) return null
 
@@ -154,6 +156,19 @@ export const AuthGateModal = () => {
                   className="text-sm py-2"
                 />
 
+                {/* Forgot password link — login tab only */}
+                {tab === 'login' && (
+                  <div className="flex justify-end -mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setForgotOpen(true)}
+                      className="text-[10px] font-semibold text-[#CA3433] hover:underline"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+                )}
+
                 {/* Role Selector — compact pill row for signup */}
                 {tab === 'signup' && (
                   <div>
@@ -226,6 +241,12 @@ export const AuthGateModal = () => {
           </p>
         </div>
       </motion.div>
+
+      <ForgotPasswordModal
+        isOpen={forgotOpen}
+        onClose={() => setForgotOpen(false)}
+        onBackToLogin={() => setForgotOpen(false)}
+      />
     </div>
   )
 }

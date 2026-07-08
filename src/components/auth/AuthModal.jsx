@@ -9,6 +9,7 @@ import { closeAuthModal } from '../../store/authSlice'
 import { useAuth } from '../../hooks/useAuth'
 import toast from 'react-hot-toast'
 import { ROLE_OPTIONS } from '../../utils/constants'
+import { ForgotPasswordModal } from './ForgotPasswordModal'
 
 const ROLE_ICONS = {
   user: <GraduationCap size={20} className="text-brand-500" />,
@@ -29,6 +30,7 @@ export const AuthModal = () => {
   const [selectedRole, setSelectedRole] = useState('user')
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [errors, setErrors] = useState({})
+  const [forgotOpen, setForgotOpen] = useState(false)
 
   React.useEffect(() => { setTab(authModalTab) }, [authModalTab])
 
@@ -93,6 +95,7 @@ export const AuthModal = () => {
   }
 
   return (
+    <>
     <Modal open={authModalOpen} onClose={() => dispatch(closeAuthModal())} size="sm">
       {/* Tabs */}
       <div className="flex gap-1 p-1 bg-gray-100 rounded-xl mb-4">
@@ -180,6 +183,19 @@ export const AuthModal = () => {
           autoComplete={tab === 'signup' ? 'new-password' : 'current-password'}
         />
 
+        {/* Forgot password link — login tab only */}
+        {tab === 'login' && (
+          <div className="flex justify-end -mt-2">
+            <button
+              type="button"
+              onClick={() => setForgotOpen(true)}
+              className="text-xs font-semibold text-[#CA3433] hover:underline"
+            >
+              Forgot password?
+            </button>
+          </div>
+        )}
+
         {/* Role Selector (Sign Up only) */}
         {tab === 'signup' && (
           <div>
@@ -210,5 +226,12 @@ export const AuthModal = () => {
       </form>
 
     </Modal>
+
+    <ForgotPasswordModal
+      isOpen={forgotOpen}
+      onClose={() => setForgotOpen(false)}
+      onBackToLogin={() => setForgotOpen(false)}
+    />
+    </>
   )
 }

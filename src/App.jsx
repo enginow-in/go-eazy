@@ -34,6 +34,7 @@ const PrivacyPolicy = lazy(() => import('./pages/legal/PrivacyPolicy'))
 const TermsOfService = lazy(() => import('./pages/legal/TermsOfService'))
 const CookiePolicy = lazy(() => import('./pages/legal/CookiePolicy'))
 const RefundPolicy = lazy(() => import('./pages/legal/RefundPolicy'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword').then(m => ({ default: m.ResetPassword })))
 
 function App() {
   // Enable to check whether Error Boundary is working or not.
@@ -128,6 +129,8 @@ function App() {
                 <PropertyEdit />
               </ProtectedRoute>
             } />
+
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

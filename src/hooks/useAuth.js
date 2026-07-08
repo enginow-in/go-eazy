@@ -179,5 +179,19 @@ export const useAuth = () => {
     return data
   }
 
-  return { user, profile, role, loading, authModalOpen, authModalTab, signUp, signIn, signInWithGoogle, signOut, updateProfile }
+  const resetPassword = async (email) => {
+    const redirectUrl = `${window.location.origin}/reset-password`
+    console.log(redirectUrl)
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: redirectUrl,
+    })
+    if (error) throw error
+  }
+
+  const updatePassword = async (newPassword) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) throw error
+  }
+
+  return { user, profile, role, loading, authModalOpen, authModalTab, signUp, signIn, signInWithGoogle, signOut, updateProfile, resetPassword, updatePassword }
 }
