@@ -21,7 +21,7 @@ export const Layout = ({ children }) => {
       />
       
       {/* Forced Auth Gate for Search page */}
-      {location.pathname === '/search' && <AuthGateModal />}
+      {/* {location.pathname === '/search' && <AuthGateModal />} */}
       
       {location.pathname !== '/systemadmin' && <Navbar />}
       <AnimatePresence mode="wait">
