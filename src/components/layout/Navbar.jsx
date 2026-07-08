@@ -133,6 +133,7 @@ export const Navbar = () => {
               <input
                 type="text"
                 id="desktop-search"
+
                 name="desktop-search"
                 value={searchQuery}
                 placeholder={t('hero.searchPlaceholder')}
@@ -144,12 +145,51 @@ export const Navbar = () => {
 
           {/* Right Links & Auth */}
           <div className="hidden md:flex items-center gap-6">
-            <div className="flex items-center space-x-6 text-sm font-medium text-gray-500">
-              <Link to="/search" className="px-3 py-1 bg-brand-lime text-gray-900 rounded-md font-semibold hover:bg-lime-400 transition-colors">{t('nav.home')}</Link>
-              <Link to="/nearby" className="hover:text-gray-900 transition-colors py-2">{t('nav.nearby')}</Link>
-              <button onClick={() => user ? navigate('/landlord') : dispatch(openAuthModal('login'))} className="hover:text-gray-900 transition-colors">{t('nav.list')}</button>
-              <Link to="/about" className="hover:text-gray-900 transition-colors py-2">{t('nav.about')}</Link>
-            </div>
+  <div className="flex items-center space-x-6 text-sm font-medium">
+    <Link
+      to="/search"
+      className={`px-3 py-1 rounded-md font-semibold transition-colors ${
+        location.pathname === "/search"
+          ? "bg-brand-lime text-gray-900"
+          : "text-gray-500 hover:text-gray-900 hover:bg-lime-400"
+      }`}
+    >
+      {t('nav.home')}
+    </Link>
+
+    <Link
+      to="/nearby"
+      className={`py-2 transition-colors ${
+        location.pathname === "/nearby"
+          ? "font-semibold text-gray-900"
+          : "text-gray-500 hover:text-gray-900"
+      }`}
+    >
+      {t('nav.nearby')}
+    </Link>
+
+    <button
+      onClick={() =>
+        user
+          ? navigate('/landlord')
+          : dispatch(openAuthModal('login'))
+      }
+      className="text-gray-500 hover:text-gray-900 transition-colors"
+    >
+      {t('nav.list')}
+    </button>
+
+    <Link
+      to="/about"
+      className={`py-2 transition-colors ${
+        location.pathname === "/about"
+          ? "font-semibold text-gray-900"
+          : "text-gray-500 hover:text-gray-900"
+      }`}
+    >
+      {t('nav.about')}
+    </Link>
+  </div>
             
             <div className="w-px h-6 bg-gray-200"></div>
 
