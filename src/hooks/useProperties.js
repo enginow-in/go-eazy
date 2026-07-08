@@ -34,7 +34,7 @@ export const useProperties = () => {
     try {
       let query = supabase
         .from('properties')
-        .select(`${PUBLIC_PROPERTY_FIELDS}, profiles!properties_landlord_id_fkey(${PUBLIC_PROFILE_FIELDS})`, { count: 'exact' })
+        .select(`${PUBLIC_PROPERTY_FIELDS}, profiles!properties_landlord_id_fkey(${PUBLIC_PROFILE_FIELDS})`)
         .eq('availability', true)
 
       if (filters.type) query = query.eq('type', filters.type)
