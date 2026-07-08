@@ -31,13 +31,6 @@ img {
   -ms-user-select: none;
 }
 
-body {
-  user-select: none;
-  -webkit-user-select: none;
-  -ms-user-select: none;
-  -moz-user-select: none;
-}
-
 input, textarea, [contenteditable="true"] {
   user-select: text !important;
   -webkit-user-select: text !important;
