@@ -1,4 +1,4 @@
-import React, { useState, useMemo, memo } from 'react'
+import React, { useState, useMemo, useCallback, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { Bookmark, Star, Home, Eye } from 'lucide-react'
@@ -19,11 +19,16 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   const images = property.images || []
   const mainImage = images[0]
 
-  const handleFav = (e) => {
-    e.stopPropagation()
-    if (!user) { dispatch(openAuthModal('signup')); return }
-    toggleFavorite(property.id)
+  const handleFav = useCallback((e) => {
+  e.stopPropagation()
+
+  if (!user) {
+    dispatch(openAuthModal("signup"))
+    return
   }
+
+  toggleFavorite(property.id)
+}, [dispatch, user, toggleFavorite, property.id])
 
   // Memoize values with deterministic calculation
   const { rating, numBeds } = useMemo(() => {
@@ -33,11 +38,10 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
     }
   }, [property.rating, property.bedrooms])
 
-  const formatPrice = (p) => {
-    if (!p) return '0'
-    const num = Number(p)
-    return num.toLocaleString('en-IN')
-  }
+  const formattedPrice = useMemo(() => {
+  if (!property.price) return "0"
+  return Number(property.price).toLocaleString("en-IN")
+}, [property.price])
 
   // List Layout (Matches Image 2)
   if (layout === 'list') {
@@ -52,6 +56,8 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
             onLoad={() => setImgLoaded(true)}
             loading="lazy"
+            decoding="async"
+  fetchPriority="low"
           />
           {!imgLoaded && <div className="skeleton absolute inset-0" />}
           {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
@@ -88,7 +94,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
               <span className={cn(
                 "font-black text-gray-900 leading-none",
                 condensed ? "text-base" : "text-base sm:text-lg"
-              )}>₹{formatPrice(property.price)}</span>
+              )}>₹{formatPrice}</span>
             </div>
             
             <div className={cn(
@@ -112,7 +118,9 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         onClick={() => navigate(`/property/${property.id}`)}
       >
         <div className="relative aspect-[4/3] overflow-hidden rounded-b-xl">
-          <img src={mainImage} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <img src={mainImage} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+           decoding="async"
+  fetchPriority="low"/>
           <div className="absolute top-2 right-2 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-lg text-[8px] font-black text-brand-600 uppercase tracking-wider">
              {t(`property.types.${property.type}`) || property.type}
           </div>
@@ -154,6 +162,8 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           )}
           onLoad={() => setImgLoaded(true)}
           loading="lazy"
+          decoding="async"
+  fetchPriority="low"
         />
         {!imgLoaded && <div className="skeleton absolute inset-0" />}
         {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}

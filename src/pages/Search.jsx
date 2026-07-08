@@ -14,6 +14,8 @@ import { Skeleton } from '../components/ui/Skeleton'
 import { useAuth } from '../hooks/useAuth'
 import { RecommendedSection } from '../components/property/RecommendedSection'
 import { useDebounce } from "../hooks/useDebounce";
+import { RangeSlider } from "../components/ui/RangeSlider";
+import { useInfiniteScroll } from "../hooks/useInfiniteScroll";
 
 export const Search = () => {
   const { t } = useTranslation()
@@ -34,6 +36,11 @@ export const Search = () => {
     sortOrder: filters.sortOrder || 'desc'
   })
   const debouncedFilters = useDebounce(localFilters, 400);
+  const loadMoreRef = useInfiniteScroll({
+  loading,
+  hasMore,
+  onLoadMore: () => fetchProperties(false),
+});
 
   // Read ?type= from URL and apply as filter
   useEffect(() => {
@@ -64,6 +71,11 @@ export const Search = () => {
     updateFilters(localFilters)
     setShowFilters(false)
   }
+  const loadMoreRef = useInfiniteScroll({
+  loading,
+  hasMore,
+  onLoadMore: () => fetchProperties(false),
+});
 
   useEffect(() => {
   updateFilters(debouncedFilters);
@@ -149,19 +161,23 @@ export const Search = () => {
              <span className="text-sm font-bold text-brand-600">₹{localFilters.priceMax >= 100000 ? '1L+' : localFilters.priceMax.toLocaleString()}</span>
            </div>
            <div className="pt-4 pb-2">
-             <input 
-               type="range" 
-               min="0" 
-               max="100000" 
-               step="1000"
-               value={localFilters.priceMax} 
-               onChange={e => setLocalFilters(prev => ({...prev, priceMax: Number(e.target.value)}))}
-               className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#CA3433]"
-             />
-              <div className="flex justify-between mt-2 text-[10px] font-bold text-gray-400">
-                <span>₹0</span>
-                <span>₹1L</span>
-              </div>
+             <RangeSlider
+  min={0}
+  max={100000}
+  step={1000}
+  value={localFilters.priceMax}
+  onChange={(value) =>
+    setLocalFilters(prev => ({
+      ...prev,
+      priceMax: value,
+    }))
+  }
+  showValue={false}
+  formatValue={(value) =>
+    `₹${value >= 100000 ? "1L+" : value.toLocaleString("en-IN")}`
+  }
+/>
+
            </div>
         </div>
       </div>
@@ -367,12 +383,17 @@ export const Search = () => {
               {listings.map(p => <PropertyCard key={p.id} property={p} layout={viewMode} />)}
             </div>
             {hasMore && (
-              <div className="mt-10 text-center">
-                <Button variant="secondary" onClick={() => fetchProperties(false)} loading={loading}>
-                  Load More
-                </Button>
-              </div>
-            )}
+  <div
+    ref={loadMoreRef}
+    className="h-16 flex items-center justify-center"
+  >
+    {loading && (
+      <span className="text-sm text-gray-500">
+        Loading more properties...
+      </span>
+    )}
+  </div>
+)}
           </>
         ) : (
           <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm">

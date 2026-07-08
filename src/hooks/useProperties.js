@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { MOCK_PROPERTIES } from '../utils/constants'
@@ -28,55 +28,96 @@ export const useProperties = () => {
     reviews, reviewsLoading 
   } = useSelector(s => s.property)
   const { user, profile } = useSelector(s => s.auth)
+  const requestIdRef = useRef(0)
+const fetchingRef = useRef(false)
 
   const fetchProperties = useCallback(async (reset = false) => {
-    dispatch(setLoading(true))
-    try {
-      let query = supabase
-        .from('properties')
-        .select(`${PUBLIC_PROPERTY_FIELDS}, profiles!properties_landlord_id_fkey(${PUBLIC_PROFILE_FIELDS})`, { count: 'exact' })
-        .eq('availability', true)
+  // Prevent duplicate requests
+  if (fetchingRef.current) return
 
-      if (filters.type) query = query.eq('type', filters.type)
-      if (filters.priceMin > 0) query = query.gte('price', filters.priceMin)
-      if (filters.priceMax < 100000) query = query.lte('price', filters.priceMax)
-      
-      if (filters.amenities?.length > 0) {
-        query = query.contains('amenities', filters.amenities)
-      }
+  fetchingRef.current = true
+  dispatch(setLoading(true))
 
-      if (filters.city) {
-        query = query.ilike('city', `%${filters.city}%`)
-      }
+  const currentRequestId = ++requestIdRef.current
 
-      if (filters.area) {
-        const fuzzyPattern = '%' + filters.area.toLowerCase().split('').filter(c => c.trim()).join('%') + '%'
-        query = query.ilike('area', fuzzyPattern)
-      }
+  try {
+    let query = supabase
+      .from("properties")
+      .select(
+        `${PUBLIC_PROPERTY_FIELDS},
+         profiles!properties_landlord_id_fkey(${PUBLIC_PROFILE_FIELDS})`,
+        { count: "exact" }
+      )
+      .eq("availability", true)
 
-      const from = reset ? 0 : page * PAGE_SIZE
-      const { data, error, count: dbCount } = await query
-        .order(filters.sortBy || 'created_at', { ascending: filters.sortOrder === 'asc' })
-        .range(from, from + PAGE_SIZE - 1)
+    if (filters.type)
+      query = query.eq("type", filters.type)
 
-      if (error) throw error
+    if (filters.priceMin > 0)
+      query = query.gte("price", filters.priceMin)
 
-      if (reset) {
-        dispatch(setListings(data || []))
-        dispatch(setTotalCount(dbCount || 0))
-      } else {
-        dispatch(appendListings(data || []))
-      }
+    if (filters.priceMax < 100000)
+      query = query.lte("price", filters.priceMax)
 
-      dispatch(setHasMore((data || []).length === PAGE_SIZE))
-      dispatch(setPage(reset ? 1 : page + 1))
-    } catch (err) {
-      console.error('fetchProperties error:', err)
+    if (filters.amenities?.length)
+      query = query.contains("amenities", filters.amenities)
+
+    if (filters.city)
+      query = query.ilike("city", `%${filters.city}%`)
+
+    if (filters.area) {
+      const fuzzy =
+        "%" +
+        filters.area
+          .toLowerCase()
+          .split("")
+          .filter(c => c.trim())
+          .join("%") +
+        "%"
+
+      query = query.ilike("area", fuzzy)
+    }
+
+    const currentPage = reset ? 0 : page
+
+    const from = currentPage * PAGE_SIZE
+    const to = from + PAGE_SIZE - 1
+
+    const { data, error, count } = await query
+      .order(filters.sortBy || "created_at", {
+        ascending: filters.sortOrder === "asc",
+      })
+      .range(from, to)
+
+    if (error) throw error
+
+    // Ignore old request if filters changed
+    if (currentRequestId !== requestIdRef.current) return
+
+    if (reset) {
+      dispatch(setListings(data || []))
+      dispatch(setTotalCount(count || 0))
+      dispatch(setPage(1))
+    } else {
+      dispatch(appendListings(data || []))
+      dispatch(setPage(page + 1))
+    }
+
+    dispatch(setHasMore((data?.length || 0) >= PAGE_SIZE))
+  } catch (err) {
+    console.error("fetchProperties:", err)
+
+    if (reset) {
       dispatch(setListings([]))
-    } finally {
+      dispatch(setHasMore(false))
+    }
+  } finally {
+    if (currentRequestId === requestIdRef.current) {
+      fetchingRef.current = false
       dispatch(setLoading(false))
     }
-  }, [filters, page, dispatch])
+  }
+}, [dispatch, filters, page])
 
   const fetchFeatured = useCallback(async () => {
     try {

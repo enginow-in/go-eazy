@@ -20,6 +20,8 @@ const propertySlice = createSlice({
       sortOrder: 'desc',
     },
     loading: false,
+    fetching: false,
+requestId: null,
     hasMore: true,
     page: 0,
     totalCount: 0,
@@ -70,6 +72,13 @@ const propertySlice = createSlice({
       state.listings = []
     },
     setLoading: (state, action) => { state.loading = action.payload },
+    setFetching: (state, action) => {
+    state.fetching = action.payload
+},
+
+setRequestId: (state, action) => {
+    state.requestId = action.payload
+},
     setHasMore: (state, action) => { state.hasMore = action.payload },
     setPage: (state, action) => { state.page = action.payload },
     setTotalCount: (state, action) => { state.totalCount = action.payload },
@@ -92,9 +101,25 @@ const propertySlice = createSlice({
 })
 
 export const {
-  setListings, appendListings, setFeatured, setCurrentProperty,
-  setFavorites, toggleFavorite, setRecentlyViewed, addRecentlyViewed,
-  setFilters, resetFilters, setLoading, setHasMore, setPage, setTotalCount,
-  setReviews, addReview, removeReview, setReviewsLoading
+  setListings,
+  appendListings,
+  setFeatured,
+  setCurrentProperty,
+  setFavorites,
+  toggleFavorite,
+  setRecentlyViewed,
+  addRecentlyViewed,
+  setFilters,
+  resetFilters,
+  setLoading,
+  setFetching,
+  setRequestId,
+  setHasMore,
+  setPage,
+  setTotalCount,
+  setReviews,
+  addReview,
+  removeReview,
+  setReviewsLoading,
 } = propertySlice.actions
 export default propertySlice.reducer
