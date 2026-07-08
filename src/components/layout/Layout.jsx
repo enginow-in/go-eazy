@@ -4,6 +4,7 @@ import { Navbar } from '../layout/Navbar'
 import { Footer } from '../layout/Footer'
 import { AuthModal } from '../auth/AuthModal'
 import { AuthGateModal } from '../auth/AuthGateModal'
+import { OfflineBanner } from '../common/OfflineBanner'
 import { Toaster } from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -20,6 +21,8 @@ export const Layout = ({ children }) => {
         }}
       />
       
+      <OfflineBanner />
+
       {/* Forced Auth Gate for Search page */}
       {location.pathname === '/search' && <AuthGateModal />}
       
