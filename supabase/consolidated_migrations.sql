@@ -1,14 +1,22 @@
--- CONSOLIDATED SCHEMAS & MIGRATIONS (POST-SCHEMA.SQL)
--- Run this script in the Supabase SQL Editor to bring your database schema fully up-to-date.
+-- ============================================================
+-- GOEAZY CONSOLIDATED MIGRATIONS
+-- ============================================================
+-- This is a rollup of all database migrations created after the initial schema.sql.
+-- If you are setting up the project from scratch, make sure you run schema.sql first,
+-- and then run this script in your Supabase SQL Editor.
 
--- 1. ADD ONBOARDING DATA COLUMN TO PROFILES
+-- 1. USER ONBOARDING PREFERENCES
+-- We need to store user quiz selections (Persona, Stay Type, City, Budget)
+-- so the recommendation engine can show relevant matches.
 ALTER TABLE public.profiles 
 ADD COLUMN IF NOT EXISTS onboarding_data jsonb DEFAULT NULL;
 
 COMMENT ON COLUMN public.profiles.onboarding_data IS 'Stores preferences from the onboarding quiz for personalized recommendations.';
 
 
--- 2. ADD UNLOCKED PROPERTIES & ADDITIONAL CONTACT FIELDS
+-- 2. CONTACT DETAILS & MAPPED UNLOCKED PROPERTIES
+-- Landlords need to list their contacts and coordinates, and we track
+-- which properties a tenant has unlocked (paid feature).
 ALTER TABLE public.properties
 ADD COLUMN IF NOT EXISTS contact_phone text,
 ADD COLUMN IF NOT EXISTS contact_email text,
@@ -22,6 +30,7 @@ CREATE TABLE IF NOT EXISTS public.unlocked_properties (
     UNIQUE(user_id, property_id)
 );
 
+-- Enable RLS so only authorized users can read their unlocks
 ALTER TABLE public.unlocked_properties ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
@@ -39,7 +48,8 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 
--- 3. PAYMENT ATTEMPTS
+-- 3. PAYMENT ATTEMPTS (SPAM PREVENTION)
+-- Simple rate-limiting table to prevent abuse on Razorpay order creation.
 CREATE TABLE IF NOT EXISTS payment_attempts (
   id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id     uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -47,6 +57,7 @@ CREATE TABLE IF NOT EXISTS payment_attempts (
   created_at  timestamptz NOT NULL DEFAULT now()
 );
 
+-- Index for speedy lookups when checking recent attempts
 CREATE INDEX IF NOT EXISTS idx_payment_attempts_user_time
   ON payment_attempts (user_id, created_at DESC);
 
@@ -57,11 +68,13 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 
--- 4. SERVICES MARKETPLACE
+-- 4. SERVICES MARKETPLACE (TIFFIN, LAUNDRY, CLEANING)
+-- Update profiles role to make sure service_providers are allowed
 ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
 ALTER TABLE public.profiles ADD CONSTRAINT profiles_role_check
   CHECK (role IN ('user', 'landlord', 'admin', 'service_provider'));
 
+-- Service providers profile
 CREATE TABLE IF NOT EXISTS public.service_providers (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   provider_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -87,6 +100,7 @@ CREATE TABLE IF NOT EXISTS public.service_providers (
 
 ALTER TABLE public.service_providers ADD COLUMN IF NOT EXISTS payment_status text DEFAULT 'pending' CHECK (payment_status IN ('pending', 'paid', 'failed'));
 
+-- Specific items a provider offers
 CREATE TABLE IF NOT EXISTS public.service_listings (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   service_provider_id uuid NOT NULL REFERENCES public.service_providers(id) ON DELETE CASCADE,
@@ -98,6 +112,7 @@ CREATE TABLE IF NOT EXISTS public.service_listings (
   PRIMARY KEY (id)
 );
 
+-- Subscription plans
 CREATE TABLE IF NOT EXISTS public.service_plans (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   service_provider_id uuid NOT NULL REFERENCES public.service_providers(id) ON DELETE CASCADE,
@@ -108,6 +123,7 @@ CREATE TABLE IF NOT EXISTS public.service_plans (
   PRIMARY KEY (id)
 );
 
+-- Reviews for service providers
 CREATE TABLE IF NOT EXISTS public.service_reviews (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   service_provider_id uuid NOT NULL REFERENCES public.service_providers(id) ON DELETE CASCADE,
@@ -119,11 +135,13 @@ CREATE TABLE IF NOT EXISTS public.service_reviews (
   UNIQUE (service_provider_id, reviewer_id)
 );
 
+-- Enable RLS across all service tables
 ALTER TABLE public.service_providers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.service_listings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.service_plans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.service_reviews ENABLE ROW LEVEL SECURITY;
 
+-- Setup RLS Policies for Services
 DO $$ BEGIN
   CREATE POLICY "Service providers are viewable by everyone" ON public.service_providers FOR SELECT USING (true);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
@@ -206,6 +224,7 @@ DO $$ BEGIN
   CREATE POLICY "Users can delete own review" ON public.service_reviews FOR DELETE USING (auth.uid() = reviewer_id);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
+-- Storage buckets for service provider documents and images
 INSERT INTO storage.buckets (id, name, public) VALUES ('service-documents', 'service-documents', true) ON CONFLICT DO NOTHING;
 INSERT INTO storage.buckets (id, name, public) VALUES ('service-images', 'service-images', true) ON CONFLICT (id) DO UPDATE SET public = true;
 
@@ -229,6 +248,7 @@ DO $$ BEGIN
   CREATE POLICY "Providers can delete their own service images" ON storage.objects FOR DELETE USING (bucket_id = 'service-images' AND auth.uid()::text = (storage.foldername(name))[1]);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
+-- Allow admin to verify service providers
 DO $$ BEGIN
   CREATE POLICY "Admins can update all service providers" ON public.service_providers FOR UPDATE USING (
     EXISTS (
@@ -251,6 +271,7 @@ $$;
 
 
 -- 5. PROPERTY REVIEWS
+-- Allow tenants to leave reviews for listings
 CREATE TABLE IF NOT EXISTS public.property_reviews (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   property_id uuid NOT NULL REFERENCES public.properties(id) ON DELETE CASCADE,
@@ -281,7 +302,8 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 
--- 6. SITE VISITS & NOTIFICATIONS
+-- 6. SITE VISITS & IN-APP NOTIFICATIONS
+-- Site visit scheduling and matching real-time user notification schema
 CREATE TABLE IF NOT EXISTS public.site_visits (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   property_id uuid NOT NULL REFERENCES public.properties(id) ON DELETE CASCADE,

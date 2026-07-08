@@ -1,82 +1,82 @@
 # Contributing to GoEazy 🏔️
 
-Thank you for wanting to contribute to GoEazy! To make the contribution process smooth, please follow the guidelines below.
+Thanks for taking the time to contribute! Having people help out makes the project better for everyone. 
+
+To help you get set up without hitting any weird bugs, here is how to configure the backend and submit your changes.
 
 ---
 
-## 🛠️ Local Development & Backend Setup
+## 🛠️ Setting up the Supabase Backend
 
-GoEazy uses **Supabase** for user authentication, database management (PostgreSQL), and image storage. Follow these steps to link the project to your own Supabase instance:
+GoEazy runs on **Supabase** for things like auth, database tables, and image hosting. You can easily link it to your own Supabase instance:
 
-### Step 1: Create a Supabase Project
-1. Go to [Supabase](https://supabase.com) and sign in.
-2. Click **New Project** and configure your organization, database name, and password.
+### 1. Spin up a Supabase Project
+1. Head over to [Supabase](https://supabase.com) and create a free project.
+2. Choose your database name, region, and set a password.
 
-### Step 2: Configure Environment Variables
+### 2. Configure Environment Variables
 1. Duplicate `.env.example` in the root of the project and rename it to `.env`.
-2. Find your API keys in the Supabase Dashboard under **Settings (Gear Icon) -> API**.
-3. Copy your project's **Project URL** and **anon public** API key, then paste them in your `.env` file:
+2. Grab your project keys from your Supabase Dashboard under **Settings -> API**.
+3. Copy your **Project URL** and the **anon public key**, then paste them into your `.env`:
    ```env
    VITE_SUPABASE_URL=https://your-project-ref.supabase.co
    VITE_SUPABASE_ANON_KEY=your-anon-publishable-key
    ```
 
-### Step 3: Set Up Database Schemas and Migrations
-1. In the Supabase Dashboard, click on the **SQL Editor** (icon with `SQL` on the left sidebar).
-2. Click **New query** (or `+ New Query`).
-3. Open [supabase/schema.sql](supabase/schema.sql) in your local editor, copy its contents, paste them into the SQL Editor, and click **Run**. This establishes your baseline tables.
+### 3. Run the Database Schemas & Migrations
+1. In your Supabase Dashboard, click on the **SQL Editor** tab (the `SQL` terminal icon in the left sidebar).
+2. Click **New query**.
+3. Open `supabase/schema.sql` in your editor, copy everything, paste it into the SQL Editor, and click **Run**. This builds the core database tables.
 4. Click **New query** again.
-5. Copy the contents of [supabase/consolidated_migrations.sql](supabase/consolidated_migrations.sql), paste them in, and click **Run**. This adds the updated columns (such as onboarding preferences), tables (reviews, site visits, notifications, service providers), and required RLS permissions.
+5. Copy and paste the contents of `supabase/consolidated_migrations.sql` and run it. This adds newer columns (like user quiz preferences), reviews, site visits, and the service provider marketplace.
 
-### Step 4: Disable Email Confirmation (Highly Recommended)
-By default, Supabase requires users to verify their email address before logging in. For local development:
-1. In the Supabase Dashboard, click **Authentication** -> **Providers** -> **Email**.
-2. Toggle **Confirm email** to **OFF**.
-3. Click **Save**.
+### 4. Turn Off Email Confirmations (Crucial for Local Testing)
+By default, Supabase won't let new users sign in until they verify their email. To make local testing painless:
+1. In the Supabase Dashboard, go to **Authentication -> Providers -> Email**.
+2. Toggle **Confirm email** to **OFF** and click **Save**.
 
-### Step 5: Sign Up a Landlord User
-1. Start your local development server:
+### 5. Create a Landlord Account
+1. Start your local dev server:
    ```bash
    npm run dev
    ```
-2. Open `http://localhost:5173/` in your browser.
-3. Click **Sign Up** in the navigation bar.
-4. Create a user with the email **`admin@goeazy.com`** and choose **Landlord** as the role. 
+2. Open `http://localhost:5173/` and click **Sign Up** in the nav bar.
+3. Register a new user with the email **`admin@goeazy.com`** and select the **Landlord** role.
 
-### Step 6: Seed Sample Data
-1. In the Supabase SQL Editor, click **New query**.
-2. Copy and paste the contents of [supabase/seed.sql](supabase/seed.sql) and click **Run**.
-3. The script will dynamically find your newly registered landlord account (`admin@goeazy.com`) and assign the 5 pre-configured sample properties to it.
-
----
-
-## 🗄️ Database File Reference
-
-Here is a breakdown of the database files inside the `supabase/` folder:
-
-*   **`schema.sql`**: Defines the base table structure (`profiles`, `properties`, `favorites`, `recently_viewed`), initial Row-Level Security (RLS) policies, default storage bucket (`property-images`), and basic functions.
-*   **`consolidated_migrations.sql`**: Consolidated incremental migrations. It adds the `onboarding_data` preferences column, review system tables (`property_reviews`, `service_reviews`), site visits booking, notifications, and service provider directory tables.
-*   **`seed.sql`**: Seeds your local workspace with fully populated properties so you can explore search features and dashboards immediately without manually filling out forms.
+### 6. Run the Seed Script
+1. Go back to your Supabase SQL Editor and click **New query**.
+2. Copy and paste the contents of `supabase/seed.sql` and click **Run**.
+3. The script will dynamically look up the landlord ID for `admin@goeazy.com` and load 5 pre-made properties into your dashboard.
 
 ---
 
-## 🚀 How to Submit Your Contributions
+## 🗄️ What are these SQL files?
 
-1. **Fork** the repository on GitHub.
-2. **Clone** your fork locally:
+*   **`schema.sql`**: The baseline schema. Sets up the primary tables (`profiles`, `properties`, `favorites`, `recently_viewed`), storage buckets, and core views functions.
+*   **`consolidated_migrations.sql`**: A consolidated file containing all the migrations created after the initial schema (like the onboarding quiz preferences, property reviews, and the service provider directory).
+*   **`seed.sql`**: Seeds your local database with sample properties so you don't have to start with a blank UI. It maps these listings to the registered `admin@goeazy.com` landlord account.
+
+---
+
+## 🚀 Creating a Pull Request
+
+1. **Fork** this repository.
+2. **Clone** your fork to your computer:
    ```bash
    git clone https://github.com/YOUR_USERNAME/go-eazy.git
    ```
-3. **Create a new branch** for your feature or bug fix:
+3. **Create a new branch** for your work:
    ```bash
    git checkout -b feature/your-feature-name
    ```
-4. **Commit** your changes with clear, descriptive commit messages:
+4. **Commit** your work with clear messages:
    ```bash
-   git commit -m "feat: add user profile picture upload"
+   git commit -m "feat: add onboarding quiz reset button"
    ```
-5. **Push** your branch to your fork:
+5. **Push** your branch:
    ```bash
    git push origin feature/your-feature-name
    ```
-6. **Open a Pull Request** against the `main` branch of the original repository.
+6. **Open a Pull Request** against our `main` branch. 
+
+Happy coding! ❤️
