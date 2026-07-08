@@ -220,7 +220,12 @@ export const useProperties = () => {
       const { data: { publicUrl } } = supabase.storage.from('property-images').getPublicUrl(path)
       imageUrls.push(publicUrl)
     }
-    const { data, error } = await supabase.from('properties').insert({ ...propertyData, landlord_id: user.id, images: imageUrls, views: 0 }).select().maybeSingle()
+    
+    const { generateEmbedding } = await import('../utils/ai')
+    const searchText = `${propertyData.title}. ${propertyData.description}. Located in ${propertyData.city}, ${propertyData.area}. Amenities: ${propertyData.amenities?.join(', ')}. Type: ${propertyData.type}. Price: ${propertyData.price}.`
+    const embedding = await generateEmbedding(searchText)
+
+    const { data, error } = await supabase.from('properties').insert({ ...propertyData, landlord_id: user.id, images: imageUrls, views: 0, embedding }).select().maybeSingle()
     if (error) throw error
     return data
   }
@@ -237,7 +242,12 @@ export const useProperties = () => {
         imageUrls.push(publicUrl)
       }
     }
-    const { data, error } = await supabase.from('properties').update({ ...updates, images: imageUrls }).eq('id', id).eq('landlord_id', user.id).select().maybeSingle()
+    
+    const { generateEmbedding } = await import('../utils/ai')
+    const searchText = `${updates.title || ''}. ${updates.description || ''}. Located in ${updates.city || ''}, ${updates.area || ''}. Amenities: ${updates.amenities?.join(', ') || ''}. Type: ${updates.type || ''}. Price: ${updates.price || ''}.`
+    const embedding = await generateEmbedding(searchText)
+
+    const { data, error } = await supabase.from('properties').update({ ...updates, images: imageUrls, embedding }).eq('id', id).eq('landlord_id', user.id).select().maybeSingle()
     if (error) throw error
     return data
   }
@@ -247,6 +257,34 @@ export const useProperties = () => {
     if (error) throw error
     return count > 0
   }
+
+  const searchSemanticProperties = useCallback(async (queryText) => {
+    dispatch(setLoading(true))
+    try {
+      const { generateEmbedding } = await import('../utils/ai')
+      const query_embedding = await generateEmbedding(queryText)
+      
+      if (!query_embedding) throw new Error('Failed to generate embedding')
+
+      const { data, error } = await supabase.rpc('match_properties', {
+        query_embedding,
+        match_threshold: 0.1,
+        match_count: 20
+      })
+
+      if (error) throw error
+
+      dispatch(setListings(data || []))
+      dispatch(setTotalCount(data?.length || 0))
+      dispatch(setHasMore(false))
+      dispatch(setPage(1))
+    } catch (err) {
+      console.error('Semantic search error:', err)
+      dispatch(setListings([]))
+    } finally {
+      dispatch(setLoading(false))
+    }
+  }, [dispatch])
 
   const fetchFavorites = useCallback(async () => {
     if (!user) return
@@ -328,7 +366,7 @@ export const useProperties = () => {
   return {
     listings, featured, currentProperty, favorites, recentlyViewed, filters,
     loading, hasMore, page, totalCount,
-    fetchProperties, fetchFeatured, fetchByType, fetchPropertyById,
+    fetchProperties, fetchFeatured, fetchByType, fetchPropertyById, searchSemanticProperties,
     createProperty, updateProperty, deleteProperty,
     fetchFavorites, toggleFavorite, fetchRecentlyViewed, getLandlordProperties,
     updateFilters: useCallback((f) => dispatch(setFilters(f)), [dispatch]),

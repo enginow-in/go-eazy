@@ -18,10 +18,11 @@ export const Search = () => {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const [searchParams] = useSearchParams()
-  const { listings, filters, loading, hasMore, fetchProperties, updateFilters, totalCount } = useProperties()
+  const { listings, filters, loading, hasMore, fetchProperties, searchSemanticProperties, updateFilters, totalCount } = useProperties()
   
   const [viewMode, setViewMode] = useState('grid')
   const [showFilters, setShowFilters] = useState(false)
+  const [isAiSearch, setIsAiSearch] = useState(false)
   const [localFilters, setLocalFilters] = useState({
     city: filters.city || '', 
     area: filters.area || '', 
@@ -63,8 +64,12 @@ export const Search = () => {
   }
 
   useEffect(() => {
-    fetchProperties(true)
-  }, [filters, fetchProperties])
+    if (isAiSearch && filters.query && filters.query.trim().length > 0) {
+      searchSemanticProperties(filters.query)
+    } else {
+      fetchProperties(true)
+    }
+  }, [filters, fetchProperties, searchSemanticProperties, isAiSearch])
 
   // Use the actual totalCount from database
   const count = useMemo(() => totalCount, [totalCount])
@@ -231,6 +236,15 @@ export const Search = () => {
                     </>
                   )}
                 </div>
+                
+                {/* AI Search Toggle */}
+                <button
+                  onClick={() => setIsAiSearch(!isAiSearch)}
+                  className={`flex items-center justify-center p-2.5 border rounded-xl transition-all shadow-sm ${isAiSearch ? 'bg-indigo-50 border-indigo-500 text-indigo-600 ring-2 ring-indigo-100' : 'bg-white border-gray-200 text-gray-500 hover:border-indigo-300 hover:text-indigo-500'}`}
+                  title="Toggle AI Semantic Search"
+                >
+                  <span className="font-bold text-xs pr-1">✨ AI</span>
+                </button>
               </div>
             </div>
           </div>
@@ -263,6 +277,14 @@ export const Search = () => {
                  </>
                )}
              </div>
+
+             {/* AI Search Toggle Desktop */}
+             <button
+               onClick={() => setIsAiSearch(!isAiSearch)}
+               className={`flex items-center gap-2 px-4 py-2 border rounded-xl transition-all shadow-sm ${isAiSearch ? 'bg-indigo-50 border-indigo-500 text-indigo-600 ring-2 ring-indigo-100' : 'bg-white border-gray-200 text-gray-500 hover:border-indigo-300 hover:text-indigo-500'}`}
+             >
+               <span className="font-bold">✨ AI Search</span>
+             </button>
           </div>
         </div>
 
