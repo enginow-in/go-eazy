@@ -5,13 +5,13 @@ import { Filter, Grid, List as ListIcon, ChevronDown } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useProperties } from '../hooks/useProperties'
 import { PropertyCard } from '../components/property/PropertyCard'
-import { Input, Select } from '../components/ui/Input'
+
 import { Button } from '../components/ui/Button'
 import { resetFilters } from '../store/propertySlice'
-import { PROPERTY_TYPES, AMENITIES, SORT_OPTIONS } from '../utils/constants'
+import { SORT_OPTIONS } from '../utils/constants'
 import { AMENITY_ICONS, cn } from '../utils/helpers'
 import { Skeleton } from '../components/ui/Skeleton'
-import { useAuth } from '../hooks/useAuth'
+
 import { RecommendedSection } from '../components/property/RecommendedSection'
 
 export const Search = () => {

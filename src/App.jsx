@@ -42,7 +42,7 @@ const PageSpinner = () => (
 
 function App() {
   useAuth() 
-  const { loading } = useSelector(s => s.auth)
+  const { loading, user } = useSelector(s => s.auth)
 
   if (loading) {
     return (
@@ -56,12 +56,12 @@ function App() {
     <BrowserRouter>
       <ScrollToTop />
       <AppInitializer />
-      <OnboardingQuiz />
-      <RoleSelectionModal />
+      {user && <OnboardingQuiz />}
+      {user && <RoleSelectionModal />}
       <Layout>
         <Suspense fallback={<PageSpinner />}>
           <Routes>
-          <Route path="/" element={<Navigate to="/search" replace />} />
+          <Route path="/" element={<Home />} />
           <Route path="/search" element={<Search />} />
           <Route path="/property/:id" element={<PropertyDetail />} />
           

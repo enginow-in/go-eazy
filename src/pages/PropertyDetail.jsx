@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { 
-  MapPin, Heart, Share2, Phone, Mail, ArrowLeft, 
+  MapPin, Heart, Share2, Phone, Mail, ArrowLeft, ArrowRight,
   CheckCircle2, ChevronDown, ChevronUp, Lock, EyeOff, X, 
   Star, Trash2, Sparkles, Calendar 
 } from 'lucide-react'
@@ -13,7 +13,7 @@ import 'swiper/css/navigation'
 import { useSelector, useDispatch } from 'react-redux'
 import { openAuthModal } from '../store/authSlice'
 import { useProperties } from '../hooks/useProperties'
-import { TypeBadge } from '../components/ui/Badge'
+
 import { Button } from '../components/ui/Button'
 import { formatPrice, AMENITY_ICONS } from '../utils/helpers'
 import { supabase } from '../lib/supabase'
@@ -728,7 +728,7 @@ export const PropertyDetail = () => {
                 <ArrowLeft size={24} />
               </button>
               <button ref={setGalleryNextEl} className="absolute right-6 top-1/2 -translate-y-1/2 z-50 p-4 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white">
-                <Share2 size={24} className="rotate-90" />
+                <ArrowRight size={24} />
               </button>
             </Swiper>
           </div>
