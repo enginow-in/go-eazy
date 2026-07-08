@@ -1,0 +1,65 @@
+# GoEazy Backend
+
+Postgres-backed auth + listings API for GoEazy, serving `public/index.html`
+and `public/login.html`.
+
+## What changed from the demo version
+
+- **Real database.** `data/db.json` is gone — everything lives in Postgres
+  (`db/schema.sql`). Works against a local Postgres install or a Supabase
+  project's connection string, since Supabase *is* Postgres underneath.
+- **Real payments.** `/api/properties/:id/checkout` creates an actual
+  Razorpay order; `/api/properties/:id/pay` verifies the HMAC-SHA256
+  signature Razorpay sends back (`utils/razorpay.js`) before marking a
+  listing `live`. Nothing trusts the client's word for it.
+- **Validation.** Every route body is checked against a Zod schema
+  (`middleware/validate.js`) before it touches a handler.
+- **Rate limiting.** Login, signup, and payment routes are capped
+  (`middleware/rateLimit.js`) to slow down brute-forcing and mass
+  account creation.
+
+## Setup
+
+```bash
+npm install
+cp .env.example .env        # fill in DATABASE_URL, JWT_SECRET, Razorpay keys
+psql "$DATABASE_URL" -f db/schema.sql
+npm start
+```
+
+Then visit `http://localhost:3000` and `http://localhost:3000/login`.
+
+If you're on Supabase specifically and also want to expose `properties`
+directly through Supabase's client SDK / PostgREST, additionally run:
+
+```bash
+psql "$SUPABASE_DATABASE_URL" -f db/schema.supabase-rls.sql
+```
+
+This backend already enforces ownership in application code, so that file
+is defense-in-depth, not a requirement.
+
+## API
+
+### Auth
+| Method | Path | Body | Notes |
+|---|---|---|---|
+| POST | `/api/auth/signup` | `{ name, email, password, role }` | `role` ∈ `tenant/landlord/service` |
+| POST | `/api/auth/login` | `{ email, password, role? }` | 401 on bad creds, 403 on role mismatch |
+| POST | `/api/auth/logout` | — | clears the session cookie |
+| GET | `/api/auth/me` | — | requires the session cookie |
+
+### Properties
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/properties?city=&minRent=&maxRent=&q=` | public, `live` listings only |
+| GET | `/api/properties/:id/contact` | requires auth; returns lat/lng + phone |
+| POST | `/api/properties` | landlord-only, creates a `draft` listing |
+| POST | `/api/properties/:id/checkout` | creates a Razorpay order for ₹199 |
+| POST | `/api/properties/:id/pay` | verifies signature, flips listing to `live` |
+
+## Still not done (see the running list from earlier in this project)
+
+Image upload, review system, recently-viewed pruning job, password reset,
+email verification, admin routes. This pass only covers "make the backend
+real" — real DB, real payments, validation, and rate limiting.

@@ -1,0 +1,16 @@
+{
+  "name": "goeazy-backend",
+  "version": "1.0.0",
+  "description": "Single-file Express backend for GoEazy — serves index.html and login.html and handles auth + listing endpoints.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
