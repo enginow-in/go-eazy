@@ -18,6 +18,7 @@ const ServiceCardComponent = ({ service, layout = 'grid' }) => {
   const categoryConfig = getCategoryConfig(t)
   const cat = categoryConfig[service.category] || { label: service.category, emoji: '🛠️', color: 'bg-gray-100 text-gray-700' }
   const mainImage = (service.images && service.images[0]) || null
+  const serviceLabel = service.name || service.category || 'Service listing'
 
   // Memoize values with deterministic calculation
   const { rating } = useMemo(() => {
@@ -45,6 +46,7 @@ const ServiceCardComponent = ({ service, layout = 'grid' }) => {
           {mainImage ? (
             <img 
               src={mainImage} 
+              alt={`${serviceLabel} cover image`}
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
               onLoad={() => setImgLoaded(true)}
               loading="lazy"
@@ -103,7 +105,7 @@ const ServiceCardComponent = ({ service, layout = 'grid' }) => {
         {mainImage ? (
           <img
             src={mainImage}
-            alt={service.name}
+            alt={`${serviceLabel} cover image`}
             className={cn(
               'w-full h-full object-cover group-hover:scale-110 transition-transform duration-700',
               imgLoaded ? 'opacity-100' : 'opacity-0'
@@ -147,7 +149,15 @@ const ServiceCardComponent = ({ service, layout = 'grid' }) => {
             <span className="text-[8px] font-bold text-gray-400 uppercase leading-none">{t('services.labels.from')}</span>
             <span className="font-black text-gray-900 text-base leading-tight">₹{formatPrice(firstPrice)}</span>
           </div>
-          <button className="text-[#CA3433] hover:text-brand-800 transition-colors">
+          <button
+            type="button"
+            aria-label={`View ${serviceLabel} details`}
+            onClick={(e) => {
+              e.stopPropagation()
+              navigate(`/services/${service.id}`)
+            }}
+            className="text-[#CA3433] hover:text-brand-800 transition-colors"
+          >
             <Eye size={18} />
           </button>
         </div>

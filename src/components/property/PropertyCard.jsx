@@ -18,6 +18,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   const isFav = favorites.includes(property.id)
   const images = property.images || []
   const mainImage = images[0]
+  const listingLabel = property.title || property.type || 'Property listing'
 
   const handleFav = (e) => {
     e.stopPropagation()
@@ -26,12 +27,11 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   }
 
   // Memoize values with deterministic calculation
-  const { rating, numBeds } = useMemo(() => {
+  const { rating } = useMemo(() => {
     return {
       rating: property.rating || '0.0',
-      numBeds: property.bedrooms || 0,
     }
-  }, [property.rating, property.bedrooms])
+  }, [property.rating])
 
   const formatPrice = (p) => {
     if (!p) return '0'
@@ -49,6 +49,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         <div className="relative w-32 h-32 sm:w-40 sm:h-40 flex-shrink-0 overflow-hidden bg-gray-50 rounded-r-2xl shadow-sm">
           <img 
             src={mainImage} 
+            alt={`${listingLabel} cover image`}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
             onLoad={() => setImgLoaded(true)}
             loading="lazy"
@@ -57,6 +58,8 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
           <button
             onClick={handleFav}
+            type="button"
+            aria-label={isFav ? `Remove ${listingLabel} from saved properties` : `Save ${listingLabel}`}
             className={cn(
               "absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center z-10 transition-all",
               isFav ? "bg-brand-500 text-white shadow-lg" : "bg-white/80 backdrop-blur-sm text-gray-600 hover:bg-white"
@@ -112,7 +115,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         onClick={() => navigate(`/property/${property.id}`)}
       >
         <div className="relative aspect-[4/3] overflow-hidden rounded-b-xl">
-          <img src={mainImage} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <img src={mainImage} alt={`${listingLabel} cover image`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           <div className="absolute top-2 right-2 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-lg text-[8px] font-black text-brand-600 uppercase tracking-wider">
              {t(`property.types.${property.type}`) || property.type}
           </div>
@@ -147,7 +150,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
       <div className="relative w-full aspect-[4/3] bg-gray-50 overflow-hidden rounded-b-2xl shadow-sm">
         <img
           src={mainImage}
-          alt={property.title}
+          alt={`${listingLabel} cover image`}
           className={cn(
             'w-full h-full object-cover group-hover:scale-110 transition-transform duration-700',
             imgLoaded ? 'opacity-100' : 'opacity-0'
@@ -159,6 +162,8 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
         <button
           onClick={handleFav}
+          type="button"
+          aria-label={isFav ? `Remove ${listingLabel} from saved properties` : `Save ${listingLabel}`}
           className={cn(
             'absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center z-10',
             'transition-all duration-200 shadow-sm transition-opacity',
@@ -199,7 +204,15 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
               condensed ? "text-sm" : "text-base"
             )}>₹{formatPrice(property.price)}</span>
           </p>
-          <button className="text-[#CA3433] hover:text-brand-800 transition-colors">
+          <button
+            type="button"
+            aria-label={`View ${listingLabel} details`}
+            onClick={(e) => {
+              e.stopPropagation()
+              navigate(`/property/${property.id}`)
+            }}
+            className="text-[#CA3433] hover:text-brand-800 transition-colors"
+          >
             <Eye size={condensed ? 14 : 18} />
           </button>
         </div>
