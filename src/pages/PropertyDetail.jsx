@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { 
   MapPin, Heart, Share2, Phone, Mail, ArrowLeft, 
   CheckCircle2, ChevronDown, ChevronUp, Lock, EyeOff, X, 
-  Star, Trash2, Sparkles, Calendar 
+  Star, Trash2, Sparkles, Calendar, Handshake 
 } from 'lucide-react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay, Pagination, Navigation } from 'swiper/modules'
@@ -21,6 +21,7 @@ import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { Skeleton } from '../components/ui/Skeleton'
 import { LocationViewer } from '../components/map/LocationViewer'
+import NegotiationModal from '../components/property/NegotiationModal'
 
 const StarRating = ({ value, onChange, readonly = false }) => (
   <div className="flex gap-1">
@@ -70,6 +71,7 @@ export const PropertyDetail = () => {
   const [unlocking, setUnlocking] = useState(false)
   const [isGalleryOpen, setIsGalleryOpen] = useState(false)
   const [initialSlideIndex, setInitialSlideIndex] = useState(0)
+  const [isNegotiating, setIsNegotiating] = useState(false)
   
   // State for gallery navigation elements
   const [galleryPrevEl, setGalleryPrevEl] = useState(null)
@@ -547,6 +549,12 @@ export const PropertyDetail = () => {
                         <a href={`mailto:${gatedData?.contact_email || ''}`} className="flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-full bg-white border border-gray-200 text-gray-900 font-bold hover:bg-gray-50 transition-colors shadow-sm text-[15px]">
                           <Mail size={18} /> {t('property.sections.sendEmail')}
                         </a>
+                        <button 
+                          onClick={() => setIsNegotiating(true)}
+                          className="flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-full bg-[#111827] text-white font-bold hover:bg-black transition-colors shadow-md text-[15px]"
+                        >
+                          <Handshake size={18} /> {t('property.sections.negotiate') || 'Negotiate Price'}
+                        </button>
                       </div>
                     ) : (
                       <div className="border border-red-50 rounded-xl p-6 text-center bg-red-50/10 relative overflow-hidden h-48 flex flex-col items-center justify-center shadow-sm">
@@ -734,6 +742,13 @@ export const PropertyDetail = () => {
           </div>
         </div>
       )}
+      
+      <NegotiationModal 
+        isOpen={isNegotiating} 
+        onClose={() => setIsNegotiating(false)} 
+        property={p} 
+        user={user} 
+      />
     </div>
   )
 }

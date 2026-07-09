@@ -3,6 +3,7 @@ import authReducer from './authSlice'
 import propertyReducer from './propertySlice'
 import uiReducer from './uiSlice'
 import serviceReducer from './serviceSlice'
+import negotiationReducer from './negotiationSlice'
 
 export const store = configureStore({
   reducer: {
@@ -10,5 +11,6 @@ export const store = configureStore({
     property: propertyReducer,
     ui: uiReducer,
     service: serviceReducer,
+    negotiation: negotiationReducer,
   },
 })
