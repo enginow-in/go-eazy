@@ -5,8 +5,11 @@ const { requireAuth } = require('./auth');
 const { validate, schemas } = require('../middleware/validate');
 const { paymentLimiter } = require('../middleware/rateLimit');
 const { createListingOrder, verifyPaymentSignature } = require('../utils/razorpay');
+const reviewsRouter = require('./reviews');
 
 const router = express.Router();
+
+router.use('/:id/reviews', reviewsRouter);
 
 function toPublicProperty(row) {
   return {
@@ -42,6 +45,32 @@ router.get('/', async (req, res, next) => {
       params
     );
     res.json({ properties: rows.map(toPublicProperty) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/properties/:id — public detail view: non-sensitive fields plus
+// the review summary. Lat/lng and phone stay behind /:id/contact.
+router.get('/:id', async (req, res, next) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, title, city, rent_per_month, photos, created_at
+       FROM properties WHERE id = $1 AND status = 'live'`,
+      [req.params.id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Listing not found.' });
+
+    const { rows: agg } = await pool.query(
+      `SELECT COUNT(*)::int AS count, COALESCE(AVG(rating), 0)::float AS average
+       FROM reviews WHERE property_id = $1`,
+      [req.params.id]
+    );
+
+    res.json({
+      property: toPublicProperty(rows[0]),
+      reviewSummary: { count: agg[0].count, average: Math.round(agg[0].average * 10) / 10 }
+    });
   } catch (err) {
     next(err);
   }
