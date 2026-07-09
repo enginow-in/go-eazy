@@ -493,18 +493,12 @@ export const PropertyDetail = () => {
                 </h4>
                 <div className="flex flex-col gap-4">
                   <div className="relative w-full">
-                    {!visitDate && (
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-sm font-bold flex items-center gap-2">
-                         <Calendar size={14} />
-                         <span>dd / mm / yyyy</span>
-                      </div>
-                    )}
                     <input 
                       type="date" 
                       min={new Date().toISOString().split('T')[0]}
                       value={visitDate}
                       onChange={(e) => setVisitDate(e.target.value)}
-                      className={`w-full bg-white border border-red-100 rounded-xl px-4 py-3.5 text-sm focus:ring-4 focus:ring-[#CA3433]/10 focus:border-[#CA3433] outline-none transition-all cursor-pointer font-bold shadow-sm appearance-none min-h-[50px] ${visitDate ? 'text-gray-900' : 'text-transparent'}`}
+                      className="w-full bg-white border border-red-100 rounded-xl px-4 py-3.5 text-sm focus:ring-4 focus:ring-[#CA3433]/10 focus:border-[#CA3433] outline-none transition-all cursor-pointer font-bold shadow-sm min-h-[50px] text-gray-900"
                       style={{ colorScheme: 'light' }}
                     />
                   </div>

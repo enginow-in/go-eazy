@@ -374,6 +374,13 @@ export const LandlordDashboard = () => {
         )}
 
         {/* View All CTA below cards when in preview mode */}
+        {!showAll && properties.length > 2 && (
+          <div className="mt-8 text-center">
+            <Button variant="secondary" onClick={() => setShowAll(true)} className="rounded-xl font-bold bg-white shadow-sm border border-gray-200">
+              View All {properties.length} Listings
+            </Button>
+          </div>
+        )}
 
       </div>
     </div>
