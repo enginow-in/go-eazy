@@ -7,6 +7,8 @@ import { PropertyCard } from '../components/property/PropertyCard'
 import { supabase } from '../lib/supabase'
 import { MOCK_PROPERTIES } from '../utils/constants'
 import { Skeleton } from '../components/ui/Skeleton'
+import { useRealtime } from '../hooks/useRealtime'
+import toast from 'react-hot-toast'
 
 export const UserDashboard = () => {
   const { user, profile } = useAuth()
@@ -26,6 +28,12 @@ export const UserDashboard = () => {
       loadUserData()
     }
   }, [user, favorites, recentlyViewed]) // React to changes in the Redux IDs
+
+  // Singleton Realtime Subscription for Notifications
+  useRealtime('notifications', user ? `user_id=eq.${user.id}` : null, (newNotification) => {
+    setNotifications(prev => [newNotification, ...prev])
+    toast('New notification received', { icon: '🔔' })
+  })
 
   const loadUserData = async () => {
     if (!user) return
