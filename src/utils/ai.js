@@ -1,40 +1,35 @@
-import { pipeline, env } from '@xenova/transformers'
-
-// Skip local model check since we're fetching from HuggingFace
-env.allowLocalModels = false
-
-class PipelineSingleton {
-  static task = 'feature-extraction'
-  static model = 'Xenova/all-MiniLM-L6-v2'
-  static instance = null
-
-  static async getInstance(progress_callback = null) {
-    if (this.instance === null) {
-      this.instance = pipeline(this.task, this.model, { progress_callback })
-    }
-    return this.instance
-  }
-}
+let worker = null;
+let resolveCbs = {};
+let messageIdCounter = 0;
 
 /**
- * Generate a 384-dimensional vector embedding for a given text string.
+ * Generate a 384-dimensional vector embedding for a given text string,
+ * offloaded to a Web Worker so the main UI thread doesn't block.
  * @param {string} text - The text to embed
  * @returns {Promise<Array<number>>} - Array of floats representing the embedding
  */
 export async function generateEmbedding(text) {
-  try {
-    const extractor = await PipelineSingleton.getInstance()
-    
-    // We pass `pooling: 'mean'` and `normalize: true` to get the sentence embedding
-    const output = await extractor(text, {
-      pooling: 'mean',
-      normalize: true
-    })
-    
-    // Convert Float32Array to standard JS Array
-    return Array.from(output.data)
-  } catch (err) {
-    console.error('Error generating embedding:', err)
-    return null
+  if (!worker) {
+    worker = new Worker(new URL('../workers/ai.worker.js', import.meta.url), { type: 'module' });
+    worker.onmessage = (event) => {
+      const { type, id, embedding, error } = event.data;
+      if (type === 'result') {
+        if (resolveCbs[id]) {
+          resolveCbs[id].resolve(embedding);
+          delete resolveCbs[id];
+        }
+      } else if (type === 'error') {
+        if (resolveCbs[id]) {
+          resolveCbs[id].reject(new Error(error));
+          delete resolveCbs[id];
+        }
+      }
+    };
   }
+
+  return new Promise((resolve, reject) => {
+    const id = messageIdCounter++;
+    resolveCbs[id] = { resolve, reject };
+    worker.postMessage({ type: 'embed', text, id });
+  });
 }

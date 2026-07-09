@@ -262,20 +262,72 @@ export const useProperties = () => {
     dispatch(setLoading(true))
     try {
       const { generateEmbedding } = await import('../utils/ai')
-      const query_embedding = await generateEmbedding(queryText)
+      const { getAllEmbeddings, saveEmbeddings } = await import('../utils/indexedDB')
       
+      const query_embedding = await generateEmbedding(queryText)
       if (!query_embedding) throw new Error('Failed to generate embedding')
 
-      const { data, error } = await supabase.rpc('match_properties', {
-        query_embedding,
-        match_threshold: 0.1,
-        match_count: 20
-      })
+      // Check IDB cache
+      let cached = await getAllEmbeddings()
+      
+      // Fetch all embeddings from Supabase to sync cache
+      const { data: dbEmbeddings, error: dbErr } = await supabase
+        .from('properties')
+        .select('id, embedding')
+        .not('embedding', 'is', null)
+        .eq('availability', true)
+        
+      if (dbErr) throw dbErr
+      
+      // Save to IDB
+      if (dbEmbeddings?.length) {
+        await saveEmbeddings(dbEmbeddings)
+        cached = dbEmbeddings
+      }
+
+      // Compute local Cosine Similarity
+      const similarities = cached.map(prop => {
+        let sum = 0;
+        let a = typeof prop.embedding === 'string' ? JSON.parse(prop.embedding) : prop.embedding;
+        let b = query_embedding;
+        if(a && a.length === b.length) {
+          for (let i = 0; i < a.length; i++) sum += a[i] * b[i];
+        }
+        return { id: prop.id, score: sum };
+      });
+
+      const topMatches = similarities
+        .filter(s => s.score > 0.1)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 20);
+        
+      if (topMatches.length === 0) {
+        dispatch(setListings([]))
+        dispatch(setTotalCount(0))
+        dispatch(setHasMore(false))
+        dispatch(setPage(1))
+        return
+      }
+
+      const matchIds = topMatches.map(m => m.id);
+      
+      // Fetch full property details
+      const { data: fullProps, error } = await supabase
+        .from('properties')
+        .select(`${PUBLIC_PROPERTY_FIELDS}, profiles!properties_landlord_id_fkey(${PUBLIC_PROFILE_FIELDS})`)
+        .in('id', matchIds);
 
       if (error) throw error
+      
+      // Sort to match ranking order
+      const sortedProps = [];
+      matchIds.forEach(id => {
+        const found = fullProps.find(p => p.id === id);
+        if (found) sortedProps.push(found);
+      });
 
-      dispatch(setListings(data || []))
-      dispatch(setTotalCount(data?.length || 0))
+      dispatch(setListings(sortedProps))
+      dispatch(setTotalCount(sortedProps.length))
       dispatch(setHasMore(false))
       dispatch(setPage(1))
     } catch (err) {
