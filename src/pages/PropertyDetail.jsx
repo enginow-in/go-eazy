@@ -180,9 +180,22 @@ export const PropertyDetail = () => {
        setTimeout(() => setPulseUnlock(false), 2000)
        return
     }
-    
     setBookingVisit(true)
     try {
+      const { data: existingVisit } = await supabase
+        .from('site_visits')
+        .select('id')
+        .eq('property_id', p.id)
+        .eq('user_id', user.id)
+        .eq('visit_date', visitDate)
+        .maybeSingle()
+
+      if (existingVisit) {
+        toast.error('You have already requested a visit for this date!')
+        setBookingVisit(false)
+        return
+      }
+
       const { error } = await supabase.from('site_visits').insert({
         property_id: p.id,
         user_id: user.id,
@@ -268,16 +281,29 @@ export const PropertyDetail = () => {
             setHasUnlocked(true)
             checkUnlockStatus() 
             if (visitDateRef.current) {
-              const { error: visitErr } = await supabase.from('site_visits').insert({
-                 property_id: p.id,
-                 user_id: user.id,
-                 landlord_id: p.landlord_id,
-                 visit_date: visitDateRef.current,
-                 status: 'pending'
-              });
-              if (!visitErr) {
-                 toast.success('Visit Request Sent! Track it in your dashboard.')
-                 setVisitDate('')
+              const { data: existingVisit } = await supabase
+                .from('site_visits')
+                .select('id')
+                .eq('property_id', p.id)
+                .eq('user_id', user.id)
+                .eq('visit_date', visitDateRef.current)
+                .maybeSingle()
+
+              if (!existingVisit) {
+                const { error: visitErr } = await supabase.from('site_visits').insert({
+                   property_id: p.id,
+                   user_id: user.id,
+                   landlord_id: p.landlord_id,
+                   visit_date: visitDateRef.current,
+                   status: 'pending'
+                });
+                if (!visitErr) {
+                   toast.success('Visit Request Sent! Track it in your dashboard.')
+                   setVisitDate('')
+                }
+              } else {
+                toast.success('Visit request already exists for this date. Track it in your dashboard.')
+                setVisitDate('')
               }
             }
           } catch (vErr) {
