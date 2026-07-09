@@ -1,7 +1,11 @@
 import { useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import toast from 'react-hot-toast'
 import { supabase } from '../lib/supabase'
 import { MOCK_PROPERTIES } from '../utils/constants'
+
+// Module-level map to track debounced save requests per property
+const saveTimeouts = new Map()
 import {
   setListings, appendListings, setFeatured, setCurrentProperty,
   setFavorites, toggleFavorite as toggleFav,
@@ -259,17 +263,36 @@ export const useProperties = () => {
 
   const toggleFavorite = async (propertyId) => {
     if (!user) return
+    
+    // 1. Instantly update UI (Optimistic Cache)
     const isFav = favorites.includes(propertyId)
     dispatch(toggleFav(propertyId))
-    try {
-      if (isFav) {
-        await supabase.from('favorites').delete().eq('user_id', user.id).eq('property_id', propertyId)
-      } else {
-        await supabase.from('favorites').insert({ user_id: user.id, property_id: propertyId })
-      }
-    } catch (err) {
-      dispatch(toggleFav(propertyId))
+    
+    // 2. Clear any pending network request to prevent spam/race conditions
+    if (saveTimeouts.has(propertyId)) {
+      clearTimeout(saveTimeouts.get(propertyId))
     }
+
+    // 3. Debounce the network request by 500ms
+    const timeout = setTimeout(async () => {
+      saveTimeouts.delete(propertyId)
+      try {
+        if (isFav) {
+          const { error } = await supabase.from('favorites').delete().eq('user_id', user.id).eq('property_id', propertyId)
+          if (error) throw error
+        } else {
+          const { error } = await supabase.from('favorites').insert({ user_id: user.id, property_id: propertyId })
+          if (error) throw error
+        }
+      } catch (err) {
+        console.error('Failed to sync favorite status:', err)
+        // 4. Graceful Rollback
+        dispatch(toggleFav(propertyId))
+        toast.error('Failed to update saved properties. Reverted.')
+      }
+    }, 500)
+
+    saveTimeouts.set(propertyId, timeout)
   }
 
   const fetchRecentlyViewed = useCallback(async () => {
