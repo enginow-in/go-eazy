@@ -18,10 +18,12 @@ export const formatPriceShort = (price) => {
 }
 
 export const truncate = (str, n = 80) =>
-  str && str.length > n ? str.slice(0, n) + '…' : str
+  (str && typeof str === 'string' && str.length > n) ? str.slice(0, n) + '…' : (str || '')
 
-export const getInitials = (name = '') =>
-  name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+export const getInitials = (name) => {
+  if (!name || typeof name !== 'string') return ''
+  return name.trim().split(' ').map(w => w[0]).filter(Boolean).join('').toUpperCase().slice(0, 2)
+}
 
 export const cn = (...classes) =>
   classes.filter(Boolean).join(' ')
