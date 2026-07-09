@@ -429,14 +429,14 @@ export const ServiceDetail = () => {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {service.contact_phone && (
-                      <a href={`tel:${gatedData?.contact_phone || service.contact_phone}`} className="flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-full bg-brand-500 text-white font-bold hover:bg-brand-600 transition-colors text-[15px]">
-                        <Phone size={18} /> {gatedData?.contact_phone || service.contact_phone}
+                    {gatedData?.contact_phone && (
+                      <a href={`tel:${gatedData.contact_phone}`} className="flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-full bg-brand-500 text-white font-bold hover:bg-brand-600 transition-colors text-[15px]">
+                        <Phone size={18} /> {gatedData.contact_phone}
                       </a>
                     )}
-                    {service.contact_email && (
-                      <a href={`mailto:${gatedData?.contact_email || service.contact_email}`} className="flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-full bg-white border border-gray-200 text-gray-900 font-bold hover:bg-gray-50 transition-colors shadow-sm text-[15px]">
-                        <Mail size={18} /> {gatedData?.contact_email || t('property.sections.sendEmail')}
+                    {gatedData?.contact_email && (
+                      <a href={`mailto:${gatedData.contact_email}`} className="flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-full bg-white border border-gray-200 text-gray-900 font-bold hover:bg-gray-50 transition-colors shadow-sm text-[15px]">
+                        <Mail size={18} /> {gatedData.contact_email}
                       </a>
                     )}
                   </div>
