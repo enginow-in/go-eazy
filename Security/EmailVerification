@@ -1,0 +1,66 @@
+const express = require('express');
+const rateLimit = require('express-rate-limit');
+
+const pool = require('../db/pool');
+const { hashToken } = require('../lib/tokens');
+const { requireAuth, sendVerificationEmail } = require('/auth')
+
+const router = express.Router();
+
+const resendLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => res.status(429).json({ error: 'Too many verification emails requested. Please wait a bit.' })
+});
+
+// GET /api/auth/verify-email?token=... — the link in the email hits this
+// directly, so it's a GET, not a POST.
+router.get('/verify-email', async (req, res, next) => {
+  const { token } = req.query;
+  if (!token || typeof token !== 'string') {
+    return res.status(400).json({ error: 'Missing verification token.' });
+  }
+  const tokenHash = hashToken(token);
+
+  try {
+    const { rows } = await pool.query(
+      `SELECT * FROM verification_tokens
+       WHERE token_hash = $1 AND purpose = 'email_verify' AND used_at IS NULL AND expires_at > now()`,
+      [tokenHash]
+    );
+    const record = rows[0];
+    if (!record) {
+      return res.status(400).json({ error: 'This verification link is invalid or has expired.' });
+    }
+
+    await pool.query('UPDATE users SET email_verified_at = now() WHERE id = $1', [record.user_id]);
+    await pool.query('UPDATE verification_tokens SET used_at = now() WHERE id = $1', [record.id]);
+
+    res.json({ ok: true, message: 'Email verified. You can close this tab.' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/auth/resend-verification — requires being signed in, since
+// there's no point emailing a verification link to someone who isn't
+// currently proving they control the session for that account.
+router.post('/resend-verification', requireAuth, resendLimiter, async (req, res, next) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM users WHERE id = $1', [req.user.sub]);
+    const user = rows[0];
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+    if (user.email_verified_at) {
+      return res.json({ ok: true, message: 'Your email is already verified.' });
+    }
+
+    await sendVerificationEmail(user);
+    res.json({ ok: true, message: 'Verification email sent.' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+module.exports = router;
