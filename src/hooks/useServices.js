@@ -196,11 +196,13 @@ export const useServices = () => {
       }
     }
 
+    const { contact_phone, contact_email, address, ...mainProviderData } = providerData
+
     // 3. Insert main provider record
     const { data: provider, error: providerError } = await supabase
       .from('service_providers')
       .insert({ 
-        ...providerData, 
+        ...mainProviderData, 
         provider_id: user.id, 
         documents: documentUrls,
         images: imageUrls
@@ -209,6 +211,23 @@ export const useServices = () => {
       .maybeSingle()
 
     if (providerError) throw providerError
+
+    // Insert contact details in service_contacts
+    if (provider) {
+      const { error: contactError } = await supabase
+        .from('service_contacts')
+        .insert({
+          service_id: provider.id,
+          contact_phone: contact_phone || '',
+          contact_email: contact_email || '',
+          address: address || '',
+        })
+      if (contactError) {
+        // Rollback main provider insert on error
+        await supabase.from('service_providers').delete().eq('id', provider.id)
+        throw contactError
+      }
+    }
 
     // Insert service items (price rows)
     if (serviceItems?.length) {
@@ -239,15 +258,28 @@ export const useServices = () => {
 
   // ── Update Service Listing ──────────────────────────────────────────
   const updateService = async (id, updates) => {
+    const { contact_phone, contact_email, address, ...mainUpdates } = updates
     const { data, error } = await supabase
       .from('service_providers')
-      .update(updates)
+      .update(mainUpdates)
       .eq('id', id)
       .eq('provider_id', user.id)
       .select()
       .maybeSingle()
 
     if (error) throw error
+
+    if (data) {
+      const { error: contactError } = await supabase
+        .from('service_contacts')
+        .upsert({
+          service_id: id,
+          contact_phone: contact_phone || '',
+          contact_email: contact_email || '',
+          address: address || '',
+        }, { onConflict: 'service_id' })
+      if (contactError) throw contactError
+    }
     return data
   }
 
@@ -267,12 +299,19 @@ export const useServices = () => {
     if (!user) return []
     const { data, error } = await supabase
       .from('service_providers')
-      .select('*, service_listings(*), service_plans(*)')
+      .select('*, service_listings(*), service_plans(*), service_contacts(contact_phone, contact_email, address)')
       .eq('provider_id', user.id)
       .order('created_at', { ascending: false })
 
     if (error) throw error
-    return data || []
+    
+    // Flatten contact details for backward compatibility with frontend
+    return data?.map(d => ({
+      ...d,
+      contact_phone: d.service_contacts?.contact_phone || d.service_contacts?.[0]?.contact_phone || '',
+      contact_email: d.service_contacts?.contact_email || d.service_contacts?.[0]?.contact_email || '',
+      address: d.service_contacts?.address || d.service_contacts?.[0]?.address || '',
+    })) || []
   }
 
   // ── Admin Functions ───────────────────────────────────────────────
@@ -288,12 +327,24 @@ export const useServices = () => {
   }
 
   const updateServiceStatus = async (id, verificationStatus) => {
-    const { error } = await supabase
-      .from('service_providers')
-      .update({ verification_status: verificationStatus })
-      .eq('id', id)
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token
+    if (!token) throw new Error('Session expired — please log in again')
 
-    if (error) throw error
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/update-service-status`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({ service_id: id, status: verificationStatus })
+    })
+
+    if (!response.ok) {
+      const errJson = await response.json().catch(() => ({}))
+      throw new Error(errJson.error || 'Failed to update status')
+    }
   }
 
   // ── Payment Function ────────────────────────────────────────────────
