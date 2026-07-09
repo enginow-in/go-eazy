@@ -21,6 +21,7 @@ import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { Skeleton } from '../components/ui/Skeleton'
 import { LocationViewer } from '../components/map/LocationViewer'
+import { SecureText } from '../components/property/SecureText'
 
 const StarRating = ({ value, onChange, readonly = false }) => (
   <div className="flex gap-1">
@@ -539,13 +540,32 @@ export const PropertyDetail = () => {
                         >
                           <Phone size={18} />
                           <span className="tracking-wide">
-                            {gatedData?.contact_phone
-                              ? gatedData.contact_phone
-                              : t('property.sections.callNow')}
+                            {gatedData?.contact_phone ? (
+                              <SecureText 
+                                encryptedPayload={(() => {
+                                  const textBytes = new TextEncoder().encode(gatedData.contact_phone);
+                                  const keyBytes = new TextEncoder().encode('goeazy-secret-key-2026');
+                                  return Array.from(textBytes).map((b, i) => b ^ keyBytes[i % keyBytes.length]).join(',');
+                                })()}
+                                xorKey="goeazy-secret-key-2026"
+                                fallback={t('property.sections.callNow')}
+                              />
+                            ) : t('property.sections.callNow')}
                           </span>
                         </a>
                         <a href={`mailto:${gatedData?.contact_email || ''}`} className="flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-full bg-white border border-gray-200 text-gray-900 font-bold hover:bg-gray-50 transition-colors shadow-sm text-[15px]">
-                          <Mail size={18} /> {t('property.sections.sendEmail')}
+                          <Mail size={18} /> 
+                          {gatedData?.contact_email ? (
+                            <SecureText 
+                              encryptedPayload={(() => {
+                                const textBytes = new TextEncoder().encode(gatedData.contact_email);
+                                const keyBytes = new TextEncoder().encode('goeazy-secret-key-2026');
+                                return Array.from(textBytes).map((b, i) => b ^ keyBytes[i % keyBytes.length]).join(',');
+                              })()}
+                              xorKey="goeazy-secret-key-2026"
+                              fallback={t('property.sections.sendEmail')}
+                            />
+                          ) : t('property.sections.sendEmail')}
                         </a>
                       </div>
                     ) : (
