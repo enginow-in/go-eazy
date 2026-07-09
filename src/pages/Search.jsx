@@ -73,7 +73,7 @@ export const Search = () => {
     <div className="space-y-6">
       {/* Location Selection */}
       <div>
-        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">Location Selection</h4>
+        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">{t('search.labels.locationSelection') || 'Location Selection'}</h4>
         <div className="grid grid-cols-2 gap-3">
            <div className="flex flex-col gap-1.5 focus-within:text-brand-600 transition-colors">
              <label htmlFor="filter-city" className="sr-only">City</label>
@@ -82,7 +82,7 @@ export const Search = () => {
                  type="text" 
                  id="filter-city"
                  name="city"
-                 placeholder="City (e.g. Dehradun)" 
+                 placeholder={t('search.labels.cityPlaceholder') || 'City (e.g. Dehradun)'} 
                  className="w-full bg-transparent border-none text-sm py-2.5 px-3 focus:ring-0 outline-none" 
                  value={localFilters.city} 
                  onChange={e => setLocalFilters(prev => ({...prev, city: e.target.value}))} 
@@ -96,7 +96,7 @@ export const Search = () => {
                  type="text" 
                  id="filter-area"
                  name="area"
-                 placeholder="Area" 
+                 placeholder={t('search.labels.areaPlaceholder') || 'Area'} 
                  className="w-full bg-transparent border-none text-sm py-2.5 px-3 focus:ring-0 outline-none" 
                  value={localFilters.area} 
                  onChange={e => setLocalFilters(prev => ({...prev, area: e.target.value}))} 
@@ -109,7 +109,7 @@ export const Search = () => {
       {/* Sort & Price Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">Sort By</h4>
+          <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">{t('search.sortBy') || 'Sort By'}</h4>
           <div className="grid grid-cols-2 gap-2">
             {SORT_OPTIONS.map(opt => (
               <button
@@ -120,7 +120,7 @@ export const Search = () => {
                 }}
                 className={`px-3 py-2 rounded-xl text-[11px] font-semibold transition-all border ${localFilters.sortBy + ':' + localFilters.sortOrder === opt.value ? 'bg-brand-50 text-brand-600 border-brand-200 shadow-sm' : 'border-gray-100 text-gray-600 hover:bg-gray-50'}`}
               >
-                {opt.label}
+                {t(`search.sort.${opt.value.replace(':', '_')}`) || opt.label}
               </button>
             ))}
           </div>
@@ -128,7 +128,7 @@ export const Search = () => {
 
         <div>
            <div className="flex justify-between items-center mb-2">
-             <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Price Max</h4>
+             <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">{t('search.labels.priceMax') || 'Price Max'}</h4>
              <span className="text-sm font-bold text-brand-600">₹{localFilters.priceMax >= 100000 ? '1L+' : localFilters.priceMax.toLocaleString()}</span>
            </div>
            <div className="pt-4 pb-2">
@@ -151,7 +151,7 @@ export const Search = () => {
 
       {/* Property Type */}
       <div>
-        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">Property Type</h4>
+        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">{t('search.labels.propertyType') || 'Property Type'}</h4>
         <div className="flex flex-wrap gap-2">
           {['Room', 'Flat', 'Hostel', 'PG'].map(type => (
             <button
@@ -166,8 +166,8 @@ export const Search = () => {
       </div>
 
       <div className="pt-4 flex gap-3 border-t border-gray-100">
-        <Button variant="secondary" className="flex-1 bg-white hover:bg-gray-50 border border-gray-100 rounded-xl font-bold py-2.5" onClick={() => { dispatch(resetFilters()); setShowFilters(false); }}>Reset All</Button>
-        <Button variant="primary" className="flex-1 rounded-xl shadow-lg shadow-brand-500/10 font-bold py-2.5" onClick={applyFilters}>Show Results</Button>
+        <Button variant="secondary" className="flex-1 bg-white hover:bg-gray-50 border border-gray-100 rounded-xl font-bold py-2.5" onClick={() => { dispatch(resetFilters()); setShowFilters(false); }}>{t('search.resetAll') || 'Reset All'}</Button>
+        <Button variant="primary" className="flex-1 rounded-xl shadow-lg shadow-brand-500/10 font-bold py-2.5" onClick={applyFilters}>{t('search.labels.showResults') || 'Show Results'}</Button>
       </div>
     </div>
   )
@@ -300,19 +300,19 @@ export const Search = () => {
             {hasMore && (
               <div className="mt-10 text-center">
                 <Button variant="secondary" onClick={() => fetchProperties(false)} loading={loading}>
-                  Load More
+                  {t('search.labels.loadMore') || 'Load More'}
                 </Button>
               </div>
             )}
           </>
         ) : (
           <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">No properties found</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">{t('search.empty.title') || 'No properties found'}</h3>
             <p className="text-gray-500 max-w-sm mx-auto mb-6">
-              We couldn't find any properties matching your current filters. Try adjusting your search criteria.
+              {t('search.empty.desc') || 'We couldn\'t find any properties matching your current filters. Try adjusting your search criteria.'}
             </p>
             <Button variant="secondary" onClick={() => dispatch(resetFilters())}>
-              Clear all filters
+              {t('search.empty.clear') || 'Clear all filters'}
             </Button>
           </div>
         )}

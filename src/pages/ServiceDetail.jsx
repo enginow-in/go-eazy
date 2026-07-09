@@ -235,10 +235,10 @@ export const ServiceDetail = () => {
     <div className="pt-20 pb-20 min-h-screen bg-[#F9F8F6] flex flex-col items-center justify-center">
       <div className="text-center max-w-sm mx-auto px-4">
         <div className="text-6xl mb-4">😕</div>
-        <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Service Not Found</h2>
-        <p className="text-gray-500 text-sm mb-6">This listing may have been removed or is not available yet.</p>
+        <h2 className="text-2xl font-extrabold text-gray-900 mb-2">{t('services.errors.notFound') || 'Service Not Found'}</h2>
+        <p className="text-gray-500 text-sm mb-6">{t('services.errors.notFoundDesc') || 'This listing may have been removed or is not available yet.'}</p>
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 mx-auto text-sm font-semibold text-[#CA3433] hover:underline">
-          <ArrowLeft size={16} /> Go Back
+          <ArrowLeft size={16} /> {t('services.errors.goBack') || 'Go Back'}
         </button>
       </div>
     </div>
