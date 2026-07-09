@@ -66,6 +66,46 @@ export const Search = () => {
     fetchProperties(true)
   }, [filters, fetchProperties])
 
+  // --- TASTE VECTOR DYNAMIC RE-RANKING ---
+  const [sortedListings, setSortedListings] = useState([])
+  const [tasteVec, setTasteVec] = useState(null)
+
+  useEffect(() => {
+    import('../utils/tasteVector').then(({ getTasteVector }) => {
+      setTasteVec(getTasteVector())
+    })
+
+    const handleTasteUpdate = (e) => setTasteVec(e.detail)
+    window.addEventListener('taste_vector_updated', handleTasteUpdate)
+    return () => window.removeEventListener('taste_vector_updated', handleTasteUpdate)
+  }, [])
+
+  useEffect(() => {
+    if (!listings || listings.length === 0) {
+      setSortedListings([])
+      return
+    }
+
+    if (!tasteVec) {
+      setSortedListings(listings)
+      return
+    }
+
+    import('../utils/tasteVector').then(({ extractPropertyVector, cosineSimilarity }) => {
+      // Re-rank the listings based on similarity to the user's taste vector
+      const sorted = [...listings].sort((a, b) => {
+        const vecA = extractPropertyVector(a)
+        const vecB = extractPropertyVector(b)
+        const simA = cosineSimilarity(vecA, tasteVec)
+        const simB = cosineSimilarity(vecB, tasteVec)
+        return simB - simA // Descending similarity
+      })
+      
+      setSortedListings(sorted)
+    })
+  }, [listings, tasteVec])
+  // ----------------------------------------
+
   // Use the actual totalCount from database
   const count = useMemo(() => totalCount, [totalCount])
 
@@ -295,7 +335,7 @@ export const Search = () => {
                "grid gap-3 sm:gap-6 xl:gap-8",
                viewMode === 'grid' ? "grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5" : "grid-cols-1"
             )}>
-              {listings.map(p => <PropertyCard key={p.id} property={p} layout={viewMode} />)}
+              {sortedListings.map(p => <PropertyCard key={p.id} property={p} layout={viewMode} />)}
             </div>
             {hasMore && (
               <div className="mt-10 text-center">
