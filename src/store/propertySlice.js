@@ -18,6 +18,7 @@ const propertySlice = createSlice({
       query: '',
       sortBy: 'created_at',
       sortOrder: 'desc',
+      bounds: null, // { min_lat, min_lng, max_lat, max_lng }
     },
     loading: false,
     hasMore: true,
