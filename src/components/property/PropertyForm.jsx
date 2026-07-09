@@ -10,6 +10,7 @@ import { supabase } from '../../lib/supabase'
 import toast from 'react-hot-toast'
 import { LocationPicker } from '../map/LocationPicker'
 
+
 // ── Success Overlay ───────────────────────────────────────────────────────────
 const ListingSuccessOverlay = () => (
   <div className="fixed inset-0 z-[99] flex flex-col items-center justify-center bg-white/95 backdrop-blur-md animate-in fade-in duration-300">
@@ -93,6 +94,7 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   const [loading, setLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [step, setStep] = useState(1)
+  const [generatingDescription, setGeneratingDescription] = useState(false)
   const [images, setImages] = useState([])
   const [previewUrls, setPreviewUrls] = useState(initialData?.images || [])
 
@@ -116,6 +118,58 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   })
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }))
+
+  const handleGenerateDescription = async () => {
+if (
+    !form.title ||
+    !form.city ||
+    !form.type ||
+    !form.price
+) {
+    toast.error("Please enter Title, City and Property Type first.")
+    return
+  }
+
+  setGeneratingDescription(true)
+
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-property-description`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+        title: form.title,
+        description: form.description,
+        propertyType: form.type,
+        city: form.city,
+        locality: form.area,
+        rent: form.price,
+        amenities: form.amenities,
+        nearbyLandmarks: form.nearby_landmarks,
+        contactAvailable: form.contact_phone ? true : false
+      }),
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error("Failed to generate description")
+    }
+
+    const data = await response.json()
+
+    set("description", data.description)
+
+    toast.success("AI description generated!")
+  } catch (err) {
+    toast.error(err.message)
+  } finally {
+    setGeneratingDescription(false)
+  }
+}
 
   const handleLocationChange = ({ latitude, longitude, map_address }) => {
     setForm(f => ({ ...f, latitude, longitude, map_address: map_address || '' }))
@@ -265,8 +319,43 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
               {PROPERTY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
             </Select>
           </div>
-          <Textarea id="property-description" label="Description" placeholder="Tell renters what makes this place special..."
-            rows={4} value={form.description} onChange={e => set('description', e.target.value)} />
+          <div className="space-y-2">
+
+  <div className="flex items-center justify-between">
+
+    <label className="text-sm font-semibold text-gray-700">
+      Property Description
+    </label>
+
+    <button
+      type="button"
+      onClick={handleGenerateDescription}
+      disabled={generatingDescription}
+      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#CA3433] to-[#E63946] text-white text-xs font-bold hover:opacity-90 disabled:opacity-50"
+    >
+      <Zap size={14} />
+
+      {generatingDescription
+        ? "Generating..."
+        : "Generate with AI"}
+    </button>
+
+  </div>
+
+  <Textarea
+    id="property-description"
+    placeholder="Tell renters what makes this place special..."
+    rows={6}
+    value={form.description}
+    onChange={(e) => set("description", e.target.value)}
+  />
+
+  <p className="text-xs text-gray-500">
+    AI generates a professional description based on your property details.
+    You can edit it before publishing.
+  </p>
+
+</div>
         </div>
       )
 
