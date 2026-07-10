@@ -193,7 +193,7 @@ export const NearbyServices = () => {
                   <img src="/1.webp" alt="Map" className="w-full h-full object-cover" />
                 </div>
                 <div className="hidden sm:flex flex-col items-start pr-1 -space-y-0.5">
-                  <span className="text-sm font-bold text-gray-950 leading-tight">{t(`cities.${filters.city}`) || t('nearby.allCities')}</span>
+                  <span className="text-sm font-bold text-gray-950 leading-tight">{filters.city ? t(`cities.${filters.city}`) : t('nearby.allCities')}</span>
                   <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-none">{t('nav.state')}</span>
                 </div>
                 <ChevronDown size={14} className={`text-gray-400 transition-transform duration-300 ${showCityDropdown ? 'rotate-180 text-[#CA3433]' : ''}`} />
