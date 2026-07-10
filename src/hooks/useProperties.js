@@ -110,7 +110,13 @@ export const useProperties = () => {
   }, [])
 
   const fetchPropertyById = useCallback(async (id) => {
-    dispatch(setLoading(true))
+    const cachedProp = listings.find(p => p.id === id) || featured.find(p => p.id === id)
+    if (cachedProp) {
+      dispatch(setCurrentProperty(cachedProp))
+    } else {
+      dispatch(setLoading(true))
+    }
+
     try {
       const { data, error } = await supabase
         .from('properties')
@@ -129,7 +135,7 @@ export const useProperties = () => {
     } finally {
       dispatch(setLoading(false))
     }
-  }, [user, dispatch])
+  }, [user, dispatch, listings, featured])
 
   const fetchGatedData = useCallback(async (id) => {
     if (!user) return null
