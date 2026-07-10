@@ -155,7 +155,7 @@ export const Navbar = () => {
 
             <button className="flex items-center gap-2 text-sm font-semibold text-gray-700">
               <div className="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center text-xs overflow-hidden border border-brand-100">
-                <img src="/INR.webp" alt="INR" className="w-full h-full object-cover" />
+                <img src="/INR.webp" alt="INR" className="w-full h-full object-cover" loading="lazy" />
               </div>
               INR <ChevronDown size={14} />
             </button>
@@ -169,7 +169,7 @@ export const Navbar = () => {
                   className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#0B0F19] text-white text-sm font-semibold hover:bg-[#CA3433] transition-all duration-300 transform hover:scale-105"
                 >
                   {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt="Avatar" className="w-5 h-5 rounded-full object-cover" />
+                    <img src={profile.avatar_url} alt="Avatar" className="w-5 h-5 rounded-full object-cover" loading="lazy" />
                   ) : (
                     <User size={16} />
                   )}
@@ -272,7 +272,7 @@ export const Navbar = () => {
             <div className="hidden lg:flex items-center h-16 border-l border-gray-100 pl-6 pr-8 bg-white min-w-max relative cursor-pointer shrink-0" onClick={() => setCityMenuOpen(!cityMenuOpen)}>
                 <div className="flex items-center gap-3">
                   <div className="relative w-10 h-10 rounded-full border border-[#CA3433] overflow-hidden bg-gray-50 flex items-center justify-center shrink-0">
-                    <img src="/1.webp" alt="City" className="w-full h-full object-cover" />
+                    <img src="/1.webp" alt="City" className="w-full h-full object-cover" loading="lazy" />
                   </div>
                   <div className="flex flex-col text-sm">
                     <span className="font-semibold text-gray-900 leading-tight">{selectedCity}</span>
@@ -325,7 +325,7 @@ export const Navbar = () => {
                 className="flex items-center gap-1.5 p-1 bg-gray-50 rounded-full border border-[#CA3433]"
               >
                 <div className="w-8 h-8 rounded-full overflow-hidden border border-white shadow-sm">
-                  <img src="/1.webp" alt="City" className="w-full h-full object-cover" />
+                  <img src="/1.webp" alt="City" className="w-full h-full object-cover" loading="lazy" />
                 </div>
                 <ChevronDown size={14} className={`text-gray-400 mr-1 transition-transform duration-200 ${cityMenuOpen ? 'rotate-180' : ''}`} />
               </button>
