@@ -5,6 +5,7 @@ import { Search, TrendingUp, Shield, Star } from 'lucide-react'
 import { setFilters } from '../../store/propertySlice'
 import { Button } from '../ui/Button'
 import { CITIES } from '../../utils/constants'
+import { LocationAutocomplete } from '../ui/LocationAutocomplete'
 import { useTranslation } from 'react-i18next'
 
 export const Hero = () => {
@@ -48,15 +49,20 @@ export const Hero = () => {
         {/* Search Bar */}
         <form onSubmit={handleSearch} className="max-w-2xl mx-auto flex gap-3 mb-8 animate-fadeInUp" style={{ animationDelay: '250ms' }}>
           <div className="flex-1 relative">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              value={searchVal}
-              onChange={e => setSearchVal(e.target.value)}
-              type="text"
-              id="hero-search"
-              name="hero-search"
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 z-10 pointer-events-none" />
+            <LocationAutocomplete
+              mode="city"
               placeholder={t('hero.searchPlaceholder')}
-              className="w-full pl-11 pr-4 py-4 rounded-xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-100 text-gray-900 text-sm transition-all"
+              value={searchVal}
+              showIcon={false}
+              onChange={(item) => {
+                setSearchVal(item.value)
+                if (!item.isTyping) {
+                  dispatch(setFilters({ city: item.value, area: '' }))
+                  navigate('/search')
+                }
+              }}
+              inputClassName="w-full pl-11 pr-4 py-4 rounded-xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-100 text-gray-900 text-sm transition-all"
             />
           </div>
           <Button type="submit" variant="primary" size="lg" className="px-7 rounded-xl shadow-md">
