@@ -1,0 +1,21 @@
+const pool = require('../db/pool');
+
+/**
+ * Mount after requireAuth. Deliberately re-checks `is_admin` against the
+ * database on every request instead of trusting a claim baked into the
+ * access token — admin status can be revoked and that should take effect
+ * immediately, not 15 minutes later when the token happens to expire.
+ */
+async function requireAdmin(req, res, next) {
+  try {
+    const { rows } = await pool.query('SELECT is_admin FROM users WHERE id = $1', [req.user.sub]);
+    if (!rows[0]?.is_admin) {
+      return res.status(403).json({ error: 'Admin access required.' });
+    }
+    next();
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { requireAdmin };
