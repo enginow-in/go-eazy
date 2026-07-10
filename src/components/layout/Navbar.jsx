@@ -12,6 +12,19 @@ import { Skeleton } from '../ui/Skeleton'
 import { CITIES } from '../../utils/constants'
 import { BannerSlider } from './BannerSlider'
 
+function useDebounce(value, delay) {
+  const [debouncedValue, setDebouncedValue] = React.useState(value)
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value)
+    }, delay)
+    return () => {
+      clearTimeout(handler)
+    }
+  }, [value, delay])
+  return debouncedValue
+}
+
 export const Navbar = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -25,25 +38,17 @@ export const Navbar = () => {
   const [langMenuOpen, setLangMenuOpen] = useState(false)
   const [selectedCity, setSelectedCity] = useState(filters.city || 'All Cities')
   const [searchQuery, setSearchQuery] = useState(filters.query || '')
-  // Tracks if the user is actively typing in the Navbar's own search bar.
-  // Without this guard, the debounce effect fires on any re-render where
-  // searchQuery !== filters.query, causing rogue /search redirects (e.g. while
-  // filling the service provider contact form).
-  const userTypedInNavSearch = React.useRef(false)
+  const debouncedSearchQuery = useDebounce(searchQuery, 400)
   
-  // Debounce effect for search — only navigate if user actually typed here
+  // Debounce effect for search
   React.useEffect(() => {
-    if (!userTypedInNavSearch.current) return
-    const timer = setTimeout(() => {
-      if (searchQuery !== (filters.query || '')) {
-        updateFilters({ query: searchQuery })
-        if (!location.pathname.startsWith('/search') && searchQuery.length > 0) {
-          navigate('/search')
-        }
+    if (debouncedSearchQuery !== (filters.query || '')) {
+      updateFilters({ query: debouncedSearchQuery })
+      if (!location.pathname.startsWith('/search') && debouncedSearchQuery.length > 0) {
+        navigate('/search')
       }
-    }, 400) // 400ms debounce
-    return () => clearTimeout(timer)
-  }, [searchQuery, updateFilters, navigate, location.pathname, filters.query])
+    }
+  }, [debouncedSearchQuery]) // Only trigger when the debounced query actually changes
 
   const languages = [
     { code: 'en', label: 'English', short: 'EN' },
@@ -64,7 +69,6 @@ export const Navbar = () => {
   }
 
   const handleLiveSearch = (e) => {
-    userTypedInNavSearch.current = true // user is actively typing in navbar
     setSearchQuery(e.target.value)
     if (mobileMenuOpen && e.target.value.length > 3) dispatch(closeMobileMenu())
   }
