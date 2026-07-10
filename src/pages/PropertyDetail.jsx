@@ -404,7 +404,7 @@ export const PropertyDetail = () => {
                 <span>{t(`cities.${p.city}`) || p.city}</span>
               </div>
               <p className="text-gray-500 text-sm">
-                {(hasUnlocked || p.landlord_id === user?.id) ? (gatedData?.exact_location || `${p.area}, ${p.city}`) : `${p.area}, ${p.city} • ${p.pincode}`}
+                {(hasUnlocked || p.landlord_id === user?.id) ? (gatedData?.exact_location || `${p.area}, ${p.city}`) : `${p.area}, ${p.city}${p.pincode ? ` • ${p.pincode}` : ''}`}
               </p>
             </div>
 
