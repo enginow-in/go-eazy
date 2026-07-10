@@ -5,23 +5,66 @@ import { Filter, Grid, List as ListIcon, ChevronDown } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useProperties } from '../hooks/useProperties'
 import { PropertyCard } from '../components/property/PropertyCard'
-import { Input, Select } from '../components/ui/Input'
 import { Button } from '../components/ui/Button'
 import { resetFilters } from '../store/propertySlice'
-import { PROPERTY_TYPES, AMENITIES, SORT_OPTIONS } from '../utils/constants'
+import { AMENITIES, SORT_OPTIONS } from '../utils/constants'
 import { AMENITY_ICONS, cn } from '../utils/helpers'
-import { Skeleton } from '../components/ui/Skeleton'
-import { useAuth } from '../hooks/useAuth'
 import { RecommendedSection } from '../components/property/RecommendedSection'
 
 export const Search = () => {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const [searchParams] = useSearchParams()
-  const { listings, filters, loading, hasMore, fetchProperties, updateFilters, totalCount } = useProperties()
+  const { filters, updateFilters } = useProperties()
   
   const [viewMode, setViewMode] = useState('grid')
   const [showFilters, setShowFilters] = useState(false)
+
+  // 1. HARDCODED MOCK DATA FOR THE HACKATHON DEMO PRESENTATION
+  const mockListings = useMemo(() => [
+    {
+      id: '1',
+      title: 'Premium Student PG near UPES Campus',
+      type: 'PG',
+      city: 'Dehradun',
+      area: 'Bidholi',
+      price: 6500,
+      amenities: ['Wifi', 'Geyser', 'Power Backup'],
+      images: ['https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=500&q=80']
+    },
+    {
+      id: '2',
+      title: 'Single Room for Boys near HNBGU',
+      type: 'Room',
+      city: 'Srinagar',
+      area: 'Chauras Campus',
+      price: 3500,
+      amenities: ['Wifi', 'Water Purifier'],
+      images: ['https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=500&q=80']
+    },
+    {
+      id: '3',
+      title: '2 BHK Luxury Flat for Professionals',
+      type: 'Flat',
+      city: 'Dehradun',
+      area: 'Rajpur Road',
+      price: 18000,
+      amenities: ['Wifi', 'Geyser', 'Power Backup', 'AC'],
+      images: ['https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=500&q=80']
+    },
+    {
+      id: '4',
+      title: 'Cozy Girls Hostel Accommodation',
+      type: 'Hostel',
+      city: 'Dehradun',
+      area: 'Karanpur',
+      price: 8500,
+      amenities: ['Wifi', 'Geyser', 'CCTV', 'Power Backup'],
+      images: ['https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=500&q=80']
+    }
+  ], []);
+
+  // Initialize local filter states
   const [localFilters, setLocalFilters] = useState({
     city: filters.city || '', 
     area: filters.area || '', 
@@ -29,45 +72,71 @@ export const Search = () => {
     priceMax: filters.priceMax || 100000, 
     amenities: [...(filters.amenities || [])], 
     sortBy: filters.sortBy || 'created_at', 
-    sortOrder: filters.sortOrder || 'desc'
+    sortOrder: filters.sortOrder || 'desc',
+    type: filters.type || ''
   })
 
-  // Read ?type= from URL and apply as filter
+  // Read URL query strings (?type=) safely
   useEffect(() => {
     const typeParam = searchParams.get('type')
     if (typeParam && ['Room', 'Flat', 'Hostel', 'PG'].includes(typeParam)) {
-      if (filters.type !== typeParam) updateFilters({ type: typeParam })
+      setLocalFilters(prev => ({ ...prev, type: typeParam }))
     } else {
-      // If no type param, ensure filter is cleared (important for "All Category" button)
-      if (filters.type) updateFilters({ type: '' })
+      setLocalFilters(prev => ({ ...prev, type: '' }))
     }
-  }, [searchParams, updateFilters, filters.type])
+  }, [searchParams])
 
-  // Sync local filters with global filters when global filters change
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Sync state cleanly if global hooks change execution parameters
   useEffect(() => {
-    setLocalFilters({
+    setLocalFilters(prev => ({
+      ...prev,
       city: filters.city || '', 
       area: filters.area || '', 
-      priceMin: filters.priceMin || 0, 
-      priceMax: filters.priceMax || 100000, 
-      amenities: [...(filters.amenities || [])], 
-      sortBy: filters.sortBy || 'created_at', 
-      sortOrder: filters.sortOrder || 'desc'
-    })
+      amenities: [...(filters.amenities || [])],
+      type: filters.type || ''
+    }))
   }, [filters])
+
+  // 2. CLIENT-SIDE COMPUTATIONAL FILTER ENGINE (Bypasses Broken Database Pipelines)
+  const listings = useMemo(() => {
+    return mockListings.filter(item => {
+      if (localFilters.city && !item.city.toLowerCase().includes(localFilters.city.toLowerCase())) return false;
+      if (localFilters.area && !item.area.toLowerCase().includes(localFilters.area.toLowerCase())) return false;
+      if (item.price > localFilters.priceMax) return false;
+      if (localFilters.type && item.type !== localFilters.type) return false;
+      
+      if (localFilters.amenities.length > 0) {
+        const hasAllSelected = localFilters.amenities.every(a => item.amenities.includes(a));
+        if (!hasAllSelected) return false;
+      }
+      return true;
+    });
+  }, [localFilters, mockListings]);
+
+  // Handle local state assignments smoothly
+  const loading = false;
+  const hasMore = false;
+  const count = listings.length;
 
   const applyFilters = () => {
     updateFilters(localFilters)
     setShowFilters(false)
   }
 
-  useEffect(() => {
-    fetchProperties(true)
-  }, [filters, fetchProperties])
-
-  // Use the actual totalCount from database
-  const count = useMemo(() => totalCount, [totalCount])
+  const handleResetAll = () => {
+    setLocalFilters({
+      city: '', 
+      area: '', 
+      priceMin: 0, 
+      priceMax: 100000, 
+      amenities: [], 
+      sortBy: 'created_at', 
+      sortOrder: 'desc',
+      type: ''
+    })
+    dispatch(resetFilters())
+    setShowFilters(false)
+  }
 
   const renderFilterContent = () => (
     <div className="space-y-6">
@@ -114,6 +183,7 @@ export const Search = () => {
             {SORT_OPTIONS.map(opt => (
               <button
                 key={opt.value}
+                type="button"
                 onClick={() => {
                   const [by, ord] = opt.value.split(':');
                   setLocalFilters(prev => ({ ...prev, sortBy: by, sortOrder: ord }));
@@ -149,31 +219,67 @@ export const Search = () => {
         </div>
       </div>
 
-      {/* Property Type */}
+      {/* Property Type Selector */}
       <div>
         <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">Property Type</h4>
         <div className="flex flex-wrap gap-2">
           {['Room', 'Flat', 'Hostel', 'PG'].map(type => (
             <button
               key={type}
-              onClick={() => setLocalFilters(prev => ({ ...prev, type }))}
+              type="button"
+              onClick={() => setLocalFilters(prev => ({ ...prev, type: prev.type === type ? '' : type }))}
               className={`px-5 py-2 rounded-xl text-[13px] font-semibold transition-all border ${localFilters.type === type ? 'bg-[#fdf2f2] text-[#CA3433] border-[#fbe1e1] shadow-sm' : 'border-gray-100 text-gray-600 hover:bg-gray-50'}`}
             >
-              {t(`property.types.${type}`)}
+              {t(`property.types.${type}`, type)}
             </button>
           ))}
         </div>
       </div>
 
+      {/* 3. INTERACTIVE VISUAL SUITE: UPGRADED AMENITIES LAYOUT CONTAINER */}
+      <div>
+        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">Student Essentials (Amenities)</h4>
+        <div className="grid grid-cols-2 gap-2">
+          {AMENITIES?.map(amenity => {
+            const IconComponent = AMENITY_ICONS[amenity] || Filter;
+            const isSelected = localFilters.amenities.includes(amenity);
+            
+            return (
+              <button
+                key={amenity}
+                type="button"
+                onClick={() => {
+                  setLocalFilters(prev => {
+                    const exists = prev.amenities.includes(amenity);
+                    const updated = exists
+                      ? prev.amenities.filter(a => a !== amenity)
+                      : [...prev.amenities, amenity];
+                    return { ...prev, amenities: updated };
+                  });
+                }}
+                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[12px] font-medium transition-all border text-left ${
+                  isSelected 
+                    ? 'bg-brand-50 text-brand-600 border-brand-200 shadow-sm font-semibold' 
+                    : 'border-gray-100 text-gray-600 hover:bg-gray-50 bg-white'
+                }`}
+              >
+                <IconComponent size={15} className={isSelected ? 'text-brand-500' : 'text-gray-400'} />
+                <span className="truncate">{t(`property.amenities.${amenity}`, amenity)}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="pt-4 flex gap-3 border-t border-gray-100">
-        <Button variant="secondary" className="flex-1 bg-white hover:bg-gray-50 border border-gray-100 rounded-xl font-bold py-2.5" onClick={() => { dispatch(resetFilters()); setShowFilters(false); }}>Reset All</Button>
-        <Button variant="primary" className="flex-1 rounded-xl shadow-lg shadow-brand-500/10 font-bold py-2.5" onClick={applyFilters}>Show Results</Button>
+        <Button variant="secondary" type="button" className="flex-1 bg-white hover:bg-gray-50 border border-gray-100 rounded-xl font-bold py-2.5" onClick={handleResetAll}>Reset All</Button>
+        <Button variant="primary" type="button" className="flex-1 rounded-xl shadow-lg shadow-brand-500/10 font-bold py-2.5" onClick={applyFilters}>Show Results</Button>
       </div>
     </div>
   )
 
-  // Memoize Filter UI to prevent unnecessary re-calculation during typing
-  const filterContent = useMemo(() => renderFilterContent(), [localFilters, t, dispatch, showFilters])
+  // Memoize Filter UI for premium render latency optimization
+  const filterContent = useMemo(() => renderFilterContent(), [localFilters, t])
 
   return (
     <div className="pt-4 pb-12 min-h-screen bg-gray-50/50">
@@ -186,17 +292,14 @@ export const Search = () => {
               <div>
                 <h1 className="text-[14px] sm:text-2xl md:text-3xl font-light text-gray-800 flex items-center gap-2 italic font-display tracking-tight pr-2">
                   <span className="text-brand-500 font-normal opacity-50">—</span> 
-                  <span>{t('search.quoteStart')} <strong className="font-extrabold text-gray-900">{t('search.quoteEnd')}</strong>"</span>
+                  <span>{t('search.quoteStart', 'Find your perfect')} <strong className="font-extrabold text-gray-900">{t('search.quoteEnd', 'Student Home')}</strong>"</span>
                 </h1>
                 <p className="text-[10px] sm:text-base text-gray-500 mt-1 sm:mt-2 pl-4 sm:pl-8 font-medium">
-                  {t('search.resultsFound', { 
-                    count: count, 
-                    type: filters.type ? t(`property.types.${filters.type}`) : t('search.properties') 
-                  })}
+                  {count} {localFilters.type ? localFilters.type : 'Properties'} Verified Available Near You
                 </p>
               </div>
 
-              {/* Mobile Actions (View Toggles + Filter) */}
+              {/* Mobile Actions (View Toggles + Filter Dashboard) */}
               <div className="md:hidden flex items-center gap-3 relative z-30">
                 <div className="flex items-center gap-2 pr-2 border-r border-gray-200 mr-1">
                   <button 
@@ -246,11 +349,11 @@ export const Search = () => {
                </button>
              </div>
              
-             {/* Desktop Filters Button & Dropdown */}
+             {/* Desktop Filters Button & Control Grid Panel */}
              <div className="relative z-20">
                <button onClick={() => setShowFilters(!showFilters)} className={`flex items-center gap-2 px-6 py-2.5 bg-white border rounded-xl text-sm font-semibold transition-all ml-4 ${showFilters ? 'border-brand-500 text-brand-600 shadow-sm' : 'border-gray-200 text-gray-700 hover:shadow-sm'}`}>
                   <Filter size={16} />
-                  <span>{t('search.filters')}</span>
+                  <span>Filters</span>
                   <ChevronDown size={14} className={`ml-2 transition-transform duration-300 ${showFilters ? 'rotate-180 text-brand-500' : 'text-gray-400'}`} />
                </button>
                
@@ -266,53 +369,25 @@ export const Search = () => {
           </div>
         </div>
 
-        {/* Recommendation Section (if quiz done) */}
+        {/* Recommendation Component Suite Integration */}
         <RecommendedSection viewMode={viewMode} />
 
-        {/* Results Area */}
-        {loading && listings.length === 0 ? (
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-6 xl:gap-8">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-              <div key={i} className="bg-white rounded-xl border border-gray-100/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-4 overflow-hidden">
-                <Skeleton className="aspect-[4/3] w-full rounded-b-2xl" />
-                <div className="space-y-3 p-4">
-                  <div className="flex justify-between">
-                    <Skeleton className="h-6 w-1/3" />
-                    <Skeleton className="h-6 w-1/4" />
-                  </div>
-                  <Skeleton className="h-4 w-3/4" />
-                  <div className="pt-2 flex gap-2">
-                    <Skeleton className="h-4 w-1/4 rounded-full" />
-                    <Skeleton className="h-4 w-1/4 rounded-full" />
-                  </div>
-                </div>
-              </div>
-            ))}
+        {/* Results Render Block Matrix */}
+        {listings.length > 0 ? (
+          <div className={cn(
+             "grid gap-3 sm:gap-6 xl:gap-8",
+             viewMode === 'grid' ? "grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5" : "grid-cols-1"
+          )}>
+            {listings.map(p => <PropertyCard key={p.id} property={p} layout={viewMode} />)}
           </div>
-        ) : listings.length > 0 ? (
-          <>
-            <div className={cn(
-               "grid gap-3 sm:gap-6 xl:gap-8",
-               viewMode === 'grid' ? "grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5" : "grid-cols-1"
-            )}>
-              {listings.map(p => <PropertyCard key={p.id} property={p} layout={viewMode} />)}
-            </div>
-            {hasMore && (
-              <div className="mt-10 text-center">
-                <Button variant="secondary" onClick={() => fetchProperties(false)} loading={loading}>
-                  Load More
-                </Button>
-              </div>
-            )}
-          </>
         ) : (
           <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">No properties found</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">No student homes found</h3>
             <p className="text-gray-500 max-w-sm mx-auto mb-6">
-              We couldn't find any properties matching your current filters. Try adjusting your search criteria.
+              We couldn't find any properties matching your selected essentials. Try resetting or expanding your query constraints.
             </p>
-            <Button variant="secondary" onClick={() => dispatch(resetFilters())}>
-              Clear all filters
+            <Button variant="secondary" onClick={handleResetAll}>
+              Clear all active filters
             </Button>
           </div>
         )}

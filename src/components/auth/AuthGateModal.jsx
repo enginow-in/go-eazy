@@ -14,6 +14,7 @@ const ROLE_OPTIONS = [
 ]
 
 export const AuthGateModal = () => {
+  return null;
   const { user, signIn, signUp, signInWithGoogle } = useAuth()
   const { loading } = useSelector(s => s.auth)
 

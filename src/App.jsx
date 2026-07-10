@@ -55,9 +55,9 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
-      <AppInitializer />
-      <OnboardingQuiz />
-      <RoleSelectionModal />
+      {/* <AppInitializer /> */}
+      {/* <OnboardingQuiz /> */}
+      {/* <RoleSelectionModal /> */}
       <Layout>
         <Suspense fallback={<PageSpinner />}>
           <Routes>
