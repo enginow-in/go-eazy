@@ -23,7 +23,6 @@ export const Navbar = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [cityMenuOpen, setCityMenuOpen] = useState(false)
   const [langMenuOpen, setLangMenuOpen] = useState(false)
-  const [selectedCity, setSelectedCity] = useState(filters.city || 'All Cities')
   const [searchQuery, setSearchQuery] = useState(filters.query || '')
   // Tracks if the user is actively typing in the Navbar's own search bar.
   // Without this guard, the debounce effect fires on any re-render where
@@ -275,8 +274,8 @@ export const Navbar = () => {
                     <img src="/1.webp" alt="City" className="w-full h-full object-cover" />
                   </div>
                   <div className="flex flex-col text-sm">
-                    <span className="font-semibold text-gray-900 leading-tight">{selectedCity}</span>
-                    <span className="text-gray-500 text-xs">Uttarakhand</span>
+                    <span className="font-semibold text-gray-900 leading-tight">{filters.city ? t(`cities.${filters.city}`) : t('nearby.allCities')}</span>
+                    <span className="text-gray-500 text-xs">{t('nav.state')}</span>
                   </div>
                   <ChevronDown size={16} className={`text-gray-400 ml-4 transition-transform duration-200 ${cityMenuOpen ? 'rotate-180' : ''}`} />
                 </div>
@@ -288,25 +287,23 @@ export const Navbar = () => {
                     <div className="absolute right-4 top-full mt-3 w-48 bg-white rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 z-50 overflow-hidden py-2" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => {
-                          setSelectedCity('All Cities')
                           updateFilters({ city: '' })
                           setCityMenuOpen(false)
                         }}
-                        className={`w-full text-left px-5 py-2.5 text-sm font-bold transition-colors ${selectedCity === 'All Cities' ? 'bg-[#fff5f5] text-[#CA3433]' : 'text-gray-700 hover:bg-gray-50'}`}
+                        className={`w-full text-left px-5 py-2.5 text-sm font-bold transition-colors ${!filters.city ? 'bg-[#fff5f5] text-[#CA3433]' : 'text-gray-700 hover:bg-gray-50'}`}
                       >
-                        All Cities
+                        {t('nearby.allCities')}
                       </button>
                       {CITIES.map(city => (
                         <button
                           key={city}
                           onClick={() => {
-                            setSelectedCity(city)
                             updateFilters({ city })
                             setCityMenuOpen(false)
                           }}
-                          className={`w-full text-left px-5 py-2.5 text-sm font-semibold transition-colors ${selectedCity === city ? 'bg-[#fff5f5] text-[#CA3433]' : 'text-gray-700 hover:bg-gray-50'}`}
+                          className={`w-full text-left px-5 py-2.5 text-sm font-semibold transition-colors ${filters.city === city ? 'bg-[#fff5f5] text-[#CA3433]' : 'text-gray-700 hover:bg-gray-50'}`}
                         >
-                          {city}
+                          {t(`cities.${city}`)}
                         </button>
                       ))}
                     </div>
@@ -339,25 +336,23 @@ export const Navbar = () => {
                     </div>
                     <button
                       onClick={() => {
-                        setSelectedCity('All Cities')
                         updateFilters({ city: '' })
                         setCityMenuOpen(false)
                       }}
-                      className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${selectedCity === 'All Cities' ? 'bg-brand-50 text-brand-600' : 'text-gray-700 hover:bg-gray-50'}`}
+                      className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${!filters.city ? 'bg-brand-50 text-brand-600' : 'text-gray-700 hover:bg-gray-50'}`}
                     >
-                      All Cities
+                      {t('nearby.allCities')}
                     </button>
                     {CITIES.map(city => (
                       <button
                         key={city}
                         onClick={() => {
-                          setSelectedCity(city)
                           updateFilters({ city })
                           setCityMenuOpen(false)
                         }}
-                        className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${selectedCity === city ? 'bg-brand-50 text-brand-600' : 'text-gray-700 hover:bg-gray-50'}`}
+                        className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${filters.city === city ? 'bg-brand-50 text-brand-600' : 'text-gray-700 hover:bg-gray-50'}`}
                       >
-                        {city}
+                        {t(`cities.${city}`)}
                       </button>
                     ))}
                   </div>
