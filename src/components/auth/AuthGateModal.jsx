@@ -149,7 +149,13 @@ export const AuthGateModal = () => {
                   placeholder="Password (min 8 chars)"
                   leftIcon={<Lock size={13} />}
                   rightIcon={
-                    <button type="button" onClick={() => setShowPass(!showPass)} className="cursor-pointer text-gray-400">
+                    <button
+                      type="button"
+                      aria-label={showPass ? "Hide password" : "Show password"}
+                      title={showPass ? "Hide password" : "Show password"}
+                      onClick={() => setShowPass(!showPass)}
+                      className="cursor-pointer text-gray-400"
+                    >
                       {showPass ? <EyeOff size={13} /> : <Eye size={13} />}
                     </button>
                   }
