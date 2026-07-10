@@ -125,14 +125,19 @@ export const useAuth = () => {
     if (error) throw error
 
     if (data.user) {
-      await supabase.from('profiles').upsert({
-        id: data.user.id,
-        email,
-        full_name: name,
-        role,
-        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
-        created_at: new Date().toISOString(),
-      })
+      try {
+        const { error: profileError } = await supabase.from('profiles').upsert({
+          id: data.user.id,
+          email,
+          full_name: name,
+          role,
+          avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
+          created_at: new Date().toISOString(),
+        })
+        if (profileError) throw profileError
+      } catch (err) {
+        throw err
+      }
     }
     return data
   }
