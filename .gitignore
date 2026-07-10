@@ -35,4 +35,5 @@ dist-ssr
 # Supabase local config/temp
 supabase/.temp/
 
-
+# PWA generated dev files
+dev-dist/
