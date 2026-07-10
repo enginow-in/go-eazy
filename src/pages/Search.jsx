@@ -241,7 +241,8 @@ export const Search = () => {
         <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">Student Essentials (Amenities)</h4>
         <div className="grid grid-cols-2 gap-2">
           {AMENITIES?.map(amenity => {
-            const IconComponent = AMENITY_ICONS[amenity] || Filter;
+            const amenityKey = typeof amenity === 'object' ? (amenity.id || amenity.value || amenity.name) : amenity;
+            const IconComponent = AMENITY_ICONS[amenityKey] || Filter;
             const isSelected = localFilters.amenities.includes(amenity);
             
             return (
@@ -264,7 +265,9 @@ export const Search = () => {
                 }`}
               >
                 <IconComponent size={15} className={isSelected ? 'text-brand-500' : 'text-gray-400'} />
-                <span className="truncate">{t(`property.amenities.${amenity}`, amenity)}</span>
+                <span className="truncate">
+                  {typeof amenity === 'object' ? (amenity.name || amenity.label || JSON.stringify(amenity)) : t(`property.amenities.${amenity}`, amenity)}
+                </span>
               </button>
             );
           })}
