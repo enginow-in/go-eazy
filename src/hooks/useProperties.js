@@ -14,7 +14,7 @@ const PAGE_SIZE = 12
 
 const PUBLIC_PROPERTY_FIELDS = `
   id, landlord_id, type, title, description, price, city, area, pincode, 
-  amenities, images, availability, views, created_at
+  amenities, images, availability, views, created_at, is_external
 `
 
 const PUBLIC_PROFILE_FIELDS = 'full_name, avatar_url, bio'
@@ -40,6 +40,9 @@ export const useProperties = () => {
       if (filters.type) query = query.eq('type', filters.type)
       if (filters.priceMin > 0) query = query.gte('price', filters.priceMin)
       if (filters.priceMax < 100000) query = query.lte('price', filters.priceMax)
+      
+      if (filters.listingType === 'verified') query = query.eq('is_external', false)
+      if (filters.listingType === 'external') query = query.eq('is_external', true)
       
       if (filters.amenities?.length > 0) {
         query = query.contains('amenities', filters.amenities)
