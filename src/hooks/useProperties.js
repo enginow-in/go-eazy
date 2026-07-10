@@ -50,8 +50,16 @@ export const useProperties = () => {
       }
 
       if (filters.area) {
-        const fuzzyPattern = '%' + filters.area.toLowerCase().split('').filter(c => c.trim()).join('%') + '%'
-        query = query.ilike('area', fuzzyPattern)
+        // Match on whole words, not individual characters. The previous version
+        // split the query into single characters joined by '%', so "abc" became
+        // "%a%b%c%" and matched almost any area containing those letters in order.
+        // Escape LIKE wildcards (% _ \) in the user input first so a stray
+        // character can't widen or break the pattern.
+        const escaped = filters.area.trim().toLowerCase().replace(/[\\%_]/g, '\\$&')
+        const words = escaped.split(/\s+/).filter(Boolean)
+        if (words.length) {
+          query = query.ilike('area', `%${words.join('%')}%`)
+        }
       }
 
       const from = reset ? 0 : page * PAGE_SIZE
