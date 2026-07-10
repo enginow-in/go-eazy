@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
-import { User, Lock, Save, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { User, Lock, Save, AlertCircle, CheckCircle2, Bell } from 'lucide-react'
 
 export const Settings = () => {
   const { user, profile } = useAuth()
@@ -11,6 +11,11 @@ export const Settings = () => {
   const [phone, setPhone] = useState('')
   const [profileLoading, setProfileLoading] = useState(false)
   const [profileMessage, setProfileMessage] = useState({ type: '', text: '' })
+
+  // Notification State
+  const [whatsappEnabled, setWhatsappEnabled] = useState(false)
+  const [notificationLoading, setNotificationLoading] = useState(false)
+  const [notificationMessage, setNotificationMessage] = useState({ type: '', text: '' })
 
   // Security State
   const [currentPassword, setCurrentPassword] = useState('')
@@ -24,6 +29,7 @@ export const Settings = () => {
     if (profile) {
       setFullName(profile.full_name || '')
       setPhone(profile.phone || '')
+      setWhatsappEnabled(profile.notification_preferences?.whatsapp || false)
     }
   }, [profile])
 
@@ -47,6 +53,29 @@ export const Settings = () => {
       setProfileMessage({ type: 'error', text: 'Failed to update profile. Please try again.' })
     } finally {
       setProfileLoading(false)
+    }
+  }
+
+  const handleNotificationUpdate = async (e) => {
+    e.preventDefault()
+    setNotificationLoading(true)
+    setNotificationMessage({ type: '', text: '' })
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ notification_preferences: { whatsapp: whatsappEnabled } })
+        .eq('id', user.id)
+
+      if (error) throw error
+
+      setNotificationMessage({ type: 'success', text: 'Notification preferences updated!' })
+      setTimeout(() => setNotificationMessage({ type: '', text: '' }), 4000)
+    } catch (error) {
+      console.error('Error updating notifications:', error.message)
+      setNotificationMessage({ type: 'error', text: 'Failed to update preferences. Please try again.' })
+    } finally {
+      setNotificationLoading(false)
     }
   }
 
@@ -185,6 +214,57 @@ export const Settings = () => {
                 >
                   {profileLoading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={18} />}
                   Save Profile
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Notifications Section */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center gap-3 bg-gray-50/50">
+              <div className="w-10 h-10 rounded-xl bg-[#fff5f5] flex flex-center text-[#CA3433] justify-center items-center">
+                <Bell size={20} />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-gray-900 font-display">Notification Preferences</h2>
+                <p className="text-sm text-gray-500">Manage how you receive updates and alerts</p>
+              </div>
+            </div>
+            
+            <form onSubmit={handleNotificationUpdate} className="p-6">
+              {notificationMessage.text && (
+                <div className={`p-4 rounded-xl mb-6 flex gap-3 text-sm font-medium ${notificationMessage.type === 'error' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+                  {notificationMessage.type === 'error' ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}
+                  {notificationMessage.text}
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-xl">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900">WhatsApp Notifications</h3>
+                    <p className="text-sm text-gray-500 mt-1">Receive important updates (bookings, payments) directly on WhatsApp.</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only peer"
+                      checked={whatsappEnabled}
+                      onChange={(e) => setWhatsappEnabled(e.target.checked)}
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#CA3433]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#CA3433]"></div>
+                  </label>
+                </div>
+              </div>
+
+              <div className="mt-8 flex justify-end">
+                <button 
+                  type="submit" 
+                  disabled={notificationLoading}
+                  className="bg-[#CA3433] hover:bg-[#ac2d2c] disabled:bg-[#ffc9c9] text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 transition-all active:scale-95 shadow-sm shadow-[#CA3433]/20"
+                >
+                  {notificationLoading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={18} />}
+                  Save Preferences
                 </button>
               </div>
             </form>
