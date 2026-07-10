@@ -8,6 +8,7 @@ import { Input } from '../ui/Input'
 import { closeAuthModal } from '../../store/authSlice'
 import { useAuth } from '../../hooks/useAuth'
 import toast from 'react-hot-toast'
+import { PasswordStrengthIndicator, getPasswordRequirements } from './PasswordStrengthIndicator'
 
 const ROLE_OPTIONS = [
   { value: 'user',             label: 'Student / Professional', icon: <GraduationCap size={20} className="text-brand-500" /> },
@@ -35,7 +36,15 @@ export const AuthModal = () => {
     const e = {}
     if (tab === 'signup' && !form.name.trim()) e.name = 'Name is required'
     if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) e.email = 'Valid email required'
-    if (form.password.length < 8) e.password = 'Min 8 characters'
+    if (tab === 'signup') {
+      const requirements = getPasswordRequirements(form.password)
+      const unmet = requirements.filter(r => !r.met)
+      if (unmet.length > 0) {
+        e.password = 'Password does not meet requirements'
+      }
+    } else {
+      if (form.password.length < 8) e.password = 'Min 8 characters'
+    }
     setErrors(e)
     return !Object.keys(e).length
   }
@@ -178,6 +187,8 @@ export const AuthModal = () => {
           error={errors.password}
           autoComplete={tab === 'signup' ? 'new-password' : 'current-password'}
         />
+
+        {tab === 'signup' && <PasswordStrengthIndicator password={form.password} />}
 
         {/* Role Selector (Sign Up only) */}
         {tab === 'signup' && (

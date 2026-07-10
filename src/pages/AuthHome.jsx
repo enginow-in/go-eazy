@@ -7,6 +7,7 @@ import { Input } from '../components/ui/Input'
 import { useAuth } from '../hooks/useAuth'
 import toast from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
+import { PasswordStrengthIndicator, getPasswordRequirements } from '../components/auth/PasswordStrengthIndicator'
 
 const ROLE_OPTIONS = [
   { value: 'user',             label: 'Student / Professional', icon: <GraduationCap size={20} className="text-brand-500" />, desc: 'Find PGs, Hostels & Flats' },
@@ -31,7 +32,15 @@ export const AuthHome = () => {
     const e = {}
     if (tab === 'signup' && !form.name.trim()) e.name = 'Name is required'
     if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) e.email = 'Valid email required'
-    if (form.password.length < 8) e.password = 'Min 8 characters'
+    if (tab === 'signup') {
+      const requirements = getPasswordRequirements(form.password)
+      const unmet = requirements.filter(r => !r.met)
+      if (unmet.length > 0) {
+        e.password = 'Password does not meet requirements'
+      }
+    } else {
+      if (form.password.length < 8) e.password = 'Min 8 characters'
+    }
     setErrors(e)
     return !Object.keys(e).length
   }
@@ -195,6 +204,8 @@ export const AuthHome = () => {
                   onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
                   error={errors.password}
                 />
+
+                {tab === 'signup' && <PasswordStrengthIndicator password={form.password} />}
 
                 {tab === 'signup' && (
                   <div className="pt-2">

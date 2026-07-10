@@ -6,6 +6,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import toast from 'react-hot-toast'
+import { PasswordStrengthIndicator, getPasswordRequirements } from './PasswordStrengthIndicator'
 
 const ROLE_OPTIONS = [
   { value: 'user',             label: 'Tenant',           emoji: '🎓' },
@@ -31,7 +32,15 @@ export const AuthGateModal = () => {
     const e = {}
     if (tab === 'signup' && !form.name.trim()) e.name = 'Name required'
     if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) e.email = 'Valid email required'
-    if (form.password.length < 8) e.password = 'Min 8 characters'
+    if (tab === 'signup') {
+      const requirements = getPasswordRequirements(form.password)
+      const unmet = requirements.filter(r => !r.met)
+      if (unmet.length > 0) {
+        e.password = 'Password does not meet requirements'
+      }
+    } else {
+      if (form.password.length < 8) e.password = 'Min 8 characters'
+    }
     setErrors(e)
     return !Object.keys(e).length
   }
@@ -158,6 +167,8 @@ export const AuthGateModal = () => {
                   error={errors.password}
                   className="text-sm py-2"
                 />
+
+                {tab === 'signup' && <PasswordStrengthIndicator password={form.password} />}
 
                 {/* Role Selector — compact pill row for signup */}
                 {tab === 'signup' && (
