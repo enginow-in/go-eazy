@@ -8,6 +8,7 @@ const propertySlice = createSlice({
     currentProperty: null,
     favorites: [],
     recentlyViewed: [],
+    comparisonList: [],
     filters: {
       city: '',
       area: '',
@@ -47,6 +48,24 @@ const propertySlice = createSlice({
       const idx = state.favorites.indexOf(id)
       if (idx >= 0) state.favorites.splice(idx, 1)
       else state.favorites.push(id)
+    },
+    toggleCompare: (state, action) => {
+      const property = action.payload
+      const idx = state.comparisonList.findIndex(p => p.id === property.id)
+      if (idx >= 0) {
+        state.comparisonList.splice(idx, 1)
+      } else {
+        if (state.comparisonList.length < 3) {
+          state.comparisonList.push(property)
+        }
+      }
+    },
+    removeFromCompare: (state, action) => {
+      const id = action.payload
+      state.comparisonList = state.comparisonList.filter(p => p.id !== id)
+    },
+    clearCompare: (state) => {
+      state.comparisonList = []
     },
     setRecentlyViewed: (state, action) => {
       state.recentlyViewed = action.payload
@@ -95,6 +114,7 @@ export const {
   setListings, appendListings, setFeatured, setCurrentProperty,
   setFavorites, toggleFavorite, setRecentlyViewed, addRecentlyViewed,
   setFilters, resetFilters, setLoading, setHasMore, setPage, setTotalCount,
-  setReviews, addReview, removeReview, setReviewsLoading
+  setReviews, addReview, removeReview, setReviewsLoading,
+  toggleCompare, removeFromCompare, clearCompare
 } = propertySlice.actions
 export default propertySlice.reducer

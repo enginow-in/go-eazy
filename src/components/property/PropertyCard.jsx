@@ -1,8 +1,10 @@
 import React, { useState, useMemo, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { Bookmark, Star, Home, Eye } from 'lucide-react'
+import { Bookmark, Star, Home, Eye, Scale } from 'lucide-react'
 import { openAuthModal } from '../../store/authSlice'
+import { toggleCompare } from '../../store/propertySlice'
+import toast from 'react-hot-toast'
 import { useProperties } from '../../hooks/useProperties'
 import { cn } from '../../utils/helpers'
 import { useTranslation } from 'react-i18next'
@@ -13,6 +15,8 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   const dispatch = useDispatch()
   const { user } = useSelector(s => s.auth)
   const { favorites, toggleFavorite } = useProperties()
+  const comparisonList = useSelector(s => s.property.comparisonList) || []
+  const isCompared = comparisonList.some(p => p.id === property.id)
   const [imgLoaded, setImgLoaded] = useState(false)
 
   const isFav = favorites.includes(property.id)
@@ -23,6 +27,20 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
     e.stopPropagation()
     if (!user) { dispatch(openAuthModal('signup')); return }
     toggleFavorite(property.id)
+  }
+
+  const handleCompare = (e) => {
+    e.stopPropagation()
+    if (!isCompared && comparisonList.length >= 3) {
+      toast.error('You can compare up to 3 properties max')
+      return
+    }
+    dispatch(toggleCompare(property))
+    if (!isCompared) {
+      toast.success('Added to compare')
+    } else {
+      toast.success('Removed from compare')
+    }
   }
 
   // Memoize values with deterministic calculation
@@ -63,6 +81,16 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
             )}
           >
             <Bookmark size={14} fill={isFav ? "currentColor" : "none"} />
+          </button>
+          <button
+            onClick={handleCompare}
+            className={cn(
+              "absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center z-10 transition-all",
+              isCompared ? "bg-[#CA3433] text-white shadow-lg" : "bg-white/80 backdrop-blur-sm text-gray-600 hover:bg-white"
+            )}
+            title="Compare"
+          >
+            <Scale size={14} />
           </button>
         </div>
 
@@ -116,6 +144,16 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           <div className="absolute top-2 right-2 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-lg text-[8px] font-black text-brand-600 uppercase tracking-wider">
              {t(`property.types.${property.type}`) || property.type}
           </div>
+          <button
+            onClick={handleCompare}
+            className={cn(
+              "absolute top-2 left-2 w-7 h-7 rounded-full flex items-center justify-center z-10 transition-all",
+              isCompared ? "bg-[#CA3433] text-white shadow-lg" : "bg-white/80 backdrop-blur-sm text-gray-600 hover:bg-white"
+            )}
+            title="Compare"
+          >
+            <Scale size={12} />
+          </button>
           {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
         </div>
         <div className="px-3 py-2">
@@ -166,6 +204,17 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           )}
         >
           <Bookmark size={14} fill={isFav ? 'currentColor' : 'none'} />
+        </button>
+        <button
+          onClick={handleCompare}
+          className={cn(
+            'absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center z-10',
+            'transition-all duration-200 shadow-sm transition-opacity',
+            isCompared ? 'bg-[#CA3433] text-white' : 'bg-white/90 backdrop-blur-sm text-gray-600'
+          )}
+          title="Compare"
+        >
+          <Scale size={14} />
         </button>
       </div>
 

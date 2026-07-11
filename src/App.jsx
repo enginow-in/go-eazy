@@ -13,11 +13,14 @@ import { OnboardingQuiz } from './components/common/OnboardingQuiz'
 import { useSelector } from 'react-redux'
 import { useAuth } from './hooks/useAuth'
 import ScrollToTop from './components/common/ScrollToTop'
+import { CompareActionBar } from './components/property/CompareActionBar'
 
 // Heavy pages: lazy-loaded into separate chunks to prevent
 // "Cannot access X before initialization" TDZ errors from
+// "Cannot access X before initialization" TDZ errors from
 // Rolldown bundling all module graphs together.
 const PropertyDetail          = lazy(() => import('./pages/PropertyDetail').then(m => ({ default: m.PropertyDetail })))
+const PropertyCompare         = lazy(() => import('./pages/PropertyCompare').then(m => ({ default: m.PropertyCompare })))
 const UserDashboard           = lazy(() => import('./pages/UserDashboard').then(m => ({ default: m.UserDashboard })))
 const SavedProperties         = lazy(() => import('./pages/SavedProperties').then(m => ({ default: m.SavedProperties })))
 const LandlordDashboard       = lazy(() => import('./pages/LandlordDashboard').then(m => ({ default: m.LandlordDashboard })))
@@ -58,12 +61,14 @@ function App() {
       <AppInitializer />
       <OnboardingQuiz />
       <RoleSelectionModal />
+      <CompareActionBar />
       <Layout>
         <Suspense fallback={<PageSpinner />}>
           <Routes>
           <Route path="/" element={<Navigate to="/search" replace />} />
           <Route path="/search" element={<Search />} />
           <Route path="/property/:id" element={<PropertyDetail />} />
+          <Route path="/compare" element={<PropertyCompare />} />
           
           {/* Legal Routes */}
           <Route path="/privacy" element={<PrivacyPolicy />} />
