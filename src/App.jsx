@@ -33,6 +33,7 @@ const PrivacyPolicy           = lazy(() => import('./pages/legal/PrivacyPolicy')
 const TermsOfService          = lazy(() => import('./pages/legal/TermsOfService'))
 const CookiePolicy            = lazy(() => import('./pages/legal/CookiePolicy'))
 const RefundPolicy            = lazy(() => import('./pages/legal/RefundPolicy'))
+const AiPropertyFinder        = lazy(() => import('./pages/AiPropertyFinder').then(m => ({ default: m.AiPropertyFinder })))
 
 const PageSpinner = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -61,8 +62,9 @@ function App() {
       <Layout>
         <Suspense fallback={<PageSpinner />}>
           <Routes>
-          <Route path="/" element={<Navigate to="/search" replace />} />
+          <Route path="/" element={<Home />} />
           <Route path="/search" element={<Search />} />
+          <Route path="/ai-finder" element={<AiPropertyFinder />} />
           <Route path="/property/:id" element={<PropertyDetail />} />
           
           {/* Legal Routes */}
@@ -102,11 +104,8 @@ function App() {
             </ProtectedRoute>
           } />
           
-          <Route path="/dashboard/saved" element={
-            <ProtectedRoute>
-              <SavedProperties />
-            </ProtectedRoute>
-          } />
+          <Route path="/favorites" element={<SavedProperties />} />
+          <Route path="/dashboard/saved" element={<Navigate to="/favorites" replace />} />
           
           <Route path="/settings" element={
             <ProtectedRoute>

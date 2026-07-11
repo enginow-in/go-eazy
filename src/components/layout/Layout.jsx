@@ -36,7 +36,7 @@ export const Layout = ({ children }) => {
           {children}
         </motion.main>
       </AnimatePresence>
-      {location.pathname === '/search' && <Footer />}
+      {location.pathname !== '/systemadmin' && <Footer />}
       <AuthModal />
     </>
   )
