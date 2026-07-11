@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { 
   Sparkles, Compass, MapPin, Heart, Share2, Download, Map, 
   Grid, Check, ArrowLeftRight, LineChart, Train, GraduationCap, 
@@ -208,7 +208,7 @@ export const AiPropertyFinder = () => {
     } catch { return [] }
   })
   
-  const [savedSearches, setSavedSearches] = useState(() => {
+  const [savedSearches] = useState(() => {
     try {
       const saved = localStorage.getItem('ai_saved_searches')
       return saved ? JSON.parse(saved) : []
@@ -268,7 +268,7 @@ export const AiPropertyFinder = () => {
   // Run search when preferences are loaded from router state
   useEffect(() => {
     if (routerLocation.state?.runImmediately) {
-      startRecommendationFlow()
+      setTimeout(() => startRecommendationFlow(), 0)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [routerLocation.state])
@@ -384,7 +384,7 @@ export const AiPropertyFinder = () => {
     } else if (resultsFilter === 'Highest Rated') {
       return [...calculated].sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0))
     } else if (resultsFilter === 'Newest') {
-      return [...calculated].sort((a, b) => new Date(b.created_at || Date.now()) - new Date(a.created_at || Date.now()))
+      return [...calculated].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
     }
     return [...calculated].sort((a, b) => b.score - a.score)
   }, [listings, preferences, resultsFilter])

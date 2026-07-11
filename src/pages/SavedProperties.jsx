@@ -8,6 +8,26 @@ import { supabase } from '../lib/supabase'
 import { MOCK_PROPERTIES, CITIES, PROPERTY_TYPES } from '../utils/constants'
 import { Skeleton } from '../components/ui/Skeleton'
 
+const SkeletonLoader = () => (
+  <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+      <div key={i} className="bg-white rounded-2xl border border-gray-100 overflow-hidden flex flex-col h-[320px]">
+        <Skeleton className="w-full h-[180px]" />
+        <div className="p-4 flex-1 flex flex-col justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-1/3" />
+            <Skeleton className="h-5 w-3/4" />
+          </div>
+          <div className="flex justify-between items-end">
+            <Skeleton className="h-6 w-20" />
+            <Skeleton className="h-8 w-8 rounded-full" />
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+)
+
 export const SavedProperties = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -28,10 +48,6 @@ export const SavedProperties = () => {
   
   // Pagination
   const [visibleCount, setVisibleCount] = useState(8)
-
-  useEffect(() => {
-    loadProperties()
-  }, [favorites]) // Re-run when favorites list changes
 
   const loadProperties = async () => {
     if (!favorites || favorites.length === 0) {
@@ -68,6 +84,11 @@ export const SavedProperties = () => {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    loadProperties()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [favorites]) // Re-run when favorites list changes
 
   // Filter and Sort Logic
   const filteredAndSorted = useMemo(() => {
