@@ -121,17 +121,45 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
     setForm(f => ({ ...f, latitude, longitude, map_address: map_address || '' }))
   }
 
+  const blobUrlsRef = React.useRef([])
+
+  React.useEffect(() => {
+    return () => {
+      blobUrlsRef.current.forEach(url => {
+        try {
+          URL.revokeObjectURL(url)
+        } catch (e) {
+          console.error('Failed to revoke object URL:', e)
+        }
+      })
+    }
+  }, [])
+
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files)
     if (files.length + previewUrls.length > 3) { toast.error('Maximum 3 images allowed'); return }
     for (const file of files) {
       if (file.size > 7 * 1024 * 1024) { toast.error(`Image ${file.name} exceeds 7MB limit`); return }
     }
+    const newUrls = files.map(f => {
+      const url = URL.createObjectURL(f)
+      blobUrlsRef.current.push(url)
+      return url
+    })
     setImages(prev => [...prev, ...files])
-    setPreviewUrls(prev => [...prev, ...files.map(f => URL.createObjectURL(f))])
+    setPreviewUrls(prev => [...prev, ...newUrls])
   }
 
   const removeImage = (index) => {
+    const urlToRemove = previewUrls[index]
+    if (urlToRemove && urlToRemove.startsWith('blob:')) {
+      try {
+        URL.revokeObjectURL(urlToRemove)
+      } catch (e) {
+        console.error('Failed to revoke object URL:', e)
+      }
+      blobUrlsRef.current = blobUrlsRef.current.filter(url => url !== urlToRemove)
+    }
     setPreviewUrls(prev => prev.filter((_, i) => i !== index))
     if (index >= (initialData?.images?.length || 0)) {
       setImages(prev => prev.filter((_, i) => i !== index - (initialData?.images?.length || 0)))
