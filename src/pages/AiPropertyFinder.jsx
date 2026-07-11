@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { 
   Sparkles, Compass, MapPin, Heart, Share2, Download, Map, 
   Grid, Check, ArrowLeftRight, LineChart, Train, GraduationCap, 
@@ -232,7 +231,7 @@ export const AiPropertyFinder = () => {
     'Preparing recommendations'
   ]
 
-  const startRecommendationFlow = () => {
+  const startRecommendationFlow = useCallback(() => {
     setIsProcessing(true)
     setProcessingStep(0)
     setShowResults(false)
@@ -263,7 +262,7 @@ export const AiPropertyFinder = () => {
         return prev + 1
       })
     }, 800)
-  }
+  }, [preferences])
 
   // Run search when preferences are loaded from router state
   useEffect(() => {
@@ -406,7 +405,7 @@ export const AiPropertyFinder = () => {
     }))
     toast.success(`Finding properties similar to ${property.title}`)
     startRecommendationFlow()
-  }, [])
+  }, [startRecommendationFlow])
 
   const handleShare = (property) => {
     navigator.clipboard.writeText(`${window.location.origin}/property/${property.id}`)
@@ -1107,7 +1106,7 @@ export const AiPropertyFinder = () => {
                             <button
                               key={search.id}
                               onClick={() => {
-                                const { id, timestamp, ...rest } = search;
+                                const { id: _, timestamp: __, ...rest } = search;
                                 setPreferences(rest);
                                 startRecommendationFlow();
                               }}
