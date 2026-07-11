@@ -99,6 +99,27 @@ async function validatePaymentWithRazorpay(
   return { valid: true }
 }
 
+// ── FETCH ORDER NOTES FROM RAZORPAY ───────────────────────────────────────────
+// The order was created server-side (create-razorpay-order) with the target
+// property_id + user_id embedded in `notes`. We re-read those notes from
+// Razorpay so the unlock is bound to the property that was actually paid for,
+// instead of trusting whatever property_id the client sends in the request body.
+async function fetchOrderNotes(
+  orderId: string,
+  keyId: string,
+  keySecret: string
+): Promise<{ property_id?: string; user_id?: string } | null> {
+  const auth = btoa(`${keyId}:${keySecret}`)
+  const resp = await fetch(`https://api.razorpay.com/v1/orders/${orderId}`, {
+    headers: { Authorization: `Basic ${auth}` }
+  })
+
+  if (!resp.ok) return null
+
+  const order = await resp.json()
+  return order?.notes ?? {}
+}
+
 // ── MAIN HANDLER ──────────────────────────────────────────────────────────────
 serve(async (req: Request) => {
   const corsHeaders = getCorsHeaders(req)
@@ -199,7 +220,38 @@ serve(async (req: Request) => {
       })
     }
 
-    // 5. Update database — only reached if all checks pass
+    // 5. Bind the unlock to the order that was actually paid for.
+    // create-razorpay-order embeds property_id + user_id in the order's notes.
+    // Without this check a user could pay ₹9 for one property, then replay the
+    // same valid order/payment/signature with a different property_id in the
+    // request body and unlock any property for free.
+    const orderNotes = await fetchOrderNotes(razorpay_order_id, keyId, secret)
+
+    if (!orderNotes) {
+      console.error(`Could not read order ${razorpay_order_id} from Razorpay`)
+      return new Response(JSON.stringify({ error: 'Could not verify order' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 502,
+      })
+    }
+
+    if (orderNotes.property_id !== property_id) {
+      console.error(`Property mismatch: order was for ${orderNotes.property_id}, body sent ${property_id}`)
+      return new Response(JSON.stringify({ error: 'Payment does not match this property' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 403,
+      })
+    }
+
+    if (orderNotes.user_id !== user.id) {
+      console.error(`User mismatch: order belongs to ${orderNotes.user_id}, request from ${user.id}`)
+      return new Response(JSON.stringify({ error: 'Payment does not belong to this user' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 403,
+      })
+    }
+
+    // 6. Update database — only reached if all checks pass
     const supabaseAdmin = createClient(
       supabaseUrl,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
@@ -210,7 +262,7 @@ serve(async (req: Request) => {
       .from('unlocked_properties')
       .upsert(
         { user_id: user.id, property_id },
-        { onConflict: 'user_id, property_id' }
+        { onConflict: 'user_id,property_id' }
       )
 
     if (dbError) {

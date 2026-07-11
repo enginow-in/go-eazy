@@ -128,7 +128,7 @@ serve(async (req) => {
       .from('unlocked_properties')
       .upsert(
         { user_id: userId, property_id: propertyId, created_at: new Date().toISOString() },
-        { onConflict: 'user_id, property_id' }
+        { onConflict: 'user_id,property_id' }
       )
 
     if (error) {
