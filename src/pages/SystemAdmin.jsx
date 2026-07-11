@@ -6,7 +6,6 @@ import { LogOut, ShieldAlert, ShieldCheck, Activity, Users, Building, AlertTrian
 import { supabase } from '../lib/supabase'
 import { Modal } from '../components/ui/Modal'
 import { Button } from '../components/ui/Button'
-import { Skeleton } from '../components/ui/Skeleton'
 import toast from 'react-hot-toast'
 
 export const SystemAdmin = () => {
@@ -23,23 +22,16 @@ export const SystemAdmin = () => {
   const [selectedDoc, setSelectedDoc] = useState(null)
   const [showApprovals, setShowApprovals] = useState(false)
 
-  // Property Verifications State
-  const [flaggedProperties, setFlaggedProperties] = useState([])
-  const [loadingProperties, setLoadingProperties] = useState(true)
-  const [showProperties, setShowProperties] = useState(false)
-  const [propToConfirm, setPropToConfirm] = useState(null)
-
 
   useEffect(() => {
     // Only load stats if authorized
     if (user && role === 'admin') {
       loadStats()
       loadProviders()
-      loadFlaggedProperties()
     }
-  }, [user, role, loadStats, loadProviders, loadFlaggedProperties])
+  }, [user])
 
-  const loadStats = React.useCallback(async () => {
+  const loadStats = async () => {
     try {
       const [uRes, pRes, sRes] = await Promise.all([
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
@@ -57,9 +49,9 @@ export const SystemAdmin = () => {
     } finally {
       setLoadingStats(false)
     }
-  }, [])
+  }
 
-  const loadProviders = React.useCallback(async () => {
+  const loadProviders = async () => {
     try {
       const data = await getAdminPendingServices()
       setProviders(data)
@@ -68,22 +60,7 @@ export const SystemAdmin = () => {
     } finally {
       setLoadingProviders(false)
     }
-  }, [getAdminPendingServices])
-
-  const loadFlaggedProperties = React.useCallback(async () => {
-    try {
-      const { data, error } = await supabase.from('properties')
-        .select(`*, profiles:landlord_id(full_name, email)`)
-        .eq('verification_status', 'flagged')
-        .order('created_at', { ascending: false })
-      if (error) throw error
-      setFlaggedProperties(data || [])
-    } catch (e) {
-      console.error('Failed to load flagged properties', e)
-    } finally {
-      setLoadingProperties(false)
-    }
-  }, [])
+  }
 
   const handleAction = async (id, newStatus) => {
     const toastId = toast.loading(`Marking as ${newStatus}...`)
@@ -91,19 +68,6 @@ export const SystemAdmin = () => {
       await updateServiceStatus(id, newStatus)
       setProviders(prev => prev.map(p => p.id === id ? { ...p, verification_status: newStatus } : p))
       toast.success(`Service Provider ${newStatus}`, { id: toastId })
-    } catch {
-      toast.error('Failed to update status', { id: toastId })
-    }
-  }
-
-  const handlePropertyAction = async (id, newStatus) => {
-    const toastId = toast.loading(`Marking as ${newStatus}...`)
-    try {
-      const { error } = await supabase.from('properties').update({ verification_status: newStatus }).eq('id', id)
-      if (error) throw error
-      setFlaggedProperties(prev => prev.filter(p => p.id !== id))
-      toast.success(`Property ${newStatus}`, { id: toastId })
-      if (propToConfirm) setPropToConfirm(null)
     } catch {
       toast.error('Failed to update status', { id: toastId })
     }
@@ -211,7 +175,7 @@ export const SystemAdmin = () => {
       <main className="max-w-6xl mx-auto p-6 lg:p-10 space-y-10">
         
         {/* Welcome & Stats Section (Hidden when managing list) */}
-        {!showApprovals && !showProperties && (
+        {!showApprovals && (
           <>
             <div>
               <h1 className="text-3xl font-extrabold font-display">System Overview</h1>
@@ -230,7 +194,7 @@ export const SystemAdmin = () => {
                   <Users className="w-4 h-4 md:w-5 md:h-5" />
                 </div>
                 <p className="text-[9px] md:text-xs font-bold text-gray-500 uppercase tracking-widest mb-0.5 md:mb-1">Total Users</p>
-                {loadingStats ? <Skeleton variant="stat-block" className="h-6 md:h-10 w-12 md:w-24" /> : 
+                {loadingStats ? <div className="h-6 md:h-10 w-12 md:w-24 bg-gray-100 rounded animate-pulse" /> : 
                   <p className="text-xl md:text-4xl font-black text-gray-900">{stats.users}</p>}
               </div>
 
@@ -242,7 +206,7 @@ export const SystemAdmin = () => {
                   <Building className="w-4 h-4 md:w-5 md:h-5" />
                 </div>
                 <p className="text-[9px] md:text-xs font-bold text-gray-500 uppercase tracking-widest mb-0.5 md:mb-1">Properties</p>
-                {loadingStats ? <Skeleton variant="stat-block" className="h-6 md:h-10 w-12 md:w-24" /> : 
+                {loadingStats ? <div className="h-6 md:h-10 w-12 md:w-24 bg-gray-100 rounded animate-pulse" /> : 
                   <p className="text-xl md:text-4xl font-black text-gray-900">{stats.properties}</p>}
               </div>
 
@@ -254,7 +218,7 @@ export const SystemAdmin = () => {
                   <Activity className="w-4 h-4 md:w-5 md:h-5" />
                 </div>
                 <p className="text-[9px] md:text-xs font-bold text-gray-500 uppercase tracking-widest mb-0.5 md:mb-1">Providers</p>
-                {loadingStats ? <Skeleton variant="stat-block" className="h-6 md:h-10 w-12 md:w-24" /> : 
+                {loadingStats ? <div className="h-6 md:h-10 w-12 md:w-24 bg-gray-100 rounded animate-pulse" /> : 
                   <p className="text-xl md:text-4xl font-black text-gray-900">{stats.services}</p>}
               </div>
             </div>
@@ -262,7 +226,6 @@ export const SystemAdmin = () => {
         )}
 
         {/* ── APPROVAL WORKFLOW ── */}
-        {!showProperties && (
         <div>
           {!showApprovals ? (
             <div 
@@ -371,120 +334,6 @@ export const SystemAdmin = () => {
             </div>
           )}
         </div>
-        )}
-
-        {/* ── FLAGGED PROPERTIES WORKFLOW ── */}
-        {!showApprovals && (
-        <div>
-          {!showProperties ? (
-            <div 
-              className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-[#CA3433]/30 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 group mt-6"
-              onClick={() => setShowProperties(true)}
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-red-50 text-[#CA3433] rounded-xl flex items-center justify-center shrink-0">
-                  <AlertTriangle size={28} />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold font-display text-gray-900">Flagged Properties</h2>
-                  <p className="text-gray-500 text-sm mt-0.5">
-                     {loadingProperties ? 'Loading flagged properties...' : `Review ${flaggedProperties.length} flagged property listings`}
-                  </p>
-                </div>
-              </div>
-              <Button variant="primary" className="shrink-0 bg-gray-900 hover:bg-black group-hover:bg-[#CA3433] transition-colors border-none">
-                Open Reviews <span className="ml-1 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">→</span>
-              </Button>
-            </div>
-          ) : (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
-              <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-4">
-                <h2 className="text-2xl font-bold font-display text-gray-900">Flagged Properties <span className="text-[#CA3433] text-lg ml-2">({flaggedProperties.length})</span></h2>
-                <button onClick={() => setShowProperties(false)} className="text-sm font-bold text-gray-500 hover:text-gray-900 px-4 py-2 rounded-xl hover:bg-gray-100 transition-colors flex items-center gap-1.5 active:scale-95">
-                  <XCircle size={16} /> Close
-                </button>
-              </div>
-              
-              {loadingProperties ? (
-                <div className="space-y-4">
-                  {[1,2,3].map(i => <div key={i} className="h-40 bg-white border border-gray-100 shadow-sm animate-pulse rounded-2xl" />)}
-                </div>
-              ) : flaggedProperties.length === 0 ? (
-                <div className="bg-white rounded-2xl p-12 text-center border border-dashed border-gray-300">
-                  <ShieldCheck className="mx-auto text-emerald-400 mb-3" size={40} />
-                  <p className="text-gray-500 font-medium">All clean! No flagged properties.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {flaggedProperties.map(p => (
-                    <div key={p.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 flex flex-col md:flex-row group relative">
-                      
-                      {/* Left: Image */}
-                      <div className="w-full md:w-48 h-48 md:h-auto bg-gray-50 flex shrink-0">
-                        {p.images && p.images[0] ? (
-                          <img src={p.images[0]} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-300 bg-gray-100">
-                            <Building size={32} />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Middle: Details */}
-                      <div className="p-5 flex-1 md:pl-6">
-                        <div className="flex flex-col md:flex-row md:justify-between items-start mb-2 gap-2">
-                           <div>
-                             <h3 className="font-bold text-xl text-gray-900 leading-tight flex items-center gap-2">
-                               {p.title}
-                               <a href={`/property/${p.id}`} target="_blank" rel="noreferrer" className="text-blue-500 hover:text-blue-700">
-                                 <Eye size={16} />
-                               </a>
-                             </h3>
-                             <p className="text-sm text-gray-500 font-medium mt-1">{p.area}, {p.city}</p>
-                           </div>
-                           <div className="md:text-right bg-red-50 p-2 rounded-lg w-full md:w-auto mt-2 md:mt-0 border border-red-100">
-                              <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Trust Score</p>
-                              <p className="text-xl font-black text-red-700">
-                                {p.verification_score || 0}/100
-                              </p>
-                           </div>
-                        </div>
-
-                        <div className="text-sm text-gray-600 line-clamp-2 my-2 italic border-l-2 border-gray-200 pl-3">
-                          "{p.description}"
-                        </div>
-
-                        <div className="flex flex-col md:flex-row flex-wrap gap-x-8 gap-y-2 text-sm text-gray-600 mt-4 mb-2">
-                           <p className="flex flex-col shrink-0"><span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Landlord</span> <strong className="text-gray-900">{p.profiles?.full_name}</strong></p>
-                           <p className="flex flex-col min-w-0"><span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Email</span> <strong className="text-gray-900 truncate">{p.profiles?.email}</strong></p>
-                           <p className="flex flex-col shrink-0"><span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Rent</span> <strong className="text-gray-900">₹{p.price}</strong></p>
-                        </div>
-                      </div>
-
-                      {/* Right: Actions */}
-                      <div className="p-4 bg-gray-50/50 border-t md:border-t-0 md:border-l border-gray-100 flex flex-row md:flex-col gap-2 shrink-0 md:w-44 items-center justify-center">
-                        <button 
-                          onClick={() => handlePropertyAction(p.id, 'verified')}
-                          className="flex-1 md:flex-none w-full py-2.5 px-4 text-xs font-bold tracking-wider uppercase bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors shadow-[0_2px_10px_rgb(34,197,94,0.2)] hover:shadow-[0_4px_12px_rgb(34,197,94,0.3)] flex items-center justify-center gap-2"
-                        >
-                          <ShieldCheck size={14} /> Verify
-                        </button>
-                        <button 
-                          onClick={() => setPropToConfirm(p)}
-                          className="flex-1 md:flex-none w-full py-2.5 px-4 text-xs font-bold tracking-wider uppercase bg-red-50 text-red-600 rounded-xl hover:bg-red-100 hover:text-red-700 transition-colors"
-                        >
-                          Reject
-                        </button>
-                      </div>
-                      
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-        )}
 
         {/* Document Modal */}
         <Modal open={!!selectedDoc} onClose={() => setSelectedDoc(null)} size="lg" className="bg-white">
@@ -503,24 +352,6 @@ export const SystemAdmin = () => {
             )}
             <div className="mt-4 flex justify-end">
               <Button onClick={() => setSelectedDoc(null)} variant="secondary" className="font-bold">Close Viewer</Button>
-            </div>
-          </div>
-        </Modal>
-
-        {/* Rejection Confirmation Modal */}
-        <Modal open={!!propToConfirm} onClose={() => setPropToConfirm(null)} size="md" className="bg-white p-6">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-100">
-              <AlertTriangle size={32} className="text-red-500" />
-            </div>
-            <h3 className="text-2xl font-black text-gray-900 mb-2 font-display">Reject Property?</h3>
-            <p className="text-gray-600 mb-6 text-sm leading-relaxed">
-              Are you sure you want to reject and soft-delete <strong>{propToConfirm?.title}</strong>? 
-              This will hide it from the platform. The landlord will need to edit and fix the listing to resubmit.
-            </p>
-            <div className="flex gap-3">
-              <Button onClick={() => setPropToConfirm(null)} variant="secondary" className="flex-1 font-bold">Cancel</Button>
-              <Button onClick={() => handlePropertyAction(propToConfirm.id, 'rejected')} variant="primary" className="flex-1 bg-red-600 hover:bg-red-700 border-none font-bold">Yes, Reject</Button>
             </div>
           </div>
         </Modal>
