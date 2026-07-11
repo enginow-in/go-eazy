@@ -197,10 +197,11 @@ export const useServices = () => {
     }
 
     // 3. Insert main provider record
+    const { contact_phone, contact_email, ...publicProviderData } = providerData
     const { data: provider, error: providerError } = await supabase
       .from('service_providers')
       .insert({ 
-        ...providerData, 
+        ...publicProviderData,
         provider_id: user.id, 
         documents: documentUrls,
         images: imageUrls
@@ -209,6 +210,14 @@ export const useServices = () => {
       .maybeSingle()
 
     if (providerError) throw providerError
+
+    const { error: contactError } = await supabase
+      .from('service_contact_details')
+      .insert({ service_provider_id: provider.id, contact_phone, contact_email })
+    if (contactError) {
+      await supabase.from('service_providers').delete().eq('id', provider.id)
+      throw contactError
+    }
 
     // Insert service items (price rows)
     if (serviceItems?.length) {

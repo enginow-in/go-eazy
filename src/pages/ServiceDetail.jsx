@@ -52,7 +52,7 @@ export const ServiceDetail = () => {
   const { user, profile } = useSelector(s => s.auth)
 
   const { 
-    currentService, reviews, reviewsLoading, 
+    currentService, reviews,
     fetchServiceById, fetchReviews, submitReview, deleteReview,
     fetchServiceGatedData 
   } = useServices()
@@ -117,13 +117,18 @@ export const ServiceDetail = () => {
     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
     : '0.0'
 
-  const handleUnlockContact = () => {
+  const handleUnlockContact = async () => {
     if (!user) {
       dispatch(openAuthModal('login'))
       return
     }
+    const gated = await fetchServiceGatedData(id)
+    if (!gated) {
+      toast.error('Contact details are available after a verified unlock.')
+      return
+    }
     setContactUnlocked(true)
-    fetchServiceGatedData(id).then(setGatedData)
+    setGatedData(gated)
     toast.success(t('services.reviews.contactUnlocked'))
   }
 
@@ -429,14 +434,14 @@ export const ServiceDetail = () => {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {service.contact_phone && (
-                      <a href={`tel:${gatedData?.contact_phone || service.contact_phone}`} className="flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-full bg-brand-500 text-white font-bold hover:bg-brand-600 transition-colors text-[15px]">
-                        <Phone size={18} /> {gatedData?.contact_phone || service.contact_phone}
+                    {gatedData?.contact_phone && (
+                      <a href={`tel:${gatedData.contact_phone}`} className="flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-full bg-brand-500 text-white font-bold hover:bg-brand-600 transition-colors text-[15px]">
+                        <Phone size={18} /> {gatedData.contact_phone}
                       </a>
                     )}
-                    {service.contact_email && (
-                      <a href={`mailto:${gatedData?.contact_email || service.contact_email}`} className="flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-full bg-white border border-gray-200 text-gray-900 font-bold hover:bg-gray-50 transition-colors shadow-sm text-[15px]">
-                        <Mail size={18} /> {gatedData?.contact_email || t('property.sections.sendEmail')}
+                    {gatedData?.contact_email && (
+                      <a href={`mailto:${gatedData.contact_email}`} className="flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-full bg-white border border-gray-200 text-gray-900 font-bold hover:bg-gray-50 transition-colors shadow-sm text-[15px]">
+                        <Mail size={18} /> {gatedData.contact_email || t('property.sections.sendEmail')}
                       </a>
                     )}
                   </div>
