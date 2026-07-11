@@ -11,7 +11,7 @@ export const formatPrice = (price) => {
 }
 
 export const formatPriceShort = (price) => {
-  if (!price) return '—'
+  if (!price && price !== 0) return '—'
   if (price >= 100000) return `₹${(price / 100000).toFixed(1)}L`
   if (price >= 1000) return `₹${(price / 1000).toFixed(0)}K`
   return `₹${price}`
