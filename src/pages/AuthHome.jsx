@@ -5,7 +5,7 @@ import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { useAuth } from '../hooks/useAuth'
 import toast from 'react-hot-toast'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion';
 
 const ROLE_OPTIONS = [
   { value: 'user',             label: 'Student / Professional', icon: <GraduationCap size={20} className="text-brand-500" />, desc: 'Find PGs, Hostels & Flats' },

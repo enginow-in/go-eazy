@@ -25,11 +25,9 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
     toggleFavorite(property.id)
   }
 
-  // Memoize values with deterministic calculation
-  const { rating, numBeds } = useMemo(() => {
+  const { rating } = useMemo(() => {
     return {
-      rating: property.rating || '0.0',
-      numBeds: property.bedrooms || 0,
+      rating: property.rating || '0.0'
     }
   }, [property.rating, property.bedrooms])
 

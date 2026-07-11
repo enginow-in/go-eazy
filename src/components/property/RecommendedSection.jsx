@@ -14,6 +14,7 @@ export const RecommendedSection = ({ viewMode = 'grid' }) => {
     if (!loading && !isLocked.current) {
       const recs = getRecommendedProperties()
       if (recs.length > 0) {
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         setRecommendations(recs)
         isLocked.current = true
       }
