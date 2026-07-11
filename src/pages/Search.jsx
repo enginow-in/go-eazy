@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import { useDispatch } from 'react-redux'
 import { useSearchParams } from 'react-router-dom'
-import { Filter, Grid, List as ListIcon, ChevronDown } from 'lucide-react'
+import { Filter, Grid, List as ListIcon, Map as MapIcon, ChevronDown } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useProperties } from '../hooks/useProperties'
 import { PropertyCard } from '../components/property/PropertyCard'
@@ -13,6 +13,7 @@ import { AMENITY_ICONS, cn } from '../utils/helpers'
 import { Skeleton } from '../components/ui/Skeleton'
 import { useAuth } from '../hooks/useAuth'
 import { RecommendedSection } from '../components/property/RecommendedSection'
+import { MapSearch } from '../components/property/MapSearch'
 
 export const Search = () => {
   const { t } = useTranslation()
@@ -211,6 +212,12 @@ export const Search = () => {
                   >
                     <ListIcon size={18} className="rotate-90" />
                   </button>
+                  <button 
+                    onClick={() => setViewMode('map')} 
+                    className={`p-2 transition-all rounded-lg ${viewMode === 'map' ? 'bg-brand-50 text-brand-600 ring-1 ring-brand-100' : 'text-gray-400'}`}
+                  >
+                    <MapIcon size={18} />
+                  </button>
                 </div>
 
                 <div className="relative">
@@ -244,6 +251,9 @@ export const Search = () => {
                <button onClick={() => setViewMode('list')} className={`hover:text-gray-900 transition-colors ${viewMode === 'list' ? 'text-gray-900 border border-gray-200 rounded p-1 shadow-sm' : 'p-1'}`}>
                   <ListIcon size={22} className="rotate-90" />
                </button>
+               <button onClick={() => setViewMode('map')} className={`hover:text-gray-900 transition-colors ${viewMode === 'map' ? 'text-gray-900 border border-gray-200 rounded p-1 shadow-sm' : 'p-1'}`}>
+                  <MapIcon size={20} />
+               </button>
              </div>
              
              {/* Desktop Filters Button & Dropdown */}
@@ -266,55 +276,97 @@ export const Search = () => {
           </div>
         </div>
 
-        {/* Recommendation Section (if quiz done) */}
-        <RecommendedSection viewMode={viewMode} />
-
-        {/* Results Area */}
-        {loading && listings.length === 0 ? (
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-6 xl:gap-8">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-              <div key={i} className="bg-white rounded-xl border border-gray-100/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-4 overflow-hidden">
-                <Skeleton className="aspect-[4/3] w-full rounded-b-2xl" />
-                <div className="space-y-3 p-4">
-                  <div className="flex justify-between">
-                    <Skeleton className="h-6 w-1/3" />
-                    <Skeleton className="h-6 w-1/4" />
+        {viewMode === 'map' ? (
+          <div className="flex flex-col md:flex-row gap-4 h-[calc(100vh-160px)] min-h-[600px] mt-4">
+            {/* Left side: Scrollable List (hidden on mobile, shown on desktop) */}
+            <div className="hidden md:flex w-full md:w-[45%] lg:w-[40%] h-full flex-col overflow-y-auto pr-2 pb-20 md:pb-0 space-y-4 custom-scrollbar">
+              {loading && listings.length === 0 ? (
+                [1, 2, 3].map(i => (
+                  <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm flex gap-4">
+                    <Skeleton className="w-32 h-24 rounded-lg" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </div>
                   </div>
-                  <Skeleton className="h-4 w-3/4" />
-                  <div className="pt-2 flex gap-2">
-                    <Skeleton className="h-4 w-1/4 rounded-full" />
-                    <Skeleton className="h-4 w-1/4 rounded-full" />
-                  </div>
+                ))
+              ) : listings.length > 0 ? (
+                <>
+                  {listings.map(p => <PropertyCard key={p.id} property={p} layout="list" />)}
+                  {hasMore && (
+                    <div className="mt-6 text-center pb-8">
+                      <Button variant="secondary" onClick={() => fetchProperties(false)} loading={loading}>
+                        Load More
+                      </Button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm mt-4">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">No properties found</h3>
+                  <Button variant="secondary" onClick={() => dispatch(resetFilters())}>Clear all filters</Button>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : listings.length > 0 ? (
-          <>
-            <div className={cn(
-               "grid gap-3 sm:gap-6 xl:gap-8",
-               viewMode === 'grid' ? "grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5" : "grid-cols-1"
-            )}>
-              {listings.map(p => <PropertyCard key={p.id} property={p} layout={viewMode} />)}
+              )}
             </div>
-            {hasMore && (
-              <div className="mt-10 text-center">
-                <Button variant="secondary" onClick={() => fetchProperties(false)} loading={loading}>
-                  Load More
+
+            {/* Right side: Map Search Component */}
+            <div className="w-full md:w-[55%] lg:w-[60%] h-[60vh] md:h-full rounded-2xl overflow-hidden shadow-sm border border-gray-200">
+              <MapSearch listings={listings} />
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Recommendation Section (if quiz done) */}
+            <RecommendedSection viewMode={viewMode} />
+
+            {/* Results Area */}
+            {loading && listings.length === 0 ? (
+              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-6 xl:gap-8 mt-6">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                  <div key={i} className="bg-white rounded-xl border border-gray-100/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-4 overflow-hidden">
+                    <Skeleton className="aspect-[4/3] w-full rounded-b-2xl" />
+                    <div className="space-y-3 p-4">
+                      <div className="flex justify-between">
+                        <Skeleton className="h-6 w-1/3" />
+                        <Skeleton className="h-6 w-1/4" />
+                      </div>
+                      <Skeleton className="h-4 w-3/4" />
+                      <div className="pt-2 flex gap-2">
+                        <Skeleton className="h-4 w-1/4 rounded-full" />
+                        <Skeleton className="h-4 w-1/4 rounded-full" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : listings.length > 0 ? (
+              <div className="mt-6">
+                <div className={cn(
+                  "grid gap-3 sm:gap-6 xl:gap-8",
+                  viewMode === 'grid' ? "grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5" : "grid-cols-1"
+                )}>
+                  {listings.map(p => <PropertyCard key={p.id} property={p} layout={viewMode} />)}
+                </div>
+                {hasMore && (
+                  <div className="mt-10 text-center">
+                    <Button variant="secondary" onClick={() => fetchProperties(false)} loading={loading}>
+                      Load More
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm mt-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">No properties found</h3>
+                <p className="text-gray-500 max-w-sm mx-auto mb-6">
+                  We couldn't find any properties matching your current filters. Try adjusting your search criteria.
+                </p>
+                <Button variant="secondary" onClick={() => dispatch(resetFilters())}>
+                  Clear all filters
                 </Button>
               </div>
             )}
           </>
-        ) : (
-          <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">No properties found</h3>
-            <p className="text-gray-500 max-w-sm mx-auto mb-6">
-              We couldn't find any properties matching your current filters. Try adjusting your search criteria.
-            </p>
-            <Button variant="secondary" onClick={() => dispatch(resetFilters())}>
-              Clear all filters
-            </Button>
-          </div>
         )}
       </div>
     </div>

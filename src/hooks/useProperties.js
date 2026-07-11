@@ -14,7 +14,7 @@ const PAGE_SIZE = 12
 
 const PUBLIC_PROPERTY_FIELDS = `
   id, landlord_id, type, title, description, price, city, area, pincode, 
-  amenities, images, availability, views, created_at
+  amenities, images, availability, views, created_at, latitude, longitude
 `
 
 const PUBLIC_PROFILE_FIELDS = 'full_name, avatar_url, bio'
