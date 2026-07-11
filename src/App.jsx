@@ -102,11 +102,8 @@ function App() {
             </ProtectedRoute>
           } />
           
-          <Route path="/dashboard/saved" element={
-            <ProtectedRoute>
-              <SavedProperties />
-            </ProtectedRoute>
-          } />
+          <Route path="/favorites" element={<SavedProperties />} />
+          <Route path="/dashboard/saved" element={<Navigate to="/favorites" replace />} />
           
           <Route path="/settings" element={
             <ProtectedRoute>

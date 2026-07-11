@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { Search, ChevronDown, User, LogOut, Home, Building, Tent, MapPin, Grid, PlusCircle, LayoutDashboard, Menu, X } from 'lucide-react'
+import { Search, ChevronDown, User, LogOut, Home, Building, Tent, MapPin, Grid, PlusCircle, LayoutDashboard, Menu, X, Heart } from 'lucide-react'
 import { openAuthModal } from '../../store/authSlice'
 import { toggleMobileMenu, closeMobileMenu } from '../../store/uiSlice'
 import { useAuth } from '../../hooks/useAuth'
@@ -18,7 +18,7 @@ export const Navbar = () => {
   const location = useLocation()
   const { t, i18n } = useTranslation()
   const { user, profile, role, signOut, loading } = useAuth()
-  const { filters, updateFilters, resetFilters } = useProperties()
+  const { filters, updateFilters, resetFilters, favorites } = useProperties()
   const { mobileMenuOpen } = useSelector(s => s.ui)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [cityMenuOpen, setCityMenuOpen] = useState(false)
@@ -147,6 +147,14 @@ export const Navbar = () => {
             <div className="flex items-center space-x-6 text-sm font-medium text-gray-500">
               <Link to="/search" className="px-3 py-1 bg-brand-lime text-gray-900 rounded-md font-semibold hover:bg-lime-400 transition-colors">{t('nav.home')}</Link>
               <Link to="/nearby" className="hover:text-gray-900 transition-colors py-2">{t('nav.nearby')}</Link>
+              <Link to="/favorites" className="hover:text-gray-900 transition-colors py-2 flex items-center gap-1.5">
+                <span>Favorites</span>
+                {favorites?.length > 0 && (
+                  <span className="bg-[#CA3433] text-white text-[10px] font-black px-1.5 py-0.5 rounded-full min-w-[16px] h-4 flex items-center justify-center">
+                    {favorites.length}
+                  </span>
+                )}
+              </Link>
               <button onClick={() => user ? navigate('/landlord') : dispatch(openAuthModal('login'))} className="hover:text-gray-900 transition-colors">{t('nav.list')}</button>
               <Link to="/about" className="hover:text-gray-900 transition-colors py-2">{t('nav.about')}</Link>
             </div>
@@ -390,6 +398,14 @@ export const Navbar = () => {
             
             <Link to="/search" onClick={() => dispatch(closeMobileMenu())} className="block font-semibold text-gray-700 py-2">{t('nav.home')}</Link>
             <Link to="/nearby" onClick={() => dispatch(closeMobileMenu())} className="block w-full text-left font-semibold text-gray-700 py-2">{t('nav.nearby')}</Link>
+            <Link to="/favorites" onClick={() => dispatch(closeMobileMenu())} className="block w-full text-left font-semibold text-gray-700 py-2 flex items-center justify-between">
+              <span>Favorites</span>
+              {favorites?.length > 0 && (
+                <span className="bg-[#CA3433] text-white text-xs font-bold px-2.5 py-0.5 rounded-full">
+                  {favorites.length}
+                </span>
+              )}
+            </Link>
             <button onClick={() => { dispatch(closeMobileMenu()); user ? navigate(role === 'landlord' ? '/landlord' : role === 'service_provider' ? '/service-provider' : '/landlord') : dispatch(openAuthModal('login')) }} className="block w-full text-left font-semibold text-gray-700 py-2">{t('nav.list')}</button>
             <Link to="/about" onClick={() => dispatch(closeMobileMenu())} className="block w-full text-left font-semibold text-gray-700 py-2">{t('nav.about')}</Link>
             
