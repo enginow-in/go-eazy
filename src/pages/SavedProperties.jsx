@@ -164,25 +164,7 @@ export const SavedProperties = () => {
     setVisibleCount(prev => prev + 8)
   }
 
-  const SkeletonLoader = () => (
-    <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-        <div key={i} className="bg-white rounded-2xl border border-gray-100 overflow-hidden flex flex-col h-[320px]">
-          <Skeleton className="w-full h-[180px]" />
-          <div className="p-4 flex-1 flex flex-col justify-between">
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-1/3" />
-              <Skeleton className="h-5 w-3/4" />
-            </div>
-            <div className="flex justify-between items-end">
-              <Skeleton className="h-6 w-20" />
-              <Skeleton className="h-8 w-8 rounded-full" />
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  )
+
 
   return (
     <div className="pt-28 pb-20 bg-gray-50 min-h-screen">
