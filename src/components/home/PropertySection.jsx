@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { ChevronRight, Flame } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
@@ -83,10 +83,19 @@ export const PropertySection = ({ title, type, icon, viewAllPath }) => {
 }
 
 export const FeaturedSection = () => {
-  const { featured, fetchFeatured, loading } = useProperties()
+  const { featured, fetchFeatured: fetchFeaturedRaw } = useProperties()
+  const [loading, setLoading] = useState(true)
   const items = featured.length ? featured : MOCK_PROPERTIES.sort((a,b) => b.views - a.views).slice(0,6)
 
-  useEffect(() => { fetchFeatured() }, [])
+  const fetchFeatured = useCallback(async () => {
+    try {
+      await fetchFeaturedRaw()
+    } finally {
+      setLoading(false)
+    }
+  }, [fetchFeaturedRaw])
+
+  useEffect(() => { fetchFeatured() }, [fetchFeatured])
 
   return (
     <section className="mb-12">
