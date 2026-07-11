@@ -211,7 +211,12 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
       })
       if (!orderResp.ok) {
         const errText = await orderResp.text()
-        let errJson = {}; try { errJson = JSON.parse(errText) } catch(e) {}
+        let errJson = {}; 
+        try { 
+          errJson = JSON.parse(errText) 
+        } catch(e) {
+          console.error('Failed to parse error response:', e, errText)
+        }
         const msg = [errJson.error, errJson.detail, `HTTP ${orderResp.status}`].filter(Boolean).join(' | ')
         toast.error(msg, { duration: 8000 }); throw new Error(msg)
       }
