@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Sparkles, Compass, MapPin, Heart, Share2, Download, Map, 
   Grid, Check, ArrowLeftRight, LineChart, Train, GraduationCap, 

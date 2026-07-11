@@ -192,6 +192,28 @@ export const PropertyDetail = () => {
         status: 'pending'
       })
       if (error) throw error
+      
+      // Trigger booking confirmation notification
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-notification`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify({
+              type: 'booking_confirmation',
+              userId: user.id,
+              propertyId: p.id
+            })
+          });
+        }
+      } catch (e) {
+        console.error('Failed to send notification:', e);
+      }
+
       toast.success('Visit Request Sent! Track it in your dashboard.')
       setVisitDate('')
     } catch (err) {
@@ -268,6 +290,25 @@ export const PropertyDetail = () => {
             toast.success('Payment verified! Contact details unlocked.')
             setHasUnlocked(true)
             checkUnlockStatus() 
+
+            // Trigger payment success notification
+            try {
+              await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-notification`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                  type: 'payment_success',
+                  userId: user.id,
+                  propertyId: p.id
+                })
+              });
+            } catch (e) {
+              console.error('Failed to send notification:', e);
+            }
+
             if (visitDateRef.current) {
               const { error: visitErr } = await supabase.from('site_visits').insert({
                  property_id: p.id,
