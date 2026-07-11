@@ -21,10 +21,13 @@ FOR SELECT USING (bucket_id = 'property-images');
 
 -- Allow authenticated landlords to upload to the 'properties/' folder
 DROP POLICY IF EXISTS "Landlords can upload property images" ON storage.objects;
-CREATE POLICY "Landlords can upload property images" ON storage.objects 
-FOR INSERT WITH CHECK (
-  bucket_id = 'property-images' AND 
-  auth.role() = 'authenticated'
+CREATE POLICY "Landlords can upload property images"
+ON storage.objects
+FOR INSERT
+WITH CHECK (
+  bucket_id = 'property-images'
+  AND auth.role() = 'authenticated'
+  AND auth.uid()::text = (storage.foldername(name))[1]
 );
 
 -- Allow landlords to update their own images
