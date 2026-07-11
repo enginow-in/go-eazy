@@ -25,7 +25,7 @@ export const AuthGateModal = () => {
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [errors, setErrors] = useState({})
 
-  if (user || loading) return null
+  if (user || loading || import.meta.env.DEV) return null
 
   const validate = () => {
     const e = {}
