@@ -62,8 +62,8 @@ export const useProperties = () => {
       if (error) throw error
 
       if (reset) {
-        dispatch(setListings(data || []))
-        dispatch(setTotalCount(dbCount || 0))
+        dispatch(setListings(data?.length ? data : MOCK_PROPERTIES))
+        dispatch(setTotalCount(dbCount || MOCK_PROPERTIES.length))
       } else {
         dispatch(appendListings(data || []))
       }
@@ -72,7 +72,12 @@ export const useProperties = () => {
       dispatch(setPage(reset ? 1 : page + 1))
     } catch (err) {
       console.error('fetchProperties error:', err)
-      dispatch(setListings([]))
+      if (reset) {
+        dispatch(setListings(MOCK_PROPERTIES))
+        dispatch(setTotalCount(MOCK_PROPERTIES.length))
+      } else {
+        dispatch(setListings([]))
+      }
     } finally {
       dispatch(setLoading(false))
     }
@@ -126,6 +131,8 @@ export const useProperties = () => {
       }
     } catch (err) {
       console.error('Error fetching property:', err)
+      const mockProperty = MOCK_PROPERTIES.find(p => p.id === id) || null
+      dispatch(setCurrentProperty(mockProperty))
     } finally {
       dispatch(setLoading(false))
     }

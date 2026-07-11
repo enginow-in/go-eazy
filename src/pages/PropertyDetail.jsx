@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { 
   MapPin, Heart, Share2, Phone, Mail, ArrowLeft, 
   CheckCircle2, ChevronDown, ChevronUp, Lock, EyeOff, X, 
-  Star, Trash2, Sparkles, Calendar 
+  Star, Trash2, Sparkles, Calendar, Scale
 } from 'lucide-react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay, Pagination, Navigation } from 'swiper/modules'
@@ -12,6 +12,7 @@ import 'swiper/css/pagination'
 import 'swiper/css/navigation'
 import { useSelector, useDispatch } from 'react-redux'
 import { openAuthModal } from '../store/authSlice'
+import { toggleCompare } from '../store/propertySlice'
 import { useProperties } from '../hooks/useProperties'
 import { TypeBadge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
@@ -56,6 +57,9 @@ export const PropertyDetail = () => {
 
   const [showScrollToTop, setShowScrollToTop] = useState(false)
   const [gatedData, setGatedData] = useState(null)
+  
+  const comparisonList = useSelector(s => s.property.comparisonList) || []
+  const isCompared = currentProperty ? comparisonList.some(p => p.id === currentProperty.id) : false
   
   const [reviewRating, setReviewRating] = useState(0)
   const [reviewText, setReviewText] = useState('')
@@ -165,6 +169,19 @@ export const PropertyDetail = () => {
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href)
     toast.success(t('property.sections.linkCopied'))
+  }
+
+  const handleCompare = () => {
+    if (!isCompared && comparisonList.length >= 3) {
+      toast.error('You can compare up to 3 properties max')
+      return
+    }
+    dispatch(toggleCompare(p))
+    if (!isCompared) {
+      toast.success('Added to compare')
+    } else {
+      toast.success('Removed from compare')
+    }
   }
 
   const submitSiteVisit = async () => {
@@ -349,6 +366,9 @@ export const PropertyDetail = () => {
       </button>
       
       <div className="absolute top-4 right-4 flex gap-2 z-10">
+        <button className={`bg-white/90 backdrop-blur-sm border-0 rounded-full w-10 h-10 p-0 flex items-center justify-center hover:bg-white transition-colors shadow-sm cursor-pointer ${isCompared ? 'bg-[#CA3433] text-white hover:bg-brand-800' : 'text-gray-900'}`} onClick={handleCompare} title="Compare">
+          <Scale size={18} />
+        </button>
         <button className="bg-white/90 backdrop-blur-sm border-0 rounded-full w-10 h-10 p-0 flex items-center justify-center hover:bg-white text-gray-900 transition-colors shadow-sm cursor-pointer" onClick={handleShare}>
           <Share2 size={18} />
         </button>
