@@ -264,7 +264,7 @@ export const SavedProperties = () => {
                     className="w-full bg-gray-50 border border-transparent focus:border-[#CA3433] focus:ring-2 focus:ring-[#CA3433]/10 rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-700 focus:outline-none"
                   >
                     <option value="">All Cities</option>
-                    {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    {CITIES.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
                   </select>
                 </div>
 

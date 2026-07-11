@@ -1,13 +1,12 @@
 import React from 'react'
 import { Home as HomeIcon, Building, Tent } from 'lucide-react'
-import { Hero } from '../components/home/Hero'
 import { HeroCarousel } from '../components/home/HeroCarousel'
 import { FeaturedSection, PropertySection } from '../components/home/PropertySection'
 
 export const Home = () => {
   return (
     <div className="bg-white">
-      <Hero />
+      
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-16">
           <HeroCarousel />

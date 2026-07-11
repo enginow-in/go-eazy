@@ -14,7 +14,14 @@ export const AMENITIES = [
 ]
 
 export const CITIES = [
-  'Dehradun', 'Srinagar', 'Rishikesh', 'Haldwani', 'Nainital', 'Haridwar', 'Roorkee', 'Rudrapur'
+  { name: 'Dehradun', emoji: '🏔️' },
+  { name: 'Srinagar', emoji: '🏔️' },
+  { name: 'Rishikesh', emoji: '🧘' },
+  { name: 'Haldwani', emoji: '🌳' },
+  { name: 'Nainital', emoji: '⛵' },
+  { name: 'Haridwar', emoji: '🛕' },
+  { name: 'Roorkee', emoji: '🎓' },
+  { name: 'Rudrapur', emoji: '🚜' }
 ]
 
 export const SORT_OPTIONS = [
