@@ -169,7 +169,7 @@ export const AuthModal = () => {
           placeholder={tab === 'signup' ? 'Min 8 characters' : '••••••••'}
           leftIcon={<Lock size={16} />}
           rightIcon={
-            <button type="button" onClick={() => setShowPass(v => !v)} className="cursor-pointer">
+            <button type="button" aria-label="Toggle password visibility" onClick={() => setShowPass(v => !v)} className="cursor-pointer">
               {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           }
