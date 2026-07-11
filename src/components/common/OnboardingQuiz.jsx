@@ -92,6 +92,12 @@ export const OnboardingQuiz = () => {
     }
   }
 
+  const handlePrevious = () => {
+    if (step > 0) {
+      setStep(s => s - 1)
+    }
+  }
+
   const finishQuiz = async () => {
     setSaving(true)
     try {
@@ -256,18 +262,33 @@ export const OnboardingQuiz = () => {
             <p className="text-xs text-gray-400">
               {step + 1} / {QUIZ_STEPS.length} — {Math.round(((step + 1) / QUIZ_STEPS.length) * 100)}% done
             </p>
-            <Button 
-              disabled={!selections[currentStep.id] || saving}
-              onClick={handleNext}
-              variant="primary" 
-              className="rounded-full px-7 py-2.5 bg-[#CA3433] hover:bg-[#ac2d2c] shadow-lg shadow-red-500/20 group"
-              loading={saving && step === QUIZ_STEPS.length - 1}
-            >
-              <span className="flex items-center gap-2 text-sm">
-                {step === QUIZ_STEPS.length - 1 ? 'Find My Match' : 'Next'}
-                <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
-              </span>
-            </Button>
+            <div className="flex items-center gap-3">
+              {step > 0 && (
+                <Button
+                  variant="secondary"
+                  onClick={handlePrevious}
+                  className="rounded-full px-6 py-2.5"
+                >
+                  Previous
+                </Button>
+              )}
+          
+              <Button
+                disabled={!selections[currentStep.id] || saving}
+                onClick={handleNext}
+                variant="primary"
+                className="rounded-full px-7 py-2.5 bg-[#CA3433] hover:bg-[#ac2d2c] shadow-lg shadow-red-500/20 group"
+                loading={saving && step === QUIZ_STEPS.length - 1}
+              >
+                <span className="flex items-center gap-2 text-sm">
+                  {step === QUIZ_STEPS.length - 1 ? "Find My Match" : "Next"}
+                  <ChevronRight
+                    size={16}
+                    className="group-hover:translate-x-1 transition-transform"
+                  />
+                </span>
+              </Button>
+            </div>
           </div>
         </div>
       </motion.div>
