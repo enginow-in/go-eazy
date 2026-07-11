@@ -21,7 +21,7 @@ export const truncate = (str, n = 80) =>
   str && str.length > n ? str.slice(0, n) + '…' : str
 
 export const getInitials = (name = '') =>
-  name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+  name.split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2)
 
 export const cn = (...classes) =>
   classes.filter(Boolean).join(' ')
