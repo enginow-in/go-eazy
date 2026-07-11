@@ -7,6 +7,7 @@ import {
   setServiceFilters, setServiceLoading,
   setReviewsLoading, setServiceHasMore, setServicePage,
 } from '../store/serviceSlice'
+import { useAbortController } from './useAbortController'
 
 const PAGE_SIZE = 12
 
@@ -21,9 +22,16 @@ export const useServices = () => {
   } = useSelector(s => s.service)
   const { user } = useSelector(s => s.auth)
 
+  // Separate abort controllers for each fetch concern
+  const createServicesController = useAbortController()
+  const createServiceDetailController = useAbortController()
+  const createReviewsController = useAbortController()
+
   // ── Fetch Services List ─────────────────────────────────────────────
   const fetchServices = useCallback(async (reset = false) => {
+    const controller = createServicesController()
     dispatch(setServiceLoading(true))
+
     try {
       const from = reset ? 0 : page * PAGE_SIZE
 
@@ -40,52 +48,75 @@ export const useServices = () => {
       if (filters.area)     query = query.ilike('area', `%${filters.area}%`)
       if (filters.query) {
         const fq = `%${filters.query}%`
-        query = query.or(`name.ilike.${fq},area.ilike.${fq},city.ilike.${fq},description.ilike.${fq}`)
+        query = query.or(
+          `name.ilike.${fq},area.ilike.${fq},city.ilike.${fq},description.ilike.${fq}`
+        )
       }
 
       const { data, error } = await query
-        .order(filters.sortBy || 'created_at', { ascending: filters.sortOrder === 'asc' })
+        .order(filters.sortBy || 'created_at', {
+          ascending: filters.sortOrder === 'asc',
+        })
         .range(from, from + PAGE_SIZE - 1)
+        .abortSignal(controller.signal)
 
+      if (controller.signal.aborted) return
       if (error) throw error
 
-      if (reset) dispatch(setServices(data || []))
-      else dispatch(appendServices(data || []))
+      if (reset) {
+        dispatch(setServices(data || []))
+        dispatch(setServicePage(1))
+      } else {
+        dispatch(appendServices(data || []))
+        dispatch(setServicePage(page + 1))
+      }
 
       dispatch(setServiceHasMore((data || []).length === PAGE_SIZE))
-      dispatch(setServicePage(reset ? 1 : page + 1))
     } catch (err) {
+      if (err.name === 'AbortError') return
       console.error('fetchServices error:', err)
       dispatch(setServices([]))
+      dispatch(setServiceHasMore(false))
     } finally {
-      dispatch(setServiceLoading(false))
+      if (!controller.signal.aborted) {
+        dispatch(setServiceLoading(false))
+      }
     }
-  }, [filters, page, dispatch])
+  }, [filters, page, dispatch, createServicesController])
 
   // ── Fetch Single Service ────────────────────────────────────────────
   // Clears stale data first, then fetches. Providers can view their own
   // service regardless of verification/payment status.
   const fetchServiceById = useCallback(async (id) => {
+    const controller = createServiceDetailController()
     dispatch(setCurrentService(null)) // Clear stale service immediately
+
     try {
       const { data, error } = await supabase
         .from('service_providers')
-        .select(`*, profiles!provider_id(${PUBLIC_PROFILE_FIELDS}), service_listings(*), service_plans(*)`)
+        .select(
+          `*, profiles!provider_id(${PUBLIC_PROFILE_FIELDS}), service_listings(*), service_plans(*)`
+        )
         .eq('id', id)
         .maybeSingle()
+        .abortSignal(controller.signal)
 
+      if (controller.signal.aborted) return
       if (error) throw error
+
       dispatch(setCurrentService(data))
 
       // Increment views for verified (publicly visible) listings
+      // This is a write operation so we don't attach abort signal
       if (data?.verification_status === 'verified') {
         await supabase.rpc('increment_service_views', { p_service_id: id })
       }
     } catch (err) {
+      if (err.name === 'AbortError') return
       console.error('fetchServiceById error:', err)
       dispatch(setCurrentService(null))
     }
-  }, [dispatch])
+  }, [dispatch, createServiceDetailController])
 
   const fetchServiceGatedData = useCallback(async (id) => {
     if (!user) return null
@@ -102,22 +133,32 @@ export const useServices = () => {
 
   // ── Fetch Reviews for a Provider ───────────────────────────────────
   const fetchReviews = useCallback(async (serviceProviderId) => {
+    const controller = createReviewsController()
     dispatch(setReviewsLoading(true))
+
     try {
       const { data, error } = await supabase
         .from('service_reviews')
-        .select('*, profiles!service_reviews_reviewer_id_fkey(full_name, avatar_url)')
+        .select(
+          '*, profiles!service_reviews_reviewer_id_fkey(full_name, avatar_url)'
+        )
         .eq('service_provider_id', serviceProviderId)
         .order('created_at', { ascending: false })
+        .abortSignal(controller.signal)
 
+      if (controller.signal.aborted) return
       if (error) throw error
+
       dispatch(setReviews(data || []))
     } catch (err) {
+      if (err.name === 'AbortError') return
       console.error('fetchReviews error:', err)
     } finally {
-      dispatch(setReviewsLoading(false))
+      if (!controller.signal.aborted) {
+        dispatch(setReviewsLoading(false))
+      }
     }
-  }, [dispatch])
+  }, [dispatch, createReviewsController])
 
   // ── Submit Review ───────────────────────────────────────────────────
   const submitReview = async (serviceProviderId, rating, feedback) => {
@@ -134,7 +175,9 @@ export const useServices = () => {
     const { data, error } = await supabase
       .from('service_reviews')
       .upsert(reviewData, { onConflict: 'service_provider_id,reviewer_id' })
-      .select('*, profiles!service_reviews_reviewer_id_fkey(full_name, avatar_url)')
+      .select(
+        '*, profiles!service_reviews_reviewer_id_fkey(full_name, avatar_url)'
+      )
       .maybeSingle()
 
     if (error) throw error
@@ -156,22 +199,31 @@ export const useServices = () => {
   }
 
   // ── Create Service Provider Listing ────────────────────────────────
-  const createService = async (providerData, serviceItems, plans, documentFiles, posterImages) => {
+  const createService = async (
+    providerData,
+    serviceItems,
+    plans,
+    documentFiles,
+    posterImages
+  ) => {
     if (!user) throw new Error('Not authenticated')
 
     // 1. Upload Poster Images
     const imageUrls = []
     if (posterImages && posterImages.length) {
       for (const img of posterImages) {
-        const path = `${user.id}/${Date.now()}_poster_${img.name.replace(/\s+/g, '_')}`
+        const path = `${user.id}/${Date.now()}_poster_${img.name.replace(
+          /\s+/g,
+          '_'
+        )}`
         const { error: uploadError } = await supabase.storage
           .from('service-images')
           .upload(path, img)
-        
+
         if (!uploadError) {
-          const { data: { publicUrl } } = supabase.storage
-            .from('service-images')
-            .getPublicUrl(path)
+          const {
+            data: { publicUrl },
+          } = supabase.storage.from('service-images').getPublicUrl(path)
           imageUrls.push(publicUrl)
         } else {
           console.error('Poster upload error:', uploadError)
@@ -183,14 +235,17 @@ export const useServices = () => {
     const documentUrls = []
     if (documentFiles?.length) {
       for (const file of documentFiles) {
-        const path = `${user.id}/${Date.now()}_doc_${file.name.replace(/\s+/g, '_')}`
+        const path = `${user.id}/${Date.now()}_doc_${file.name.replace(
+          /\s+/g,
+          '_'
+        )}`
         const { error: uploadError } = await supabase.storage
           .from('service-documents')
           .upload(path, file)
         if (!uploadError) {
-          const { data: { publicUrl } } = supabase.storage
-            .from('service-documents')
-            .getPublicUrl(path)
+          const {
+            data: { publicUrl },
+          } = supabase.storage.from('service-documents').getPublicUrl(path)
           documentUrls.push(publicUrl)
         }
       }
@@ -199,11 +254,11 @@ export const useServices = () => {
     // 3. Insert main provider record
     const { data: provider, error: providerError } = await supabase
       .from('service_providers')
-      .insert({ 
-        ...providerData, 
-        provider_id: user.id, 
+      .insert({
+        ...providerData,
+        provider_id: user.id,
         documents: documentUrls,
-        images: imageUrls
+        images: imageUrls,
       })
       .select()
       .maybeSingle()
@@ -275,14 +330,16 @@ export const useServices = () => {
     return data || []
   }
 
-  // ── Admin Functions ───────────────────────────────────────────────
+  // ── Admin Functions ─────────────────────────────────────────────────
   const getAdminPendingServices = async () => {
     // We assume the caller checks if they are admin
     const { data, error } = await supabase
       .from('service_providers')
-      .select('*, profiles!service_providers_provider_id_fkey(full_name, email)')
+      .select(
+        '*, profiles!service_providers_provider_id_fkey(full_name, email)'
+      )
       .order('created_at', { ascending: false })
-      
+
     if (error) throw error
     return data || []
   }
@@ -308,11 +365,21 @@ export const useServices = () => {
     if (error) throw error
   }
 
-  // updateFilters is the primary alias used across all pages (NearbyServices, etc.)
-  const updateFilters = useCallback((f) => dispatch(setServiceFilters(f)), [dispatch])
+  // updateFilters is the primary alias used across all pages
+  const updateFilters = useCallback(
+    (f) => dispatch(setServiceFilters(f)),
+    [dispatch]
+  )
 
   return {
-    services, currentService, reviews, filters, loading, reviewsLoading, hasMore, page,
+    services,
+    currentService,
+    reviews,
+    filters,
+    loading,
+    reviewsLoading,
+    hasMore,
+    page,
     fetchServices,
     fetchServiceById,
     fetchReviews,
@@ -327,6 +394,6 @@ export const useServices = () => {
     payServiceListing,
     updateFilters,
     setServiceFilters: updateFilters,
-    fetchServiceGatedData
+    fetchServiceGatedData,
   }
 }
