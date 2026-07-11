@@ -35,7 +35,7 @@ const StatusBadge = ({ status }) => {
 export const ServiceProviderDashboard = () => {
   const navigate = useNavigate()
   const { profile } = useSelector(s => s.auth)
-  const { getMyServices, deleteService, payServiceListing } = useServices()
+  const { getMyServices, deleteService } = useServices()
 
   const [myServices, setMyServices] = useState([])
   const [loading, setLoading] = useState(true)
@@ -60,7 +60,7 @@ export const ServiceProviderDashboard = () => {
       await deleteService(id)
       setMyServices(v => v.filter(s => s.id !== id))
       toast.success('Listing deleted')
-    } catch (err) {
+    } catch {
       toast.error('Failed to delete listing')
     }
   }
@@ -87,13 +87,14 @@ export const ServiceProviderDashboard = () => {
       if (!await loadRazorpay()) throw new Error('Razorpay SDK failed to load')
 
       // Create order via Edge Function
-      const orderResp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-listing-order`, {
+      const orderResp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-service-listing-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
           'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
-        }
+        },
+        body: JSON.stringify({ service_id: serviceId })
       })
       if (!orderResp.ok) {
         const errJson = await orderResp.json().catch(() => ({}))
@@ -110,15 +111,33 @@ export const ServiceProviderDashboard = () => {
         image: '/favicon.svg',
         handler: async function(response) {
           try {
-            // Mark payment as paid in DB
-            await payServiceListing(serviceId)
+            // The server validates the Razorpay signature and payment before marking the listing paid.
+            const { data: { session: verificationSession } } = await supabase.auth.getSession()
+            const verifyResp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-service-payment`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${verificationSession?.access_token}`,
+                'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                service_id: serviceId
+              })
+            })
+            if (!verifyResp.ok) {
+              const errJson = await verifyResp.json().catch(() => ({}))
+              throw new Error(errJson.error || 'Payment verification failed')
+            }
             // Refresh the service in UI
             setMyServices(prev => prev.map(s =>
               s.id === serviceId ? { ...s, payment_status: 'paid' } : s
             ))
             toast.success('🎉 Payment successful! Your listing is now LIVE on GoEazy.')
           } catch (err) {
-            toast.error('Payment recorded but DB update failed. Contact support.')
+            toast.error(err.message || 'Payment verification failed. Contact support.')
           } finally { setPayingId(null) }
         },
         prefill: { name: profile?.full_name || '', email: '' },
