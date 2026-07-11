@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, X, Image as ImageIcon, Zap, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react'
+import { Plus, X, Image as ImageIcon, Zap, CheckCircle2, ChevronRight, ChevronLeft, ShieldCheck, ShieldAlert, Shield } from 'lucide-react'
 import { Input, Textarea, Select } from '../ui/Input'
 import { Button } from '../ui/Button'
 import { PROPERTY_TYPES, AMENITIES } from '../../utils/constants'
@@ -9,6 +9,8 @@ import { useSelector } from 'react-redux'
 import { supabase } from '../../lib/supabase'
 import toast from 'react-hot-toast'
 import { LocationPicker } from '../map/LocationPicker'
+import { calculateVerificationScorePreview } from '../../utils/verification'
+import { cn } from '../../utils/helpers'
 
 // ── Success Overlay ───────────────────────────────────────────────────────────
 const ListingSuccessOverlay = () => (
@@ -211,7 +213,7 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
       })
       if (!orderResp.ok) {
         const errText = await orderResp.text()
-        let errJson = {}; try { errJson = JSON.parse(errText) } catch(e) {}
+        let errJson = {}; try { errJson = JSON.parse(errText) } catch(e) { console.error('Failed to parse error JSON:', e) }
         const msg = [errJson.error, errJson.detail, `HTTP ${orderResp.status}`].filter(Boolean).join(' | ')
         toast.error(msg, { duration: 8000 }); throw new Error(msg)
       }
@@ -247,6 +249,8 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
 
   // ── Render Steps ──────────────────────────────────────────────────────────
   const renderStep = () => {
+    const { score, status } = calculateVerificationScorePreview({ ...form, imagePreviews: previewUrls })
+
     switch (step) {
 
       case 1: return (
@@ -267,6 +271,26 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
           </div>
           <Textarea id="property-description" label="Description" placeholder="Tell renters what makes this place special..."
             rows={4} value={form.description} onChange={e => set('description', e.target.value)} />
+            
+          <div className="mt-2 p-4 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-bold text-sm text-gray-900">Live Trust Score Preview</span>
+                {status === 'verified' && <ShieldCheck size={16} className="text-emerald-500" />}
+                {status === 'flagged' && <ShieldAlert size={16} className="text-red-500" />}
+                {status === 'pending' && <Shield size={16} className="text-gray-400" />}
+              </div>
+              <p className="text-xs text-gray-500 hidden sm:block">Longer descriptions, more photos, and avoiding spam increase your score.</p>
+            </div>
+            <div className={cn(
+              "px-3 py-1.5 rounded-lg text-sm font-black border flex-shrink-0",
+              score >= 70 ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+              score < 40 ? "bg-red-50 text-red-700 border-red-200" :
+              "bg-gray-50 text-gray-700 border-gray-200"
+            )}>
+              {score}/100
+            </div>
+          </div>
         </div>
       )
 
