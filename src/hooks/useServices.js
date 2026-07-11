@@ -287,13 +287,13 @@ export const useServices = () => {
     return data || []
   }
 
-  const updateServiceStatus = async (id, verificationStatus) => {
-    const { error } = await supabase
-      .from('service_providers')
-      .update({ verification_status: verificationStatus })
-      .eq('id', id)
+  const approveService = async (id, status) => {
+    const { data, error } = await supabase.functions.invoke('admin-approve-service', {
+      body: { service_id: id, status }
+    })
 
     if (error) throw error
+    return data
   }
 
   // ── Payment Function ────────────────────────────────────────────────
@@ -323,7 +323,7 @@ export const useServices = () => {
     deleteService,
     getMyServices,
     getAdminPendingServices,
-    updateServiceStatus,
+    approveService,
     payServiceListing,
     updateFilters,
     setServiceFilters: updateFilters,

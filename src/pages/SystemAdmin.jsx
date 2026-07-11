@@ -10,7 +10,7 @@ import toast from 'react-hot-toast'
 
 export const SystemAdmin = () => {
   const { user, role, loading, signInWithGoogle, signOut } = useAuth()
-  const { getAdminPendingServices, updateServiceStatus } = useServices()
+  const { getAdminPendingServices, approveService } = useServices()
   const navigate = useNavigate()
   
   const [stats, setStats] = useState({ users: 0, properties: 0, services: 0 })
@@ -65,7 +65,7 @@ export const SystemAdmin = () => {
   const handleAction = async (id, newStatus) => {
     const toastId = toast.loading(`Marking as ${newStatus}...`)
     try {
-      await updateServiceStatus(id, newStatus)
+      await approveService(id, newStatus)
       setProviders(prev => prev.map(p => p.id === id ? { ...p, verification_status: newStatus } : p))
       toast.success(`Service Provider ${newStatus}`, { id: toastId })
     } catch {
