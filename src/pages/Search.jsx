@@ -44,7 +44,7 @@ export const Search = () => {
   }, [searchParams, updateFilters, filters.type])
 
   // Sync local filters with global filters when global filters change
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   useEffect(() => {
     setLocalFilters({
       city: filters.city || '', 

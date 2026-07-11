@@ -45,24 +45,7 @@ export const Hero = () => {
           {t('hero.desc')}
         </p>
 
-        {/* Search Bar */}
-        <form onSubmit={handleSearch} className="max-w-2xl mx-auto flex gap-3 mb-8 animate-fadeInUp" style={{ animationDelay: '250ms' }}>
-          <div className="flex-1 relative">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              value={searchVal}
-              onChange={e => setSearchVal(e.target.value)}
-              type="text"
-              id="hero-search"
-              name="hero-search"
-              placeholder={t('hero.searchPlaceholder')}
-              className="w-full pl-11 pr-4 py-4 rounded-xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-100 text-gray-900 text-sm transition-all"
-            />
-          </div>
-          <Button type="submit" variant="primary" size="lg" className="px-7 rounded-xl shadow-md">
-            {t('hero.searchBtn')}
-          </Button>
-        </form>
+        {/* Search Bar Removed from Hero Section */}
 
         {/* City Chips */}
         <div className="flex flex-wrap justify-center gap-2.5 mb-12 animate-fadeInUp" style={{ animationDelay: '300ms' }}>

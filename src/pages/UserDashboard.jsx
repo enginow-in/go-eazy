@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Heart, Clock, User as UserIcon, ChevronLeft, Bell, Calendar, MapPin } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useProperties } from '../hooks/useProperties'
@@ -8,7 +8,26 @@ import { supabase } from '../lib/supabase'
 import { MOCK_PROPERTIES } from '../utils/constants'
 import { Skeleton } from '../components/ui/Skeleton'
 
+const LoadingRow = () => (
+  <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide">
+    {[1, 2, 3, 4].map(i => (
+      <div key={i} className="flex-shrink-0 w-64 rounded-xl bg-white border border-gray-100 p-3 space-y-3">
+        <Skeleton className="h-44 w-full rounded-xl" />
+        <div className="space-y-2 px-1">
+          <Skeleton className="h-5 w-4/5" />
+          <Skeleton className="h-4 w-3/5" />
+          <div className="pt-1 flex gap-2">
+            <Skeleton className="h-3 w-1/4 rounded-full" />
+            <Skeleton className="h-3 w-1/4 rounded-full" />
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+)
+
 export const UserDashboard = () => {
+  const navigate = useNavigate()
   const { user, profile } = useAuth()
   const { favorites, recentlyViewed } = useProperties()
   const [favProps, setFavProps] = useState([])
@@ -19,13 +38,6 @@ export const UserDashboard = () => {
   const [showNotifications, setShowNotifications] = useState(false)
   const [myVisits, setMyVisits] = useState([])
   const [loadingData, setLoadingData] = useState(true)
-
-  useEffect(() => {
-    if (user) {
-      loadProperties()
-      loadUserData()
-    }
-  }, [user, favorites, recentlyViewed]) // React to changes in the Redux IDs
 
   const loadUserData = async () => {
     if (!user) return
@@ -44,17 +56,6 @@ export const UserDashboard = () => {
       setLoadingData(false)
     }
   }
-
-  const markAsRead = async () => {
-    try {
-      await supabase.from('notifications').update({ is_read: true }).eq('user_id', user.id).eq('is_read', false)
-      setNotifications(prev => prev.map(n => ({...n, is_read: true})))
-    } catch (err) {
-      console.error(err)
-    }
-  }
-  
-  const unreadCount = notifications.filter(n => !n.is_read).length
 
   const loadProperties = async () => {
     if (!user) return
@@ -98,23 +99,24 @@ export const UserDashboard = () => {
     }
   }
 
-  const LoadingRow = () => (
-    <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide">
-      {[1, 2, 3, 4].map(i => (
-        <div key={i} className="flex-shrink-0 w-64 rounded-xl bg-white border border-gray-100 p-3 space-y-3">
-          <Skeleton className="h-44 w-full rounded-xl" />
-          <div className="space-y-2 px-1">
-            <Skeleton className="h-5 w-4/5" />
-            <Skeleton className="h-4 w-3/5" />
-            <div className="pt-1 flex gap-2">
-              <Skeleton className="h-3 w-1/4 rounded-full" />
-              <Skeleton className="h-3 w-1/4 rounded-full" />
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  )
+  useEffect(() => {
+    if (user) {
+      loadProperties()
+      loadUserData()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, favorites, recentlyViewed]) // React to changes in the Redux IDs
+
+  const markAsRead = async () => {
+    try {
+      await supabase.from('notifications').update({ is_read: true }).eq('user_id', user.id).eq('is_read', false)
+      setNotifications(prev => prev.map(n => ({...n, is_read: true})))
+    } catch (err) {
+      console.error(err)
+    }
+  }
+  
+  const unreadCount = notifications.filter(n => !n.is_read).length
 
   return (
     <div className="pt-4 pb-20 bg-gray-50 min-h-screen">

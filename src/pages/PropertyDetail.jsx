@@ -87,12 +87,6 @@ export const PropertyDetail = () => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  useEffect(() => {
-    fetchPropertyById(id)
-    fetchReviews(id)
-    checkUnlockStatus()
-  }, [id, user, fetchPropertyById, fetchReviews])
-
   const checkUnlockStatus = async () => {
     if (!user || !id) return
     const { data } = await supabase
@@ -107,6 +101,13 @@ export const PropertyDetail = () => {
       setGatedData(gated)
     }
   }
+
+  useEffect(() => {
+    fetchPropertyById(id)
+    fetchReviews(id)
+    checkUnlockStatus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, user, fetchPropertyById, fetchReviews])
 
   // Also fetch gated data if current user is the landlord
   useEffect(() => {
