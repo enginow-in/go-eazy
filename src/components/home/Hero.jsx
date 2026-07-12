@@ -1,3 +1,4 @@
+
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
@@ -11,13 +12,8 @@ export const Hero = () => {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const [searchVal, setSearchVal] = React.useState('')
 
-  const handleSearch = (e) => {
-    e.preventDefault()
-    dispatch(setFilters({ city: searchVal }))
-    navigate('/search')
-  }
+
 
   const stats = [
     { icon: TrendingUp, value: '10,000+', label: t('hero.stats.listings') },
@@ -78,3 +74,4 @@ export const Hero = () => {
     </section>
   )
 }
+

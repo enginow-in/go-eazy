@@ -132,7 +132,16 @@ User experience is the core of GoEazy. We've implemented several "Premium-Only" 
 - **v1.2**: Landlord Analytics update and Full SEO Branding.
 
 ---
+
+## 📱 PWA Support
+GoEazy is available as an installable Progressive Web App (PWA). It includes:
+- **Offline access** using a service worker (static caching + offline fallback page).
+- **Install to home screen** (custom install prompt UI).
+- **Auto-update UX** via an update toast prompting users to refresh.
+
+---
 # Enginow Open Source Program
+
 
 Welcome to the Enginow Open Source Program!
 

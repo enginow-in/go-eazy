@@ -254,7 +254,7 @@ export const useProperties = () => {
       try {
         const localFavs = JSON.parse(localStorage.getItem('favorite_property_ids') || '[]')
         dispatch(setFavorites(localFavs))
-      } catch (err) {
+      } catch {
         dispatch(setFavorites([]))
       }
       return
@@ -269,7 +269,7 @@ export const useProperties = () => {
       let localFavs = []
       try {
         localFavs = JSON.parse(localStorage.getItem('favorite_property_ids') || '[]')
-      } catch (err) {
+      } catch {
         localFavs = []
       }
 
@@ -364,7 +364,7 @@ export const useProperties = () => {
       const seventyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString()
       const { data } = await supabase.from('recently_viewed').select('property_id').eq('user_id', user.id).gte('viewed_at', seventyTwoHoursAgo).order('viewed_at', { ascending: false }).limit(20)
       dispatch(setRecentlyViewed(data?.map(r => r.property_id) || []))
-    } catch {}
+    } catch { /* ignore */ }
   }, [user, dispatch])
 
   const getLandlordProperties = async () => {

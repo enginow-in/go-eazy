@@ -13,6 +13,9 @@ import { OnboardingQuiz } from './components/common/OnboardingQuiz'
 import { useSelector } from 'react-redux'
 import { useAuth } from './hooks/useAuth'
 import ScrollToTop from './components/common/ScrollToTop'
+import { InstallAppBanner } from './components/ui/InstallAppBanner'
+import { PwaUpdateNotifier } from './components/common/PwaUpdateNotifier'
+
 
 // Heavy pages: lazy-loaded into separate chunks to prevent
 // "Cannot access X before initialization" TDZ errors from
@@ -61,7 +64,10 @@ function App() {
       <RoleSelectionModal />
       <Layout>
         <Suspense fallback={<PageSpinner />}>
+          <PwaUpdateNotifier />
+          <InstallAppBanner />
           <Routes>
+
           <Route path="/" element={<Home />} />
           <Route path="/search" element={<Search />} />
           <Route path="/ai-finder" element={<AiPropertyFinder />} />

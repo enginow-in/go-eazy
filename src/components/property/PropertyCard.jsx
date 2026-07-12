@@ -1,9 +1,10 @@
 import React, { useState, useMemo, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useDispatch, useSelector } from 'react-redux'
+
 import { Heart, Star, Home, Eye } from 'lucide-react'
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion'
-import { openAuthModal } from '../../store/authSlice'
+// import { openAuthModal } from '../../store/authSlice'
 import { useProperties } from '../../hooks/useProperties'
 import { cn } from '../../utils/helpers'
 import { useTranslation } from 'react-i18next'
@@ -11,8 +12,6 @@ import { useTranslation } from 'react-i18next'
 const PropertyCardComponent = ({ property, layout = 'grid', compact = false, condensed = false, badge = null }) => {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const dispatch = useDispatch()
-  const { user } = useSelector(s => s.auth)
   const { favorites, toggleFavorite } = useProperties()
   const [imgLoaded, setImgLoaded] = useState(false)
 
@@ -26,12 +25,11 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   }
 
   // Memoize values with deterministic calculation
-  const { rating, numBeds } = useMemo(() => {
+  const { rating } = useMemo(() => {
     return {
       rating: property.rating || '0.0',
-      numBeds: property.bedrooms || 0,
     }
-  }, [property.rating, property.bedrooms])
+  }, [property.rating])
 
   const formatPrice = (p) => {
     if (!p) return '0'

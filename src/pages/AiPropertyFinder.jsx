@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Sparkles, Compass, MapPin, Heart, Share2, Download, Map, 
@@ -263,7 +264,7 @@ export const AiPropertyFinder = () => {
         return prev + 1
       })
     }, 800)
-  }, [preferences])
+  }, [preferences, steps.length])
 
   // Run search when preferences are loaded from router state
   useEffect(() => {

@@ -74,7 +74,7 @@ results.forEach(res => {
   console.log(`SEO: ${res.seo}`);
   
   // Find top fixes for scores below 90
-  const findOpportunities = (categoryKeys) => {
+  const findOpportunities = () => {
     return Object.values(res.audits)
       .filter(audit => audit.score !== null && audit.score < 1 && audit.details && audit.details.type === 'opportunity')
       .sort((a, b) => b.details.overallSavingsMs - a.details.overallSavingsMs)
