@@ -98,7 +98,11 @@ export const ServiceDetail = () => {
   // Check if current user is the provider or has unlocked (if we have unlock records for services)
   useEffect(() => {
     const checkStatus = async () => {
-      if (!user || !service || !id) return
+      if (!user || !service || !id) {
+        setContactUnlocked(false)
+        setGatedData(null)
+        return
+      }
       
       const isProvider = service?.provider_id === user.id
       if (isProvider) {
