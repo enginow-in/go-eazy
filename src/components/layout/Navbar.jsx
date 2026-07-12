@@ -25,6 +25,8 @@ export const Navbar = () => {
   const [langMenuOpen, setLangMenuOpen] = useState(false)
   const [selectedCity, setSelectedCity] = useState(filters.city || 'All Cities')
   const [searchQuery, setSearchQuery] = useState(filters.query || '')
+  const userMenuRef = React.useRef(null)
+  const langMenuRef = React.useRef(null)
   // Tracks if the user is actively typing in the Navbar's own search bar.
   // Without this guard, the debounce effect fires on any re-render where
   // searchQuery !== filters.query, causing rogue /search redirects (e.g. while
@@ -56,6 +58,24 @@ export const Navbar = () => {
     setLangMenuOpen(false)
   }
 
+  React.useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setUserMenuOpen(false)
+        setLangMenuOpen(false)
+        setCityMenuOpen(false)
+        if (mobileMenuOpen) dispatch(closeMobileMenu())
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [mobileMenuOpen, dispatch])
+
+  const handleMenuKeyDown = (e, closeFn) => {
+    if (e.key === 'Tab' && !e.shiftKey) {
+      closeFn()
+    }
+  }
 
   const handleSignOut = async () => {
     await signOut()
@@ -77,7 +97,11 @@ export const Navbar = () => {
   ]
 
   return (
-    <nav className="relative z-40 bg-white">
+    <nav className="relative z-40 bg-white" role="navigation" aria-label="Main navigation">
+      {/* Skip to content link for screen readers */}
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:bg-[#CA3433] focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:text-sm focus:font-semibold">
+        Skip to main content
+      </a>
       {/* Top Navbar */}
       <div className="w-full px-2 sm:px-4">
         <div className="flex items-center justify-between h-20 relative">
@@ -102,6 +126,9 @@ export const Navbar = () => {
             <button 
               onClick={() => setLangMenuOpen(!langMenuOpen)}
               className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-700 hover:text-[#CA3433] transition-colors uppercase px-1 py-2"
+              aria-label="Change language"
+              aria-expanded={langMenuOpen}
+              aria-haspopup="true"
             >
               {currentLang.short} <ChevronDown size={14} className={`transition-transform duration-200 ${langMenuOpen ? 'rotate-180 text-[#CA3433]' : ''}`} />
             </button>
@@ -137,6 +164,7 @@ export const Navbar = () => {
                 value={searchQuery}
                 placeholder={t('hero.searchPlaceholder')}
                 onChange={handleLiveSearch}
+                aria-label={t('hero.searchPlaceholder')}
                 className="w-full bg-gray-50 border border-transparent focus:border-[#CA3433] focus:ring-2 focus:ring-[#CA3433]/10 rounded-full py-2.5 pl-12 pr-4 text-sm font-medium focus:outline-none transition-all"
               />
             </div>
@@ -145,10 +173,10 @@ export const Navbar = () => {
           {/* Right Links & Auth */}
           <div className="hidden md:flex items-center gap-6">
             <div className="flex items-center space-x-6 text-sm font-medium text-gray-500">
-              <Link to="/search" className="px-3 py-1 bg-brand-lime text-gray-900 rounded-md font-semibold hover:bg-lime-400 transition-colors">{t('nav.home')}</Link>
-              <Link to="/nearby" className="hover:text-gray-900 transition-colors py-2">{t('nav.nearby')}</Link>
+              <Link to="/search" className="px-3 py-1 bg-brand-lime text-gray-900 rounded-md font-semibold hover:bg-lime-400 transition-colors" aria-current={location.pathname === '/search' ? 'page' : undefined}>{t('nav.home')}</Link>
+              <Link to="/nearby" className="hover:text-gray-900 transition-colors py-2" aria-current={location.pathname === '/nearby' ? 'page' : undefined}>{t('nav.nearby')}</Link>
               <button onClick={() => user ? navigate('/landlord') : dispatch(openAuthModal('login'))} className="hover:text-gray-900 transition-colors">{t('nav.list')}</button>
-              <Link to="/about" className="hover:text-gray-900 transition-colors py-2">{t('nav.about')}</Link>
+              <Link to="/about" className="hover:text-gray-900 transition-colors py-2" aria-current={location.pathname === '/about' ? 'page' : undefined}>{t('nav.about')}</Link>
             </div>
             
             <div className="w-px h-6 bg-gray-200"></div>
@@ -167,6 +195,9 @@ export const Navbar = () => {
                 <button
                   onClick={() => setUserMenuOpen(v => !v)}
                   className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#0B0F19] text-white text-sm font-semibold hover:bg-[#CA3433] transition-all duration-300 transform hover:scale-105"
+                  aria-label="User menu"
+                  aria-expanded={userMenuOpen}
+                  aria-haspopup="true"
                 >
                   {profile?.avatar_url ? (
                     <img src={profile.avatar_url} alt="Avatar" className="w-5 h-5 rounded-full object-cover" />
@@ -211,6 +242,7 @@ export const Navbar = () => {
               <button 
                 onClick={() => dispatch(openAuthModal('login'))}
                 className="px-6 py-2.5 rounded-full bg-[#0B0F19] text-white text-sm font-semibold hover:bg-[#CA3433] transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-xl shadow-black/20"
+                aria-label={t('nav.login')}
               >
                 {t('nav.login')}
               </button>
@@ -221,6 +253,9 @@ export const Navbar = () => {
            <button
             className="md:hidden p-2 rounded-xl text-gray-900"
             onClick={() => dispatch(toggleMobileMenu())}
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-menu"
           >
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -249,17 +284,19 @@ export const Navbar = () => {
 
               <div className="flex items-center gap-8 px-4 font-bold text-sm flex-1 whitespace-nowrap min-w-max">
                 {categoryTabs.map(tab => (
-                  <button 
-                    key={tab.name}
-                    onClick={() => {
-                      updateFilters({ type: tab.value })
-                      navigate(`/search?type=${tab.value}`)
-                    }}
-                    className={cn(
-                      "flex items-center gap-2 h-16 border-b-[3px] transition-all px-2 group/tab",
-                      filters.type === tab.value ? "border-[#CA3433] text-[#CA3433] bg-[#fff5f5]" : "border-transparent text-gray-500 hover:text-gray-900"
-                    )}
-                  >
+              <button 
+                key={tab.name}
+                onClick={() => {
+                  updateFilters({ type: tab.value })
+                  navigate(`/search?type=${tab.value}`)
+                }}
+                aria-label={`Filter by ${tab.name}`}
+                aria-pressed={filters.type === tab.value}
+                className={cn(
+                  "flex items-center gap-2 h-16 border-b-[3px] transition-all px-2 group/tab",
+                  filters.type === tab.value ? "border-[#CA3433] text-[#CA3433] bg-[#fff5f5]" : "border-transparent text-gray-500 hover:text-gray-900"
+                )}
+              >
                     <span className="group-hover/tab:scale-110 transition-transform duration-200">
                       {tab.icon}
                     </span>
@@ -323,6 +360,9 @@ export const Navbar = () => {
               <button 
                 onClick={() => setCityMenuOpen(!cityMenuOpen)}
                 className="flex items-center gap-1.5 p-1 bg-gray-50 rounded-full border border-[#CA3433]"
+                aria-label="Select city"
+                aria-expanded={cityMenuOpen}
+                aria-haspopup="true"
               >
                 <div className="w-8 h-8 rounded-full overflow-hidden border border-white shadow-sm">
                   <img src="/1.webp" alt="City" className="w-full h-full object-cover" />
@@ -376,6 +416,7 @@ export const Navbar = () => {
                 value={searchQuery}
                 placeholder={t('hero.searchPlaceholder')}
                 onChange={handleLiveSearch}
+                aria-label={t('hero.searchPlaceholder')}
                 className="w-full bg-gray-50 border border-[#CA3433] rounded-full py-2.5 pl-12 pr-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#CA3433]/20 shadow-sm transition-all"
               />
             </div>
@@ -385,7 +426,7 @@ export const Navbar = () => {
       
        {/* Mobile Menu */}
        {mobileMenuOpen && (
-        <div className="md:hidden absolute top-20 left-0 right-0 bg-white border-b border-gray-100 shadow-xl overflow-y-auto max-h-[80vh] z-50">
+        <div id="mobile-menu" role="dialog" aria-label="Mobile navigation menu" className="md:hidden absolute top-20 left-0 right-0 bg-white border-b border-gray-100 shadow-xl overflow-y-auto max-h-[80vh] z-50">
           <div className="px-4 py-4 space-y-4">
             
             <Link to="/search" onClick={() => dispatch(closeMobileMenu())} className="block font-semibold text-gray-700 py-2">{t('nav.home')}</Link>
