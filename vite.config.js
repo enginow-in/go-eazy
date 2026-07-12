@@ -42,12 +42,17 @@ export default defineConfig({
       overlay: false,
     }
   },
-  build: {
+build: {
     chunkSizeWarningLimit: 5000,
-    rolldownOptions: {
-      checks: {
-        pluginTimings: false,
-      },
+    rollupOptions: {
+      // Corrected to standard Vite-supported Rollup API configuration block
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
+        }
+      }
     },
   },
 })
