@@ -127,9 +127,32 @@ export const ServiceDetail = () => {
     toast.success(t('services.reviews.contactUnlocked'))
   }
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href)
-    toast.success(t('property.sections.linkCopied'))
+  const handleShare = async () => {
+    // Feature-detect navigator.clipboard and handle failure gracefully (H5):
+    // on insecure contexts / older browsers it is undefined or rejects, and we
+    // must not fire a false success toast. Fall back to a hidden-textarea copy
+    // before giving up with an error toast.
+    const href = window.location.href
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(href)
+        toast.success(t('property.sections.linkCopied'))
+        return
+      }
+      // Legacy fallback for browsers without the async clipboard API
+      const ta = document.createElement('textarea')
+      ta.value = href
+      ta.style.position = 'fixed'
+      ta.style.opacity = '0'
+      document.body.appendChild(ta)
+      ta.focus(); ta.select()
+      const ok = document.execCommand('copy')
+      document.body.removeChild(ta)
+      if (ok) { toast.success(t('property.sections.linkCopied')); return }
+      throw new Error('execCommand copy failed')
+    } catch {
+      toast.error('Failed to copy link')
+    }
   }
 
   const handleSubmitReview = async () => {
