@@ -22,6 +22,42 @@ import { useTranslation } from 'react-i18next'
 import { Skeleton } from '../components/ui/Skeleton'
 import { LocationViewer } from '../components/map/LocationViewer'
 
+// --- Breadcrumb component (local to this file) ---
+const Breadcrumbs = ({ items }) => {
+  if (!items || items.length === 0) return null
+
+  return (
+    <nav aria-label="Breadcrumb" className="mb-4">
+      <ol className="flex flex-wrap items-center text-xs sm:text-sm text-gray-500">
+        {items.map((item, index) => {
+          const isLast = index === items.length - 1
+
+          return (
+            <li key={index} className="flex items-center">
+              {index > 0 && (
+                <span className="mx-1 sm:mx-2 text-gray-400">/</span>
+              )}
+
+              {isLast ? (
+                <span aria-current="page" className="font-semibold text-gray-800">
+                  {item.label}
+                </span>
+              ) : (
+                <a
+                  href={item.href}
+                  className="hover:text-[#CA3433] hover:underline"
+                >
+                  {item.label}
+                </a>
+              )}
+            </li>
+          )
+        })}
+      </ol>
+    </nav>
+  )
+}
+
 const StarRating = ({ value, onChange, readonly = false }) => (
   <div className="flex gap-1">
     {[1, 2, 3, 4, 5].map(n => (
@@ -156,6 +192,33 @@ export const PropertyDetail = () => {
     : '0.0'
 
   const myReview = reviews.find(r => r.reviewer_id === user?.id)
+
+  // --- Build breadcrumbs for this property ---
+  const cityLabel = t(`cities.${p.city}`) || p.city
+  const typeLabel = t(`property.types.${p.type}`) || p.type
+  const titleLabel = p.title || t('property.labels.details') || 'Property Details'
+
+  const breadcrumbItems = [
+    { label: t('nav.home') || 'Home', href: '/' },
+    { label: cityLabel, href: `/search?city=${encodeURIComponent(p.city || '')}` },
+    { label: typeLabel, href: `/search?city=${encodeURIComponent(p.city || '')}&type=${encodeURIComponent(p.type || '')}` },
+    { label: titleLabel, href: null }
+  ]
+
+  // JSON-LD schema for breadcrumbs
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbItems.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.label,
+      ...(item.href
+        ? { item: `${origin}${item.href}` }
+        : { item: typeof window !== 'undefined' ? window.location.href : '' })
+    }))
+  }
 
   const handleFav = () => {
     if (!user) { dispatch(openAuthModal('signup')); return }
@@ -361,7 +424,16 @@ export const PropertyDetail = () => {
 
   return (
     <div className="pt-8 pb-20 bg-[#F9F8F6] min-h-screen">
+      {/* Breadcrumb JSON-LD for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+
       <div className="w-full px-4 sm:px-10 md:px-16 lg:px-20">
+        {/* Breadcrumbs */}
+        <Breadcrumbs items={breadcrumbItems} />
+
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900 mb-6 transition-colors">
           <ArrowLeft size={16} /> {t('property.labels.back')}
         </button>
