@@ -142,7 +142,7 @@ export const useProperties = () => {
       //    (the RPC may not include these fields, and landlords can always read their own data)
       const { data: directData } = await supabase
         .from('properties')
-        .select('contact_phone, contact_email, exact_location')
+        .select('contact_phone, contact_email, exact_location, latitude, longitude')
         .eq('id', id)
         .maybeSingle()
 
@@ -152,6 +152,8 @@ export const useProperties = () => {
         contact_phone: rpcData?.contact_phone || directData?.contact_phone || null,
         contact_email: rpcData?.contact_email || directData?.contact_email || null,
         exact_location: rpcData?.exact_location || directData?.exact_location || null,
+        latitude: rpcData?.latitude || directData?.latitude || null,
+        longitude: rpcData?.longitude || directData?.longitude || null,
       }
     } catch (err) {
       console.error('Error fetching gated data:', err)
