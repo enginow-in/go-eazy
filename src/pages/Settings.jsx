@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import { User, Lock, Save, AlertCircle, CheckCircle2 } from 'lucide-react'
@@ -18,6 +18,13 @@ export const Settings = () => {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [securityLoading, setSecurityLoading] = useState(false)
   const [securityMessage, setSecurityMessage] = useState({ type: '', text: '' })
+  const profileMessageTimer = useRef(null)
+  const securityMessageTimer = useRef(null)
+
+  useEffect(() => () => {
+    clearTimeout(profileMessageTimer.current)
+    clearTimeout(securityMessageTimer.current)
+  }, [])
 
   // Populate profile info on load
   useEffect(() => {
@@ -41,7 +48,10 @@ export const Settings = () => {
       if (error) throw error
 
       setProfileMessage({ type: 'success', text: 'Profile updated successfully!' })
-      setTimeout(() => setProfileMessage({ type: '', text: '' }), 4000)
+      clearTimeout(profileMessageTimer.current)
+      profileMessageTimer.current = setTimeout(() => {
+        setProfileMessage({ type: '', text: '' })
+      }, 4000)
     } catch (error) {
       console.error('Error updating profile:', error.message)
       setProfileMessage({ type: 'error', text: 'Failed to update profile. Please try again.' })
@@ -91,7 +101,10 @@ export const Settings = () => {
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
-      setTimeout(() => setSecurityMessage({ type: '', text: '' }), 4000)
+      clearTimeout(securityMessageTimer.current)
+      securityMessageTimer.current = setTimeout(() => {
+        setSecurityMessage({ type: '', text: '' })
+      }, 4000)
       
     } catch (error) {
       console.error('Error updating password:', error.message)
