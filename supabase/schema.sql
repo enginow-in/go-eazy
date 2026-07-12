@@ -30,6 +30,9 @@ CREATE TABLE public.properties (
   availability boolean DEFAULT true,
   nearby_landmarks text,
   views integer DEFAULT 0,
+  latitude double precision,
+  longitude double precision,
+  map_address text,
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
   PRIMARY KEY (id)
 );
