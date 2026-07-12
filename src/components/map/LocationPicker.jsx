@@ -22,6 +22,7 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
   const [searchResults, setSearchResults] = useState([])
   const [showResults, setShowResults] = useState(false)
   const [hasPin, setHasPin] = useState(false)
+  const hasInitialCoordinates = value?.latitude != null && value?.longitude != null
 
   // Reverse geocode coordinates → human-readable address
   const reverseGeocode = useCallback(async (lng, lat) => {
@@ -80,8 +81,8 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v12',
-      center: value?.longitude ? [value.longitude, value.latitude] : DEFAULT_CENTER,
-      zoom: value?.longitude ? 15 : DEFAULT_ZOOM,
+      center: hasInitialCoordinates ? [value.longitude, value.latitude] : DEFAULT_CENTER,
+      zoom: hasInitialCoordinates ? 15 : DEFAULT_ZOOM,
       attributionControl: false,
     })
 
@@ -92,7 +93,7 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
       placeMarker(e.lngLat.lng, e.lngLat.lat)
     })
 
-    if (value?.latitude && value?.longitude) {
+    if (hasInitialCoordinates) {
       map.current.on('load', () => {
         placeMarker(value.longitude, value.latitude, value.map_address)
       })
