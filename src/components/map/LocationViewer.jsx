@@ -1,31 +1,45 @@
-import React, { useEffect, useRef } from 'react'
-import { MapPin, ExternalLink } from 'lucide-react'
+import React, { useState, useEffect, useRef } from 'react'
+import { MapPin, ExternalLink, Navigation } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 // mapbox-gl is loaded via CDN script in index.html (window.mapboxgl)
 // NOT imported/bundled — prevents "Cannot access X before initialization" TDZ
 // error caused by mapbox-gl's circular deps in Vite/Rolldown Web Worker bundles.
 
 export const LocationViewer = ({ latitude, longitude, title = 'Location', address }) => {
+  const { t } = useTranslation()
   const mapContainer = useRef(null)
   const map = useRef(null)
+  const [mapError, setMapError] = useState(false)
 
   useEffect(() => {
     if (!latitude || !longitude || map.current) return
     const mapboxgl = window.mapboxgl
-    if (!mapboxgl) { console.error('mapbox-gl not loaded from CDN'); return }
+    const token = import.meta.env.VITE_MAPBOX_TOKEN
 
-    mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN
+    if (!token || !token.startsWith('pk.') || !mapboxgl) {
+      setMapError(true)
+      console.warn('Mapbox token is missing or invalid. Map rendering skipped.')
+      return
+    }
 
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: [longitude, latitude],
-      zoom: 15,
-      interactive: false,
-      attributionControl: false,
-    })
+    try {
+      mapboxgl.accessToken = token
 
-    map.current.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-left')
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: [longitude, latitude],
+        zoom: 15,
+        interactive: false,
+        attributionControl: false,
+      })
+
+      map.current.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-left')
+    } catch (err) {
+      console.error('Error initializing map:', err)
+      setMapError(true)
+    }
 
     map.current.on('load', () => {
       if (!map.current) return
@@ -123,8 +137,30 @@ export const LocationViewer = ({ latitude, longitude, title = 'Location', addres
         </p>
       )}
 
-      <div className="rounded-xl overflow-hidden border border-gray-100 shadow-sm" style={{ height: '260px' }}>
-        <div ref={mapContainer} className="w-full h-full" />
+      <div className="rounded-xl overflow-hidden border border-gray-100 shadow-sm animate-in fade-in duration-300" style={{ height: '260px' }}>
+        {mapError ? (
+          <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 p-6 text-center text-gray-500">
+            <MapPin size={32} className="text-gray-300 mb-2" />
+            <p className="font-bold text-gray-700 text-sm">Map Preview Unavailable</p>
+            <p className="text-xs text-gray-400 mt-1 max-w-xs">
+              VITE_MAPBOX_TOKEN is missing or invalid in your .env file.
+            </p>
+          </div>
+        ) : (
+          <div ref={mapContainer} className="w-full h-full" />
+        )}
+      </div>
+
+      <div className="mt-4">
+        <a
+          href={`https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full py-3 px-4 rounded-xl font-bold text-white bg-[#CA3433] hover:bg-[#ac2d2c] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-sm text-sm"
+        >
+          <Navigation size={16} />
+          {t('property.sections.getDirections')}
+        </a>
       </div>
 
       <p className="text-xs text-gray-400 mt-3 text-center">
