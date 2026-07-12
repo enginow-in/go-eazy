@@ -1,0 +1,273 @@
+# GoEazy Backend
+
+Postgres-backed auth + listings API for GoEazy, serving `public/index.html`
+and `public/login.html`.
+
+## What's here
+
+**Real backend (previous pass):**
+- **Real database.** `data/db.json` is gone — everything lives in Postgres
+  (`db/schema.sql`). Works against a local Postgres install or a Supabase
+  project's connection string, since Supabase *is* Postgres underneath.
+- **Real payments.** `/api/properties/:id/checkout` creates an actual
+  Razorpay order; `/api/properties/:id/pay` verifies the HMAC-SHA256
+  signature Razorpay sends back (`utils/razorpay.js`) before marking a
+  listing `live`. Nothing trusts the client's word for it.
+- **Validation.** Every route body is checked against a Zod schema
+  (`middleware/validate.js`) before it touches a handler.
+- **Rate limiting.** Login, signup, and payment routes are capped
+  (`middleware/rateLimit.js`) to slow down brute-forcing and mass
+  account creation.
+
+**Auth completeness (previous pass):**
+- **Password reset.** `POST /api/auth/forgot-password` (always responds
+  identically whether or not the email exists — no user enumeration),
+  `POST /api/auth/reset-password`. `public/forgot-password.html` and
+  `public/reset-password.html` are the pages the "Forgot password?" link
+  and the emailed link actually go to now. Resetting revokes every
+  existing session for that account.
+- **Email verification.** Signup fires off a verification email
+  (`routes/auth.js` → `utils/mailer.js`); `GET /api/auth/verify-email`
+  handles the click, `POST /api/auth/resend-verification` covers "I didn't
+  get it." Listing creation (`POST /api/properties`) now requires a
+  verified email — the one place this actually gets enforced, not just
+  tracked.
+- **Short-lived access tokens + rotating refresh tokens.** Access tokens
+  are 15-minute JWTs; refresh tokens are opaque random strings, only
+  their SHA-256 hash is stored (`refresh_tokens` table), and each
+  `/api/auth/refresh` call revokes the token it was given and issues a
+  new one. Replaying an already-rotated-away refresh token is treated as
+  theft and revokes every session for that user, not just the one call —
+  tested in the smoke test below. `public/auth-client.js` has an
+  `authFetch()` helper that retries once through `/refresh` on a
+  `TOKEN_EXPIRED` response, so pages don't need to think about token
+  lifetime.
+- **Google OAuth.** `GET /api/auth/google` → Google's consent screen (CSRF
+  protected via a state cookie) → `GET /api/auth/google/callback`
+  exchanges the code, fetches the profile, and creates or logs in the
+  matching user. New Google sign-ins get `role = NULL` until they hit
+  `POST /api/auth/select-role`, matching the product's "Universal Role
+  Selection" behaviour for both signup paths. **This can't be tested
+  without a real Google Cloud OAuth client** — I verified the redirect
+  Claude's server builds is correct (right params, right state cookie),
+  but the actual code-exchange round trip needs `GOOGLE_CLIENT_ID` /
+  `GOOGLE_CLIENT_SECRET` from a real project.
+
+**Polish (previous pass):**
+- **Admin routes.** `routes/admin.js` — a review queue for service-provider
+  verification (`GET /api/admin/service-providers`, `.../approve`,
+  `.../reject`) and live platform metrics
+  (`GET /api/admin/metrics`: users by role, properties by status, review
+  count/average, service-provider counts, revenue from paid listings).
+  Matches the product's "Master System Admin Panel" — verify/reject
+  service providers, live telemetry across Users/Properties/Service
+  Providers. Admin status (`is_admin`) is a DB column, not a role, and
+  it's re-checked on every request rather than baked into the access
+  token — see `middleware/adminAuth.js`. Nothing grants it automatically;
+  run `npm run make-admin -- someone@example.com` to bootstrap the first
+  admin. Also added: service providers can now submit their own
+  verification profile + documents (`routes/serviceProviders.js`), and
+  `POST /api/uploads` now accepts service-provider documents as well as
+  landlord photos.
+- **Deployment config.** `Dockerfile` (multi-stage, non-root, with a
+  `HEALTHCHECK` hitting the new `GET /api/health`), `docker-compose.yml`
+  (app + Postgres, with volumes for both the DB and local-disk uploads),
+  `.dockerignore`. I ran `npm ci --omit=dev` — the exact command the
+  image runs — and booted the app on production deps only to confirm
+  nothing dev-only sneaks into runtime.
+- **API documentation.** `openapi.yaml` — every route in this project,
+  request/response schemas, auth requirements, error codes. Validated
+  against the official OpenAPI 3.0.3 schema (not just YAML syntax) —
+  import it into Postman or Swagger UI directly.
+
+**Operational polish (this pass):**
+- **Structured logging.** `lib/logger.js` (pino) — pretty-printed in dev,
+  JSON in production. `app.js` logs every request via `pino-http`, with
+  `set-cookie`, `cookie`, and `authorization` headers redacted so session
+  tokens never end up in logs (this was actually broken on the first pass
+  — `set-cookie` was leaking full tokens into request logs until I caught
+  it in testing and added it to the redact list). All `console.*` calls in
+  the app itself were replaced; `scripts/make-admin.js` keeps plain
+  `console.log` since it's a one-off CLI tool, not app logging.
+- **App/server split.** `server.js` used to build the Express app *and*
+  bind the port in one file, which made it untestable without a real
+  listening socket. It's now `app.js` (the app, exported, nothing else)
+  and a thin `server.js` (env checks, `app.listen`, the prune schedule,
+  graceful `SIGTERM` shutdown).
+- **S3-ready storage.** `lib/storage.js` abstracts "save this uploaded
+  file" behind one function. Default (`STORAGE_DRIVER=local`) writes to
+  `./uploads`, unchanged from before. Set `STORAGE_DRIVER=s3` plus
+  `S3_BUCKET`/`S3_ACCESS_KEY_ID`/`S3_SECRET_ACCESS_KEY`/`S3_PUBLIC_BASE_URL`
+  (and `S3_ENDPOINT` for anything other than real AWS — R2, MinIO,
+  Supabase Storage's S3 protocol) and uploads go to a real bucket instead,
+  with zero changes to `routes/uploads.js`.
+- **Automated tests.** `tests/` — 18 tests using Node's built-in test
+  runner + supertest, no extra test framework needed. Covers signup/login
+  validation, the three distinct 401 codes from `requireAuth`, refresh-token
+  rotation *and* the theft-detection cascade (replay an old token, confirm
+  it kills the new one too), logout revocation, no-enumeration on
+  forgot-password, Razorpay HMAC verification (valid/tampered/mismatched),
+  and the full admin approval flow including the 403 gate for non-admins.
+  Run with `npm test`. **Point `DATABASE_URL` at a disposable database
+  before running this** — the suite truncates every table between runs,
+  and `tests/helpers.js` refuses to run at all unless the connection
+  string looks like localhost/test/dev, as a guard against pointing it at
+  production by mistake.
+
+**Missing features filled in (previous pass):**
+- **Image upload.** `POST /api/uploads` (`routes/uploads.js`, `middleware/upload.js`)
+  accepts 1-3 photos, JPEG/PNG/WebP only, 7MB each. Storage backend is
+  pluggable — see `lib/storage.js` and the "Operational polish" section above.
+- **Search/filter.** `GET /api/properties?city=&minRent=&maxRent=&q=`
+- **Property detail.** `GET /api/properties/:id` — public fields + review summary.
+- **Reviews.** `GET/POST /api/properties/:id/reviews` — one review per
+  (property, user), automatic average calculation (`routes/reviews.js`).
+- **Recently viewed.** `POST /api/recently-viewed/:propertyId` records a
+  view; `GET /api/recently-viewed` returns the last 72 hours of it. Pruned
+  both inline (on every view) and on an hourly schedule (`lib/prune.js`),
+  matching the "Server-Side Storage Governance" behaviour from the product notes.
+
+## Setup
+
+```bash
+npm install
+cp .env.example .env        # fill in DATABASE_URL, JWT_SECRET, Razorpay + Google keys
+psql "$DATABASE_URL" -f db/schema.sql
+npm start
+```
+
+Then visit `http://localhost:3000` and `http://localhost:3000/login`.
+
+Without `SMTP_*` set, verification and password-reset emails just print
+to the console instead of sending — fine for local dev, not for anything
+real. Without `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`/`GOOGLE_REDIRECT_URI`,
+the "Continue with Google" button will 500 with a clear message rather
+than failing silently.
+
+### Or with Docker Compose
+
+```bash
+cp .env.example .env        # fill in at least JWT_SECRET, RAZORPAY_KEY_ID/SECRET
+docker compose up --build
+```
+
+This starts Postgres and the app together. You still need to run the
+schema once against the compose Postgres instance:
+
+```bash
+docker compose exec db psql -U goeazy -d goeazy -f /dev/stdin < db/schema.sql
+```
+
+Then:
+
+```bash
+docker compose exec app npm run make-admin -- someone@example.com
+```
+
+Local-disk uploads are persisted via a named volume, but that only works
+for a single instance — set `STORAGE_DRIVER=s3` (see `lib/storage.js`)
+before running more than one `app` replica or deploying anywhere with
+ephemeral disk. On Railway/Render, point `DATABASE_URL` at their managed
+Postgres, set the same env vars from `.env.example` in the dashboard, and
+use `GET /api/health` as the health-check path.
+
+### Running the tests
+
+```bash
+npm test
+```
+
+Point `DATABASE_URL` at a disposable database first — `npm test` truncates
+every table between runs. `tests/helpers.js` will throw rather than run if
+the connection string doesn't look like localhost/test/dev, but that's a
+guard, not a guarantee — don't point it at anything you care about.
+
+If you're on Supabase specifically and also want to expose `properties`
+directly through Supabase's client SDK / PostgREST, additionally run:
+
+```bash
+psql "$SUPABASE_DATABASE_URL" -f db/schema.supabase-rls.sql
+```
+
+This backend already enforces ownership in application code, so that file
+is defense-in-depth, not a requirement.
+
+## API
+
+### Auth
+| Method | Path | Body | Notes |
+|---|---|---|---|
+| POST | `/api/auth/signup` | `{ name, email, password, role }` | sends a verification email; `role` ∈ `tenant/landlord/service` |
+| POST | `/api/auth/login` | `{ email, password, role? }` | 401 on bad creds, 403 on role mismatch, 400 if the account is Google-only |
+| POST | `/api/auth/logout` | — | revokes the current refresh token, clears both cookies |
+| POST | `/api/auth/refresh` | — | rotates the refresh token, issues a new access token |
+| GET | `/api/auth/me` | — | requires a valid access token |
+| POST | `/api/auth/select-role` | `{ role }` | for accounts with no role yet (Google sign-ins) |
+| POST | `/api/auth/forgot-password` | `{ email }` | always responds the same regardless of whether the email exists |
+| POST | `/api/auth/reset-password` | `{ token, newPassword }` | revokes all sessions for that user on success |
+| GET | `/api/auth/verify-email` | `?token=` | single-use, 24h expiry |
+| POST | `/api/auth/resend-verification` | — | requires auth |
+| GET | `/api/auth/google` | — | redirects to Google's consent screen |
+| GET | `/api/auth/google/callback` | — | Google redirects here; not user-facing |
+
+### Properties
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/properties?city=&minRent=&maxRent=&q=` | public, `live` listings only |
+| GET | `/api/properties/:id` | public detail + review summary |
+| GET | `/api/properties/:id/contact` | requires auth; returns lat/lng + phone |
+| POST | `/api/properties` | landlord-only, creates a `draft` listing |
+| POST | `/api/properties/:id/checkout` | creates a Razorpay order for ₹199 |
+| POST | `/api/properties/:id/pay` | verifies signature, flips listing to `live` |
+
+### Reviews
+| Method | Path | Body | Notes |
+|---|---|---|---|
+| GET | `/api/properties/:id/reviews` | — | public, includes average + count |
+| POST | `/api/properties/:id/reviews` | `{ rating, comment? }` | one per user per property, upserts on repeat |
+
+### Recently viewed
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/api/recently-viewed/:propertyId` | requires auth; call when a listing's detail page opens |
+| GET | `/api/recently-viewed` | requires auth; last 72 hours, most recent first |
+
+### Uploads
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/api/uploads` | landlord or service-provider accounts, multipart field `photos`, 1-3 files, 7MB each |
+
+### Service providers
+| Method | Path | Body | Notes |
+|---|---|---|---|
+| POST | `/api/service-providers/profile` | `{ businessName, category, documents }` | service-role only; resubmitting resets status to `pending` |
+| GET | `/api/service-providers/me` | — | your own profile + status |
+
+### Admin
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/admin/service-providers?status=pending` | review queue; `status` ∈ `pending/approved/rejected/all` |
+| POST | `/api/admin/service-providers/:id/approve` | — |
+| POST | `/api/admin/service-providers/:id/reject` | body `{ note? }` |
+| GET | `/api/admin/metrics` | users/properties/reviews/service-providers/revenue, all live-queried |
+
+### Health
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/health` | checks the DB connection too, not just that the process is up |
+
+Full request/response schemas for every route above are in `openapi.yaml`
+— import it into Postman or Swagger UI for a working client.
+
+## Still not done
+
+Nothing from the original running list — real DB, real payments,
+validation, rate limiting, image upload, search/filter, property detail,
+reviews, recently-viewed pruning, password reset, email verification,
+refresh tokens, Google OAuth, admin routes, deployment config, API docs,
+structured logging, S3-ready storage, and automated tests are all
+covered above. What's left is the stuff that only bites at real scale
+and isn't worth guessing at in advance: a proper job queue instead of
+the in-process `setInterval` prune schedule, CI running `npm test`
+automatically, and a CDN in front of whichever storage driver ends up
+serving photos.
