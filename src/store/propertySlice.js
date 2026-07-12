@@ -31,7 +31,13 @@ const propertySlice = createSlice({
       state.listings = action.payload
     },
     appendListings: (state, action) => {
-      state.listings = [...state.listings, ...action.payload]
+      const existingIds = new Set(state.listings.map(l => l.id))
+      const uniqueNewListings = action.payload.filter(l => {
+        if (existingIds.has(l.id)) return false
+        existingIds.add(l.id)
+        return true
+      })
+      state.listings = [...state.listings, ...uniqueNewListings]
     },
     setFeatured: (state, action) => {
       state.featured = action.payload
