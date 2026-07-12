@@ -113,6 +113,9 @@ export const useAuth = () => {
   }
 
   const signUp = async ({ email, password, name, role }) => {
+    if (role && String(role).toLowerCase() === 'admin') {
+      throw new Error('Unauthorized: Admin role registration is not allowed.')
+    }
     const { data, error } = await supabase.auth.signUp({
       email, password,
       options: { 
@@ -168,9 +171,13 @@ export const useAuth = () => {
   }
 
   const updateProfile = async (updates) => {
+    const cleanUpdates = { ...updates }
+    if ('role' in cleanUpdates && String(cleanUpdates.role).toLowerCase() === 'admin') {
+      throw new Error('Unauthorized: Admin role assignment is not allowed via client.')
+    }
     const { data, error } = await supabase
       .from('profiles')
-      .update(updates)
+      .update(cleanUpdates)
       .eq('id', user.id)
       .select()
       .maybeSingle()
