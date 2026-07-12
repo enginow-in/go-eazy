@@ -108,3 +108,106 @@ button:active,
 
 /* Swiper overrides for premium aesthetic */
 .swiper-pagination-bullet-active { background: #CA3433 !important; }
+
+/* Dark Mode base styles */
+.dark body {
+  background-color: #0B0F19; /* brand-dark */
+  color: #f3f4f6; /* slate-100 */
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #1f2937;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #374151;
+}
+
+.dark .glass {
+  background: rgba(11, 15, 25, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Global Dark Mode Overrides for Uniform Layout Styling */
+.dark .bg-white {
+  background-color: #111827 !important; /* slate-900 */
+}
+
+.dark .bg-gray-50,
+.dark .bg-gray-50\/50,
+.dark .bg-\[\#F9F8F6\],
+.dark .bg-\[\#fcfbf9\],
+.dark .bg-slate-50\/20,
+.dark .bg-\[\#F9F8F6\]\/50 {
+  background-color: #0B0F19 !important; /* brand-dark */
+}
+
+.dark .bg-gray-100 {
+  background-color: #1f2937 !important; /* slate-800 */
+}
+
+/* Text Adaptations */
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-gray-700 {
+  color: #f3f4f6 !important; /* slate-100 */
+}
+
+.dark .text-gray-600 {
+  color: #e5e7eb !important; /* slate-200 */
+}
+
+.dark .text-gray-500 {
+  color: #9ca3af !important; /* slate-400 */
+}
+
+/* Border Adaptations */
+.dark .border-gray-50,
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-100\/50,
+.dark .border-red-50,
+.dark .border-red-100,
+.dark .border-t-gray-50 {
+  border-color: #1f2937 !important; /* slate-800 */
+}
+
+/* Status Labels & High-Contrast Light Colors Adaptations */
+.dark .bg-red-50,
+.dark .bg-\[\#FEF2F2\],
+.dark .bg-\[\#fff5f5\],
+.dark .bg-\[\#fdf2f2\],
+.dark .bg-red-50\/10 {
+  background-color: rgba(202, 52, 51, 0.1) !important; /* Translucent Brand Red */
+}
+
+.dark .bg-green-50 {
+  background-color: rgba(16, 185, 129, 0.1) !important; /* Translucent Green */
+}
+
+.dark .bg-amber-50,
+.dark .bg-yellow-50,
+.dark .bg-\[\#fffcf0\] {
+  background-color: rgba(245, 158, 11, 0.1) !important; /* Translucent Amber/Yellow */
+}
+
+.dark .bg-blue-50 {
+  background-color: rgba(59, 130, 246, 0.1) !important; /* Translucent Blue */
+}
+
+/* Form Controls & Inputs */
+.dark input:not([type="range"]),
+.dark textarea,
+.dark select {
+  background-color: #111827 !important;
+  color: #f3f4f6 !important;
+  border-color: #1f2937 !important;
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: #CA3433 !important;
+}
+
+
