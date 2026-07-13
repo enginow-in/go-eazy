@@ -103,7 +103,6 @@ User experience is the core of GoEazy. We've implemented several "Premium-Only" 
 
 ## 📈 Roadmap & Versions
 - **v3.2.0 (Latest)**: 🔐 **Major Release: Authentication Hardening & Onboarding v2**:
-  - **Forced Auth Modal**: Implemented a global authentication gate for search results to ensure only registered users can access platform data.
   - **Universal Role Selection**: All new users (Google & Email) are now prompted for a role upon first login.
   - **Tiered Onboarding**: Redesigned the onboarding quiz to trigger exclusively for Tenants, while Landlords and Service Providers are routed directly to their specialized dashboards.
   - **Site Visit Booking**: New interactive visit request system integrated into the gated contact flow.
