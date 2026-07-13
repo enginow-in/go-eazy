@@ -9,14 +9,20 @@ export const useAuth = () => {
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
+    ;(async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
 
-      if (error) console.error('Auth: Session error', error)
-      
-      dispatch(setUser(session?.user ?? null))
-      if (session?.user) fetchProfile(session.user.id)
-      else dispatch(setLoading(false))
-    })
+        if (error) console.error('Auth: Session error', error)
+
+        dispatch(setUser(session?.user ?? null))
+        if (session?.user) fetchProfile(session.user.id)
+        else dispatch(setLoading(false))
+      } catch (err) {
+        console.error('Auth: getSession threw unexpectedly', err)
+        dispatch(setLoading(false))
+      }
+    })()
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
