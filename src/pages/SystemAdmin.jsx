@@ -29,7 +29,8 @@ export const SystemAdmin = () => {
       loadStats()
       loadProviders()
     }
-  }, [user])
+  }, [user,role])
+
 
   const loadStats = async () => {
     try {
