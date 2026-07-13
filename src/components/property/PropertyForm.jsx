@@ -131,7 +131,21 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
     setPreviewUrls(prev => [...prev, ...files.map(f => URL.createObjectURL(f))])
   }
 
+  // Prevent memory leaks from Object URLs
+  useEffect(() => {
+    return () => {
+      previewUrls.forEach(url => {
+        if (url.startsWith('blob:')) URL.revokeObjectURL(url)
+      })
+    }
+  }, [previewUrls])
+
   const removeImage = (index) => {
+    const urlToRemove = previewUrls[index]
+    if (urlToRemove && urlToRemove.startsWith('blob:')) {
+      URL.revokeObjectURL(urlToRemove)
+    }
+    
     setPreviewUrls(prev => prev.filter((_, i) => i !== index))
     if (index >= (initialData?.images?.length || 0)) {
       setImages(prev => prev.filter((_, i) => i !== index - (initialData?.images?.length || 0)))
