@@ -22,6 +22,14 @@ import { useTranslation } from 'react-i18next'
 import { Skeleton } from '../components/ui/Skeleton'
 import { LocationViewer } from '../components/map/LocationViewer'
 
+const isPastVisitDate = (date) => {
+  const now = new Date()
+  const localToday = new Date(now.getTime() - now.getTimezoneOffset() * 60 * 1000)
+    .toISOString()
+    .slice(0, 10)
+  return date < localToday
+}
+
 const StarRating = ({ value, onChange, readonly = false }) => (
   <div className="flex gap-1">
     {[1, 2, 3, 4, 5].map(n => (
@@ -171,6 +179,7 @@ export const PropertyDetail = () => {
     if (!user) { dispatch(openAuthModal('login')); return }
     if (p.landlord_id === user.id) { toast.error('You cannot book a visit for your own property'); return }
     if (!visitDate) { toast.error('Please select a date for the visit'); return }
+    if (isPastVisitDate(visitDate)) { toast.error('Please choose today or a future date for the visit'); return }
     
     if (!hasUnlocked) {
        setPulseUnlock(true)
@@ -268,20 +277,26 @@ export const PropertyDetail = () => {
             setHasUnlocked(true)
             checkUnlockStatus() 
             if (visitDateRef.current) {
-              const { error: visitErr } = await supabase.from('site_visits').insert({
-                 property_id: p.id,
-                 user_id: user.id,
-                 landlord_id: p.landlord_id,
-                 visit_date: visitDateRef.current,
-                 status: 'pending'
-              });
-              if (!visitErr) {
-                 toast.success('Visit Request Sent! Track it in your dashboard.')
-                 setVisitDate('')
+              if (isPastVisitDate(visitDateRef.current)) {
+                toast.error('Payment verified, but please choose today or a future date for the visit')
+              } else {
+                const { error: visitErr } = await supabase.from('site_visits').insert({
+                  property_id: p.id,
+                  user_id: user.id,
+                  landlord_id: p.landlord_id,
+                  visit_date: visitDateRef.current,
+                  status: 'pending'
+                })
+                if (visitErr) {
+                  throw visitErr
+                }
+                toast.success('Visit Request Sent! Track it in your dashboard.')
+                setVisitDate('')
               }
             }
           } catch (vErr) {
-            toast.error('Payment verification failed')
+            console.error('Payment verification or visit booking failed:', vErr)
+            toast.error(vErr.message || 'Payment verification failed')
           } finally {
             setUnlocking(false)
           }
