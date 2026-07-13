@@ -1,30 +1,48 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import { useProperties } from '../../hooks/useProperties'
+import { useAuth } from '../../hooks/useAuth'
 import { PropertyCard } from './PropertyCard'
 import { cn } from '../../utils/helpers'
 
+const shuffle = (properties) => {
+  const shuffled = [...properties]
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1))
+    const current = shuffled[index]
+    shuffled[index] = shuffled[randomIndex]
+    shuffled[randomIndex] = current
+  }
+
+  return shuffled
+}
+
 export const RecommendedSection = ({ viewMode = 'grid' }) => {
-  const { getRecommendedProperties, loading } = useProperties()
+  const { recommendedProperties, loading } = useProperties()
+  const { profile } = useAuth()
+  const onboardingData = profile?.onboarding_data
   const [recommendations, setRecommendations] = useState([])
-  const isLocked = useRef(false)
 
-  // Lock recommendations once — prevents re-shuffle flicker on every re-render
   useEffect(() => {
-    if (!loading && !isLocked.current) {
-      const recs = getRecommendedProperties()
-      if (recs.length > 0) {
-        setRecommendations(recs)
-        isLocked.current = true
-      }
-    }
-  }, [loading, getRecommendedProperties])
+    setRecommendations(shuffle(recommendedProperties).slice(0, 8))
+  }, [recommendedProperties])
 
-  if (!recommendations.length) return null
+  // Hide immediately when the user resets, without waiting for a new quiz
+  // submission to change onboardingData. This is React's documented pattern
+  // for adjusting state during render in response to a prop change, rather
+  // than doing it in an effect: https://react.dev/learn/you-might-not-need-an-effect
+  const [prevOnboardingData, setPrevOnboardingData] = useState(onboardingData)
+  const [dismissed, setDismissed] = useState(false)
+  if (prevOnboardingData !== onboardingData) {
+    setPrevOnboardingData(onboardingData)
+    setDismissed(false)
+  }
+
+  if (loading || dismissed || !recommendations.length) return null
 
   const handleResetQuiz = () => {
-    isLocked.current = false
-    setRecommendations([])
+    setDismissed(true)
     window.dispatchEvent(new Event('goeazy_quiz_reset'))
   }
 
