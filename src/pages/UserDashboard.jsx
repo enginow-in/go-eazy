@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Heart, Clock, User as UserIcon, ChevronLeft, Bell, Calendar, MapPin } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useProperties } from '../hooks/useProperties'
@@ -9,6 +9,7 @@ import { MOCK_PROPERTIES } from '../utils/constants'
 import { Skeleton } from '../components/ui/Skeleton'
 
 export const UserDashboard = () => {
+  const navigate = useNavigate()
   const { user, profile } = useAuth()
   const { favorites, recentlyViewed } = useProperties()
   const [favProps, setFavProps] = useState([])

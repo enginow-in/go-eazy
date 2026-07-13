@@ -50,8 +50,7 @@ export const useProperties = () => {
       }
 
       if (filters.area) {
-        const fuzzyPattern = '%' + filters.area.toLowerCase().split('').filter(c => c.trim()).join('%') + '%'
-        query = query.ilike('area', fuzzyPattern)
+        query = query.ilike('area', `%${filters.area}%`)
       }
 
       const from = reset ? 0 : page * PAGE_SIZE
