@@ -119,7 +119,12 @@ export const useProperties = () => {
         .maybeSingle()
       if (error) throw error
       dispatch(setCurrentProperty(data))
-      
+
+      // Increment views count (fire-and-forget, don't block the UI)
+      supabase.rpc('increment_property_views', { prop_id: id }).then(({ error: rpcErr }) => {
+        if (rpcErr) console.error('Failed to increment views:', rpcErr)
+      })
+
       if (user && data) {
         dispatch(addRecentlyViewed(id))
         await supabase.from('recently_viewed').upsert({ user_id: user.id, property_id: id, viewed_at: new Date().toISOString() })
