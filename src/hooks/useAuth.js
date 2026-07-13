@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { setUser, setProfile, logout, setLoading } from '../store/authSlice'
@@ -6,6 +6,8 @@ import { setUser, setProfile, logout, setLoading } from '../store/authSlice'
 export const useAuth = () => {
   const dispatch = useDispatch()
   const { user, profile, role, loading, authModalOpen, authModalTab } = useSelector(s => s.auth)
+  // Tracks the userId currently being fetched to prevent duplicate in-flight calls.
+  const fetchingUserIdRef = useRef(null)
 
   useEffect(() => {
     // Get initial session
@@ -36,6 +38,12 @@ export const useAuth = () => {
   }, [])
 
   const fetchProfile = async (userId) => {
+    // ── DUPLICATE CALL GUARD ──
+    // getSession() and onAuthStateChange can fire for the same user in quick
+    // succession. Skip if a fetch for this userId is already in flight.
+    if (fetchingUserIdRef.current === userId) return
+    fetchingUserIdRef.current = userId
+
     try {
       // First try to fetch
       let { data, error } = await supabase
@@ -109,6 +117,9 @@ export const useAuth = () => {
     } catch (err) {
       console.error('Auth: fetchProfile catch block', err)
       dispatch(setLoading(false))
+    } finally {
+      // Always release the lock so future sign-in/sign-out cycles aren't blocked.
+      fetchingUserIdRef.current = null
     }
   }
 
