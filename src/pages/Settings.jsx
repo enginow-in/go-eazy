@@ -1,11 +1,80 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
-import { User, Lock, Save, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { User, Lock, Save, AlertCircle, CheckCircle2, Camera, Loader2, Trash2 } from 'lucide-react'
 
 export const Settings = () => {
   const { user, profile } = useAuth()
-  
+
+// --- PHOTO UPLOAD ---
+  const [uploading, setUploading] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState('')
+  const fileInputRef = useRef(null)
+
+  useEffect(() => {
+    if (profile?.avatar_url) {
+      setAvatarUrl(profile.avatar_url)
+    }
+  }, [profile])
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file || !user) return
+
+    setUploading(true)
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`
+      const filePath = `avatars/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('profiles') 
+        .upload(filePath, file, { upsert: true })
+
+      if (uploadError) throw uploadError
+
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('profiles')
+        .getPublicUrl(filePath)
+
+      
+      const { error: dbError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id)
+
+      if (dbError) throw dbError
+
+      setAvatarUrl(publicUrl)
+      alert('Profile photo updated successfully!')
+    } catch (err) {
+      console.error(err)
+      alert('Failed to upload image. Make sure the storage bucket exists.')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleRemovePhoto = async () => {
+    if (!confirm('Remove profile photo?') || !user) return
+    setUploading(true)
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: null })
+        .eq('id', user.id)
+
+      if (error) throw error
+      setAvatarUrl('')
+      alert('Profile photo removed!')
+    } catch (err) {
+      alert('Error removing photo')
+    } finally {
+      setUploading(false)
+    }
+  }
+
   // Profile State
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
@@ -101,7 +170,7 @@ export const Settings = () => {
     }
   }
 
-  return (
+return (
     <div className="pt-4 pb-20 bg-gray-50 min-h-screen">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         
@@ -131,6 +200,55 @@ export const Settings = () => {
                   {profileMessage.text}
                 </div>
               )}
+
+              {/* Profile Photo Upload Interface */}
+              <div className="flex flex-col sm:flex-row items-center gap-5 p-4 border border-gray-100 rounded-2xl bg-gray-50/50 mb-6">
+                <div className="relative w-20 h-20 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0 shadow-inner">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-8 h-8 text-gray-400" />
+                  )}
+                  
+                  {uploading && (
+                    <div className="absolute inset-0 bg-black/45 flex items-center justify-center text-white">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-col items-center sm:items-start gap-2">
+                  <span className="text-sm font-semibold text-gray-700">Profile Photo</span>
+                  <div className="flex gap-2">
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      ref={fileInputRef} 
+                      onChange={handleFileChange} 
+                      disabled={uploading}
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="flex items-center gap-1.5 text-xs bg-gray-900 text-white px-3 py-2 rounded-xl hover:bg-gray-800 font-medium transition active:scale-95"
+                    >
+                      <Camera className="w-3.5 h-3.5" /> Upload
+                    </button>
+                    {avatarUrl && (
+                      <button 
+                        type="button"
+                        onClick={handleRemovePhoto}
+                        disabled={uploading}
+                        className="flex items-center gap-1.5 text-xs bg-red-50 text-red-600 px-3 py-2 rounded-xl hover:bg-red-100 font-medium transition active:scale-95"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
 
               <div className="space-y-4">
                 <div>
@@ -276,5 +394,4 @@ export const Settings = () => {
         </div>
       </div>
     </div>
-  )
-}
+  )}
