@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Heart, Clock, User as UserIcon, ChevronLeft, Bell, Calendar, MapPin } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
@@ -15,6 +15,7 @@ export const UserDashboard = () => {
   const [favProps, setFavProps] = useState([])
   const [recentProps, setRecentProps] = useState([])
   const [loading, setLoading] = useState(true)
+  const propertyRequestIdRef = useRef(0)
 
   const [notifications, setNotifications] = useState([])
   const [showNotifications, setShowNotifications] = useState(false)
@@ -59,6 +60,7 @@ export const UserDashboard = () => {
 
   const loadProperties = async () => {
     if (!user) return
+    const requestId = ++propertyRequestIdRef.current
     
     // Only set loading if we don't have any data yet
     if (favProps.length === 0 && recentProps.length === 0) {
@@ -69,28 +71,33 @@ export const UserDashboard = () => {
       // Fetch details for favorited ids
       if (favorites.length > 0) {
         const { data } = await supabase.from('properties').select('*').in('id', favorites)
+        if (requestId !== propertyRequestIdRef.current) return
         if (data) {
            // preserve order based on favorites array
            const ordered = favorites.map(id => data.find(p => p.id === id)).filter(Boolean)
            setFavProps(ordered)
         }
       } else {
+        if (requestId !== propertyRequestIdRef.current) return
         setFavProps([])
       }
 
       // Fetch details for recently viewed ids
       if (recentlyViewed.length > 0) {
         const { data } = await supabase.from('properties').select('*').in('id', recentlyViewed)
+        if (requestId !== propertyRequestIdRef.current) return
         if (data) {
           // preserve order based on recentlyViewed array
           const ordered = recentlyViewed.map(id => data.find(p => p.id === id)).filter(Boolean)
           setRecentProps(ordered)
         }
       } else {
+        if (requestId !== propertyRequestIdRef.current) return
         setRecentProps([])
       }
     } catch (err) {
       console.error('[UserDashboard] Load error:', err)
+      if (requestId !== propertyRequestIdRef.current) return
       // Fallback
       setFavProps(MOCK_PROPERTIES.filter(p => favorites.includes(p.id)))
       setRecentProps(recentlyViewed.map(id => MOCK_PROPERTIES.find(p => p.id === id)).filter(Boolean))
