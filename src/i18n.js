@@ -15,7 +15,8 @@ const resources = {
         dashboard: 'Dashboard',
         settings: 'Settings',
         signOut: 'Sign Out',
-        state: 'Uttarakhand'
+        state: 'Uttarakhand',
+        allCities: 'All Cities'
       },
       cities: {
         Dehradun: 'Dehradun',
@@ -277,7 +278,8 @@ const resources = {
         dashboard: 'डैशबोर्ड',
         settings: 'सेटिंग्स',
         signOut: 'लॉग आउट',
-        state: 'उत्तराखंड'
+        state: 'उत्तराखंड',
+        allCities: 'सभी शहर'
       },
       cities: {
         Dehradun: 'देहरादून',
