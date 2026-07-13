@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { MOCK_PROPERTIES } from '../utils/constants'
@@ -28,6 +28,7 @@ export const useProperties = () => {
     reviews, reviewsLoading 
   } = useSelector(s => s.property)
   const { user, profile } = useSelector(s => s.auth)
+  const onboardingData = profile?.onboarding_data
 
   const fetchProperties = useCallback(async (reset = false) => {
     dispatch(setLoading(true))
@@ -287,11 +288,11 @@ export const useProperties = () => {
     return data || []
   }
 
-  const getRecommendedProperties = useCallback(() => {
+  const recommendedProperties = useMemo(() => {
     // If no listings or no quiz data, return empty
-    if (!listings || listings.length === 0 || !profile?.onboarding_data) return []
+    if (!listings || listings.length === 0 || !onboardingData) return []
 
-    const prefs = profile.onboarding_data
+    const prefs = onboardingData
 
     // If user explicitly skipped or haven't finished quiz
     if (prefs?.skipped || !prefs?.persona) return []
@@ -321,9 +322,8 @@ export const useProperties = () => {
       filtered = listings.filter(p => p.type === prefs.type).slice(0, 10)
     }
 
-    // Sort randomly and limit to 8 results for the section
-    return filtered.sort(() => 0.5 - Math.random()).slice(0, 8)
-  }, [listings, profile])
+    return filtered
+  }, [listings, onboardingData])
 
   return {
     listings, featured, currentProperty, favorites, recentlyViewed, filters,
@@ -333,7 +333,7 @@ export const useProperties = () => {
     fetchFavorites, toggleFavorite, fetchRecentlyViewed, getLandlordProperties,
     updateFilters: useCallback((f) => dispatch(setFilters(f)), [dispatch]),
     resetFilters: useCallback(() => dispatch(resetFilters()), [dispatch]),
-    getRecommendedProperties,
+    recommendedProperties,
     fetchGatedData,
     reviews, reviewsLoading,
     fetchReviews, submitReview, deleteReview

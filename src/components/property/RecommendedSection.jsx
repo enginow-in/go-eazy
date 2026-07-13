@@ -1,24 +1,32 @@
-import React, { useState, useMemo } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import { useProperties } from '../../hooks/useProperties'
 import { useAuth } from '../../hooks/useAuth'
 import { PropertyCard } from './PropertyCard'
 import { cn } from '../../utils/helpers'
 
+const shuffle = (properties) => {
+  const shuffled = [...properties]
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1))
+    const current = shuffled[index]
+    shuffled[index] = shuffled[randomIndex]
+    shuffled[randomIndex] = current
+  }
+
+  return shuffled
+}
+
 export const RecommendedSection = ({ viewMode = 'grid' }) => {
-  const { getRecommendedProperties, loading } = useProperties()
+  const { recommendedProperties, loading } = useProperties()
   const { profile } = useAuth()
   const onboardingData = profile?.onboarding_data
+  const [recommendations, setRecommendations] = useState([])
 
-  // getRecommendedProperties() randomizes its sort order on every call, so it
-  // must only be invoked when its actual inputs (listings/profile) change —
-  // not on unrelated re-renders like a viewMode toggle. useMemo already gives
-  // us that for free, since getRecommendedProperties is itself memoized on
-  // [listings, profile]. No effect or ref is needed to "lock" the result.
-  const recommendations = useMemo(
-    () => (loading ? [] : getRecommendedProperties()),
-    [loading, getRecommendedProperties]
-  )
+  useEffect(() => {
+    setRecommendations(shuffle(recommendedProperties).slice(0, 8))
+  }, [recommendedProperties])
 
   // Hide immediately when the user resets, without waiting for a new quiz
   // submission to change onboardingData. This is React's documented pattern
@@ -31,7 +39,7 @@ export const RecommendedSection = ({ viewMode = 'grid' }) => {
     setDismissed(false)
   }
 
-  if (dismissed || !recommendations.length) return null
+  if (loading || dismissed || !recommendations.length) return null
 
   const handleResetQuiz = () => {
     setDismissed(true)
