@@ -143,38 +143,91 @@ export const Navbar = () => {
           </div>
 
           {/* Right Links & Auth */}
-          <div className="hidden md:flex items-center gap-6">
-            <div className="flex items-center space-x-6 text-sm font-medium text-gray-500">
-              <Link to="/search" className="px-3 py-1 bg-brand-lime text-gray-900 rounded-md font-semibold hover:bg-lime-400 transition-colors">{t('nav.home')}</Link>
-              <Link to="/nearby" className="hover:text-gray-900 transition-colors py-2">{t('nav.nearby')}</Link>
-              <button onClick={() => user ? navigate('/landlord') : dispatch(openAuthModal('login'))} className="hover:text-gray-900 transition-colors">{t('nav.list')}</button>
-              <Link to="/about" className="hover:text-gray-900 transition-colors py-2">{t('nav.about')}</Link>
-            </div>
-            
-            <div className="w-px h-6 bg-gray-200"></div>
+<div className="hidden md:flex items-center gap-6">
+  <div className="flex items-center space-x-6 text-sm font-medium text-gray-500">
 
-            <button className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-              <div className="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center text-xs overflow-hidden border border-brand-100">
-                <img src="/INR.webp" alt="INR" className="w-full h-full object-cover" />
-              </div>
-              INR <ChevronDown size={14} />
-            </button>
+    <Link
+      to="/search"
+      className={`px-3 py-1 rounded-md font-semibold transition-colors ${
+        location.pathname === "/search"
+          ? "bg-brand-lime text-gray-900"
+          : "text-gray-500 hover:text-gray-900 hover:bg-lime-400"
+      }`}
+    >
+      {t("nav.home")}
+    </Link>
 
-            {loading ? (
-              <Skeleton className="h-10 w-28 rounded-full" />
-            ) : user ? (
-              <div className="relative">
-                <button
-                  onClick={() => setUserMenuOpen(v => !v)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#0B0F19] text-white text-sm font-semibold hover:bg-[#CA3433] transition-all duration-300 transform hover:scale-105"
-                >
-                  {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt="Avatar" className="w-5 h-5 rounded-full object-cover" />
-                  ) : (
-                    <User size={16} />
-                  )}
-                  <span>{role === 'admin' ? 'Admin Panel' : (profile?.full_name?.split(' ')[0] || 'Dashboard')}</span>
-                </button>
+    <Link
+      to="/nearby"
+      className={`py-2 transition-colors ${
+        location.pathname === "/nearby"
+          ? "bg-brand-lime text-gray-900 rounded-md px-3 py-1 font-semibold"
+          : "py-2 hover:text-gray-900"
+      }`}
+    >
+      {t("nav.nearby")}
+    </Link>
+
+    <button
+      onClick={() =>
+        user
+          ? navigate("/landlord")
+          : dispatch(openAuthModal("login"))
+      }
+      className={`transition-colors ${
+        location.pathname === "/landlord"
+          ? "font-semibold text-gray-900"
+          : "text-gray-500 hover:text-gray-900"
+      }`}
+    >
+      {t("nav.list")}
+    </button>
+
+    <Link
+      to="/about"
+      className={`py-2 transition-colors ${
+        location.pathname === "/about"
+          ?  "bg-brand-lime text-gray-900 rounded-md px-3 py-1 font-semibold"
+          : "py-2 hover:text-gray-900"
+      }`}
+    >
+      {t("nav.about")}
+    </Link>
+
+  </div>
+
+  <div className="w-px h-6 bg-gray-200"></div>
+
+  <button className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+    <div className="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center text-xs overflow-hidden border border-brand-100">
+      <img src="/INR.webp" alt="INR" className="w-full h-full object-cover" />
+    </div>
+    INR <ChevronDown size={14} />
+  </button>
+
+  {loading ? (
+    <Skeleton className="h-10 w-28 rounded-full" />
+  ) : user ? (
+    <div className="relative">
+      <button
+        onClick={() => setUserMenuOpen(v => !v)}
+        className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#0B0F19] text-white text-sm font-semibold hover:bg-[#CA3433] transition-all duration-300 transform hover:scale-105"
+      >
+        {profile?.avatar_url ? (
+          <img
+            src={profile.avatar_url}
+            alt="Avatar"
+            className="w-5 h-5 rounded-full object-cover"
+          />
+        ) : (
+          <User size={16} />
+        )}
+        <span>
+          {role === "admin"
+            ? "Admin Panel"
+            : profile?.full_name?.split(" ")[0] || "Dashboard"}
+        </span>
+      </button>
 
                 {userMenuOpen && (
                   <>
