@@ -9,7 +9,6 @@ export const RecommendedSection = ({ viewMode = 'grid' }) => {
   const [recommendations, setRecommendations] = useState([])
   const isLocked = useRef(false)
 
-  // Lock recommendations once — prevents re-shuffle flicker on every re-render
   useEffect(() => {
     if (!loading && !isLocked.current) {
       const recs = getRecommendedProperties()
@@ -19,6 +18,20 @@ export const RecommendedSection = ({ viewMode = 'grid' }) => {
       }
     }
   }, [loading, getRecommendedProperties])
+
+  // Listen for quiz updates
+  useEffect(() => {
+    const handleUpdate = () => {
+      isLocked.current = false
+      const recs = getRecommendedProperties()
+      setRecommendations(recs)
+      if (recs.length > 0) {
+        isLocked.current = true
+      }
+    }
+    window.addEventListener('goeazy_recommendations_updated', handleUpdate)
+    return () => window.removeEventListener('goeazy_recommendations_updated', handleUpdate)
+  }, [getRecommendedProperties])
 
   if (!recommendations.length) return null
 
