@@ -169,14 +169,14 @@ export const PropertyDetail = () => {
 
   const submitSiteVisit = async () => {
     if (!user) { dispatch(openAuthModal('login')); return }
-    if (p.landlord_id === user.id) { toast.error('You cannot book a visit for your own property'); return }
-    if (!visitDate) { toast.error('Please select a date for the visit'); return }
+    if (p.landlord_id === user.id) { toast.error(t('property.toast.ownPropertyVisit') || 'You cannot book a visit for your own property'); return }
+    if (!visitDate) { toast.error(t('property.toast.selectDate') || 'Please select a date for the visit'); return }
     
     if (!hasUnlocked) {
        setPulseUnlock(true)
        const unlockBtn = document.getElementById('unlock-button')
        if (unlockBtn) unlockBtn.scrollIntoView({ behavior: 'smooth', block: 'center' })
-       toast.error('Please unlock contact details to confirm your visit')
+       toast.error(t('property.toast.unlockToConfirm') || 'Please unlock contact details to confirm your visit')
        setTimeout(() => setPulseUnlock(false), 2000)
        return
     }
@@ -191,11 +191,11 @@ export const PropertyDetail = () => {
         status: 'pending'
       })
       if (error) throw error
-      toast.success('Visit Request Sent! Track it in your dashboard.')
+      toast.success(t('property.toast.visitRequestSent') || 'Visit Request Sent! Track it in your dashboard.')
       setVisitDate('')
     } catch (err) {
       console.error(err)
-      toast.error('Failed to book visit.')
+      toast.error(t('property.toast.visitRequestFailed') || 'Failed to book visit.')
     } finally {
       setBookingVisit(false)
     }
@@ -238,7 +238,7 @@ export const PropertyDetail = () => {
         })
       }
 
-      if (!(await loadRazorpay())) throw new Error('Razorpay SDK failed to load')
+      if (!(await loadRazorpay())) throw new Error(t('property.toast.razorpayFailed') || 'Razorpay SDK failed to load')
 
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
@@ -263,8 +263,8 @@ export const PropertyDetail = () => {
                 property_id: p.id
               })
             })
-            if (!verifyResp.ok) throw new Error('Payment verification failed')
-            toast.success('Payment verified! Contact details unlocked.')
+            if (!verifyResp.ok) throw new Error(t('property.toast.paymentFailed') || 'Payment verification failed')
+            toast.success(t('property.toast.paymentVerified') || 'Payment verified! Contact details unlocked.')
             setHasUnlocked(true)
             checkUnlockStatus() 
             if (visitDateRef.current) {
@@ -276,12 +276,12 @@ export const PropertyDetail = () => {
                  status: 'pending'
               });
               if (!visitErr) {
-                 toast.success('Visit Request Sent! Track it in your dashboard.')
+                 toast.success(t('property.toast.visitRequestSent') || 'Visit Request Sent! Track it in your dashboard.')
                  setVisitDate('')
               }
             }
           } catch (vErr) {
-            toast.error('Payment verification failed')
+            toast.error(t('property.toast.paymentFailed') || 'Payment verification failed')
           } finally {
             setUnlocking(false)
           }
@@ -301,7 +301,7 @@ export const PropertyDetail = () => {
       new window.Razorpay(options).open()
     } catch (err) {
       console.error('Payment initiation error:', err)
-      toast.error('Could not initiate payment')
+      toast.error(t('property.toast.paymentInitiateFailed') || 'Could not initiate payment')
     } finally {
       setUnlocking(false)
     }
@@ -520,14 +520,14 @@ export const PropertyDetail = () => {
                   </Button>
                 </div>
                 <p className="mt-4 text-[11px] text-gray-500 font-medium">
-                  * Direct visit coordinate sharing is available for verified users.
+                  {t('property.sections.verifiedSharing')}
                 </p>
               </div>
 
               <div className="space-y-4 mb-8">
                 <div className="p-4 bg-[#F9F8F6] rounded-xl border border-gray-100">
                    <p className="text-xs text-gray-500 font-bold mb-1 uppercase tracking-wider">{t('property.sections.owner')}</p>
-                   <p className="font-semibold text-gray-900">{p.profiles?.full_name || 'Listing Owner'}</p>
+                   <p className="font-semibold text-gray-900">{p.profiles?.full_name || t('property.sections.listingOwner')}</p>
                 </div>
 
                 {user ? (

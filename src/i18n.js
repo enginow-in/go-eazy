@@ -59,6 +59,20 @@ const resources = {
           price_asc: 'Price: Low to High',
           price_desc: 'Price: High to Low',
           views_desc: 'Most Popular'
+        },
+        labels: {
+          locationSelection: 'Location Selection',
+          cityPlaceholder: 'City (e.g. Dehradun)',
+          areaPlaceholder: 'Area',
+          priceMax: 'Price Max',
+          propertyType: 'Property Type',
+          showResults: 'Show Results',
+          loadMore: 'Load More'
+        },
+        empty: {
+          title: 'No properties found',
+          desc: 'We couldn\'t find any properties matching your current filters. Try adjusting your search criteria.',
+          clear: 'Clear all filters'
         }
       },
       property: {
@@ -118,7 +132,20 @@ const resources = {
           posting: 'Posting...',
           anonymous: 'Anonymous',
           bookVisit: 'Book a Site Visit',
-          book: 'Book Now'
+          book: 'Book Now',
+          listingOwner: 'Listing Owner',
+          verifiedSharing: '* Direct visit coordinate sharing is available for verified users.'
+        },
+        toast: {
+          ownPropertyVisit: 'You cannot book a visit for your own property',
+          selectDate: 'Please select a date for the visit',
+          unlockToConfirm: 'Please unlock contact details to confirm your visit',
+          visitRequestSent: 'Visit Request Sent! Track it in your dashboard.',
+          visitRequestFailed: 'Failed to book visit.',
+          razorpayFailed: 'Razorpay SDK failed to load',
+          paymentFailed: 'Payment verification failed',
+          paymentVerified: 'Payment verified! Contact details unlocked.',
+          paymentInitiateFailed: 'Could not initiate payment'
         }
       },
       services: {
@@ -151,7 +178,13 @@ const resources = {
           reviewSubmitted: 'Review submitted!',
           reviewDeleted: 'Review deleted',
           noReviewsYet: 'No reviews yet. Be the first to share your experience!',
-          anonymousUser: 'Anonymous User'
+          anonymousUser: 'Anonymous User',
+          unlockError: 'Failed to unlock contact details'
+        },
+        errors: {
+          notFound: 'Service Not Found',
+          notFoundDesc: 'This listing may have been removed or is not available yet.',
+          goBack: 'Go Back'
         }
       },
       footer: {
@@ -321,6 +354,20 @@ const resources = {
           price_asc: 'कीमत: कम से ज्यादा',
           price_desc: 'कीमत: ज्यादा से कम',
           views_desc: 'सबसे लोकप्रिय'
+        },
+        labels: {
+          locationSelection: 'स्थान चयन',
+          cityPlaceholder: 'शहर (जैसे देहरादून)',
+          areaPlaceholder: 'क्षेत्र',
+          priceMax: 'अधिकतम कीमत',
+          propertyType: 'प्रॉपर्टी प्रकार',
+          showResults: 'परिणाम दिखाएं',
+          loadMore: 'और लोड करें'
+        },
+        empty: {
+          title: 'कोई प्रॉपर्टी नहीं मिली',
+          desc: 'हम आपके वर्तमान फिल्टर से मेल खाने वाली कोई प्रॉपर्टी नहीं ढूंढ पाए। कृपया अपने खोज मानदंड समायोजित करें।',
+          clear: 'सभी फिल्टर साफ करें'
         }
       },
       property: {
@@ -380,7 +427,20 @@ const resources = {
           posting: 'पोस्ट हो रहा है...',
           anonymous: 'अज्ञात',
           bookVisit: 'साइट विजिट बुक करें',
-          book: 'बुक करें'
+          book: 'बुक करें',
+          listingOwner: 'लिस्टिंग के मालिक',
+          verifiedSharing: '* सीधे यात्रा निर्देशांक साझाकरण सत्यापित उपयोगकर्ताओं के लिए उपलब्ध है।'
+        },
+        toast: {
+          ownPropertyVisit: 'आप अपनी खुद की संपत्ति के लिए विज़िट बुक नहीं कर सकते',
+          selectDate: 'कृपया विज़िट के लिए एक तारीख चुनें',
+          unlockToConfirm: 'अपनी विज़िट की पुष्टि करने के लिए कृपया संपर्क विवरण अनलॉक करें',
+          visitRequestSent: 'विज़िट अनुरोध भेजा गया! इसे अपने डैशबोर्ड में ट्रैक करें।',
+          visitRequestFailed: 'विज़िट बुक करने में विफल।',
+          razorpayFailed: 'रेज़रपे एसडीके लोड करने में विफल',
+          paymentFailed: 'भुगतान सत्यापन विफल',
+          paymentVerified: 'भुगतान सत्यापित! संपर्क विवरण अनलॉक हो गए।',
+          paymentInitiateFailed: 'भुगतान प्रारंभ नहीं किया जा सका'
         }
       },
       services: {
@@ -413,7 +473,13 @@ const resources = {
           reviewSubmitted: 'रिव्यु सबमिट किया गया!',
           reviewDeleted: 'रिव्यु हटा दिया गया',
           noReviewsYet: 'अभी तक कोई रिव्यु नहीं। अपना अनुभव साझा करने वाले पहले व्यक्ति बनें!',
-          anonymousUser: 'अज्ञात उपयोगकर्ता'
+          anonymousUser: 'अज्ञात उपयोगकर्ता',
+          unlockError: 'संपर्क विवरण अनलॉक करने में विफल'
+        },
+        errors: {
+          notFound: 'सेवा नहीं मिली',
+          notFoundDesc: 'यह लिस्टिंग हटा दी गई हो सकती है या अभी उपलब्ध नहीं है।',
+          goBack: 'वापस जाएं'
         }
       },
       footer: {
@@ -535,6 +601,7 @@ i18n
   .init({
     resources,
     fallbackLng: 'en',
+    returnEmptyString: false,
     interpolation: {
       escapeValue: false
     }
