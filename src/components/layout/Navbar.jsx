@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { Skeleton } from '../ui/Skeleton'
 import { CITIES } from '../../utils/constants'
 import { BannerSlider } from './BannerSlider'
+import { ThemeToggle } from '../common/ThemeToggle'
 
 export const Navbar = () => {
   const dispatch = useDispatch()
@@ -159,6 +160,9 @@ export const Navbar = () => {
               </div>
               INR <ChevronDown size={14} />
             </button>
+
+            {/* Theme toggle — desktop */}
+            <ThemeToggle />
 
             {loading ? (
               <Skeleton className="h-10 w-28 rounded-full" />
@@ -392,7 +396,13 @@ export const Navbar = () => {
             <Link to="/nearby" onClick={() => dispatch(closeMobileMenu())} className="block w-full text-left font-semibold text-gray-700 py-2">{t('nav.nearby')}</Link>
             <button onClick={() => { dispatch(closeMobileMenu()); user ? navigate(role === 'landlord' ? '/landlord' : role === 'service_provider' ? '/service-provider' : '/landlord') : dispatch(openAuthModal('login')) }} className="block w-full text-left font-semibold text-gray-700 py-2">{t('nav.list')}</button>
             <Link to="/about" onClick={() => dispatch(closeMobileMenu())} className="block w-full text-left font-semibold text-gray-700 py-2">{t('nav.about')}</Link>
-            
+
+            {/* Theme toggle — mobile menu */}
+            <div className="flex items-center justify-between py-2">
+              <span className="font-semibold text-gray-700 text-sm">Dark Mode</span>
+              <ThemeToggle />
+            </div>
+
             <div className="w-full h-px bg-gray-100 my-4" />
             
             {user ? (
