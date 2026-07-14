@@ -420,9 +420,7 @@ export const ServiceDetail = () => {
                       {user ? (
                         <>
                           <Lock size={18} />
-                          <span>{t('property.labels.pay')}</span>
-                          <span className="bg-white/20 px-2 py-0.5 rounded-md text-[13px] font-black">₹9</span>
-                          <span>{t('property.labels.toUnlock')}</span>
+                          <span>{t('services.labels.unlockBtn')}</span>
                         </>
                       ) : t('services.labels.loginPrompt')}
                     </button>
