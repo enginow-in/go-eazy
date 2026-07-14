@@ -9,6 +9,7 @@ import { Button } from '../components/ui/Button'
 import { Skeleton } from '../components/ui/Skeleton'
 import { resetServiceFilters } from '../store/serviceSlice'
 import { useTranslation } from 'react-i18next'
+import { LocationAutocomplete } from '../components/ui/LocationAutocomplete'
 
 const UK_CITIES = [
   'Dehradun', 'Srinagar', 'Rishikesh', 'Haldwani', 'Nainital', 'Haridwar', 'Roorkee', 'Rudrapur'
@@ -82,28 +83,39 @@ export const NearbyServices = () => {
       <div>
         <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">{t('nearby.locationSel')}</h4>
         <div className="grid grid-cols-2 gap-3">
-           <div className="flex flex-col gap-1.5">
-             <div className="flex bg-gray-50 rounded-xl overflow-hidden border border-gray-200 focus-within:border-[#CA3433]/50 transition-colors pr-2">
-               <input 
-                 type="text" 
-                 placeholder={t('nearby.cityPlaceholder')} 
-                 className="w-full bg-transparent border-none text-sm py-2.5 px-3 focus:ring-0 outline-none" 
-                 value={localFilters.city} 
-                 onChange={e => setLocalFilters(prev => ({...prev, city: e.target.value}))} 
-               />
-             </div>
-           </div>
-           <div className="flex flex-col gap-1.5">
-             <div className="flex bg-gray-50 rounded-xl overflow-hidden border border-gray-200 focus-within:border-[#CA3433]/50 transition-colors pr-2">
-               <input 
-                 type="text" 
-                 placeholder={t('nearby.areaPlaceholder')} 
-                 className="w-full bg-transparent border-none text-sm py-2.5 px-3 focus:ring-0 outline-none" 
-                 value={localFilters.area} 
-                 onChange={e => setLocalFilters(prev => ({...prev, area: e.target.value}))} 
-               />
-             </div>
-           </div>
+           <div className="flex flex-col gap-1.5 focus-within:text-[#CA3433]/50 transition-colors">
+              <div className="flex bg-gray-50 rounded-xl overflow-hidden border border-gray-200 focus-within:border-[#CA3433]/50 transition-colors pr-2">
+                <LocationAutocomplete
+                  mode="city"
+                  placeholder={t('nearby.cityPlaceholder')}
+                  value={localFilters.city}
+                  onChange={(item) => {
+                    if (item.isTyping) {
+                      setLocalFilters(prev => ({ ...prev, city: item.value }))
+                    } else {
+                      setLocalFilters(prev => ({ ...prev, city: item.value, area: '' }))
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5 focus-within:text-[#CA3433]/50 transition-colors">
+              <div className="flex bg-gray-50 rounded-xl overflow-hidden border border-gray-200 focus-within:border-[#CA3433]/50 transition-colors pr-2">
+                <LocationAutocomplete
+                  mode="area"
+                  placeholder={t('nearby.areaPlaceholder')}
+                  selectedCity={localFilters.city}
+                  value={localFilters.area}
+                  onChange={(item) => {
+                    if (item.isTyping) {
+                      setLocalFilters(prev => ({ ...prev, area: item.value }))
+                    } else {
+                      setLocalFilters(prev => ({ ...prev, area: item.value, city: item.city || prev.city }))
+                    }
+                  }}
+                />
+              </div>
+            </div>
         </div>
       </div>
 

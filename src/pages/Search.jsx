@@ -9,9 +9,9 @@ import { Input, Select } from '../components/ui/Input'
 import { Button } from '../components/ui/Button'
 import { resetFilters } from '../store/propertySlice'
 import { PROPERTY_TYPES, AMENITIES, SORT_OPTIONS } from '../utils/constants'
+import { LocationAutocomplete } from '../components/ui/LocationAutocomplete'
 import { AMENITY_ICONS, cn } from '../utils/helpers'
 import { Skeleton } from '../components/ui/Skeleton'
-import { useAuth } from '../hooks/useAuth'
 import { RecommendedSection } from '../components/property/RecommendedSection'
 
 export const Search = () => {
@@ -75,31 +75,38 @@ export const Search = () => {
       <div>
         <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">Location Selection</h4>
         <div className="grid grid-cols-2 gap-3">
-           <div className="flex flex-col gap-1.5 focus-within:text-brand-600 transition-colors">
+           <div className="flex flex-col gap-1.5 focus-within:text-[#CA3433]/50 transition-colors">
              <label htmlFor="filter-city" className="sr-only">City</label>
-             <div className="flex bg-gray-50 rounded-xl overflow-hidden border border-gray-200 focus-within:border-brand-50-focus transition-colors pr-2">
-               <input 
-                 type="text" 
-                 id="filter-city"
-                 name="city"
-                 placeholder="City (e.g. Dehradun)" 
-                 className="w-full bg-transparent border-none text-sm py-2.5 px-3 focus:ring-0 outline-none" 
-                 value={localFilters.city} 
-                 onChange={e => setLocalFilters(prev => ({...prev, city: e.target.value}))} 
+             <div className="flex bg-gray-50 rounded-xl overflow-hidden border border-gray-200 focus-within:border-[#CA3433]/50 transition-colors pr-2">
+               <LocationAutocomplete
+                 mode="city"
+                 placeholder="City (e.g. Dehradun)"
+                 value={localFilters.city}
+                 onChange={(item) => {
+                   if (item.isTyping) {
+                     setLocalFilters(prev => ({ ...prev, city: item.value }))
+                   } else {
+                     setLocalFilters(prev => ({ ...prev, city: item.value, area: '' }))
+                   }
+                 }}
                />
              </div>
            </div>
-           <div className="flex flex-col gap-1.5 focus-within:text-brand-600 transition-colors">
+           <div className="flex flex-col gap-1.5 focus-within:text-[#CA3433]/50 transition-colors">
              <label htmlFor="filter-area" className="sr-only">Area</label>
-             <div className="flex bg-gray-50 rounded-xl overflow-hidden border border-gray-200 focus-within:border-brand-50-focus transition-colors pr-2">
-               <input 
-                 type="text" 
-                 id="filter-area"
-                 name="area"
-                 placeholder="Area" 
-                 className="w-full bg-transparent border-none text-sm py-2.5 px-3 focus:ring-0 outline-none" 
-                 value={localFilters.area} 
-                 onChange={e => setLocalFilters(prev => ({...prev, area: e.target.value}))} 
+             <div className="flex bg-gray-50 rounded-xl overflow-hidden border border-gray-200 focus-within:border-[#CA3433]/50 transition-colors pr-2">
+               <LocationAutocomplete
+                 mode="area"
+                 placeholder="Area"
+                 selectedCity={localFilters.city}
+                 value={localFilters.area}
+                 onChange={(item) => {
+                   if (item.isTyping) {
+                     setLocalFilters(prev => ({ ...prev, area: item.value }))
+                   } else {
+                     setLocalFilters(prev => ({ ...prev, area: item.value, city: item.city || prev.city }))
+                   }
+                 }}
                />
              </div>
            </div>
