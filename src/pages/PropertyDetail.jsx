@@ -21,6 +21,7 @@ import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { Skeleton } from '../components/ui/Skeleton'
 import { LocationViewer } from '../components/map/LocationViewer'
+import { LeaseEditor } from '../components/property/LeaseEditor'
 
 const StarRating = ({ value, onChange, readonly = false }) => (
   <div className="flex gap-1">
@@ -74,6 +75,7 @@ export const PropertyDetail = () => {
   // State for gallery navigation elements
   const [galleryPrevEl, setGalleryPrevEl] = useState(null)
   const [galleryNextEl, setGalleryNextEl] = useState(null)
+  const [showCollabModal, setShowCollabModal] = useState(false)
 
   useEffect(() => {
     visitDateRef.current = visitDate
@@ -570,6 +572,13 @@ export const PropertyDetail = () => {
                   )}
               </div>
 
+              <div className="mb-6">
+                <Button variant="secondary" className="w-full flex items-center justify-center gap-2 font-bold py-3.5 bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100 transition-colors" onClick={() => setShowCollabModal(true)}>
+                  <Sparkles size={16} className="text-blue-500" />
+                  Live Contract Editor
+                </Button>
+              </div>
+
               {((user && !(hasUnlocked || p.landlord_id === user.id)) || !user) && (
                 <button 
                   id="unlock-button"
@@ -731,6 +740,20 @@ export const PropertyDetail = () => {
                 <Share2 size={24} className="rotate-90" />
               </button>
             </Swiper>
+          </div>
+        </div>
+      )}
+
+      {/* Collab Editor Modal */}
+      {showCollabModal && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6">
+          <div className="bg-white rounded-2xl w-full max-w-4xl shadow-2xl relative overflow-hidden flex flex-col h-[90vh]">
+            <button onClick={() => setShowCollabModal(false)} className="absolute top-3 right-3 z-50 p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors shadow-sm">
+              <X size={16} />
+            </button>
+            <div className="flex-1 overflow-hidden">
+              <LeaseEditor propertyId={id} userName={user?.user_metadata?.full_name || 'Guest'} />
+            </div>
           </div>
         </div>
       )}
