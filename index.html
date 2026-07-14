@@ -20,11 +20,10 @@
     <!-- Mapbox GL CSS + JS loaded from CDN (NOT bundled) to prevent
          "Cannot access X before initialization" TDZ error in Vite/Rolldown
          caused by mapbox-gl's internal circular dependencies in its Web Worker -->
-    <link href='https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css' rel='stylesheet' />
-    <script src='https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js'></script>
-    
-    <!-- Console Cleanup & Permissions Policy -->
-    <meta http-equiv="Permissions-Policy" content="accelerometer=(self), gyroscope=(self), magnetometer=(self), camera=(), microphone=(), geolocation=(self)">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+
+    <meta http-equiv="Permissions-Policy" content="accelerometer=(self), gyroscope=(self)" />
     <script>
       (function() {
         // Dynamic Tab Title
