@@ -1,4 +1,4 @@
-import React, { useState, useMemo, memo } from 'react'
+import React, { useState, useMemo, memo, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { Bookmark, Star, Home, Eye } from 'lucide-react'
@@ -6,6 +6,7 @@ import { openAuthModal } from '../../store/authSlice'
 import { useProperties } from '../../hooks/useProperties'
 import { cn } from '../../utils/helpers'
 import { useTranslation } from 'react-i18next'
+import { updateTasteVector } from '../../utils/tasteVector'
 
 const PropertyCardComponent = ({ property, layout = 'grid', compact = false, condensed = false, badge = null }) => {
   const navigate = useNavigate()
@@ -14,6 +15,29 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   const { user } = useSelector(s => s.auth)
   const { favorites, toggleFavorite } = useProperties()
   const [imgLoaded, setImgLoaded] = useState(false)
+
+  // Telemetry for dwell-time Taste Vector update
+  const cardRef = useRef(null)
+  const enterTimeRef = useRef(0)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        enterTimeRef.current = Date.now()
+      } else {
+        if (enterTimeRef.current > 0) {
+          const dwellTime = Date.now() - enterTimeRef.current
+          if (dwellTime > 2000) { // meaningful dwell time
+            updateTasteVector(property)
+          }
+          enterTimeRef.current = 0
+        }
+      }
+    }, { threshold: 0.6 }) // 60% of card needs to be visible
+
+    if (cardRef.current) observer.observe(cardRef.current)
+    return () => observer.disconnect()
+  }, [property])
 
   const isFav = favorites.includes(property.id)
   const images = property.images || []
@@ -43,6 +67,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   if (layout === 'list') {
     return (
       <div 
+        ref={cardRef}
         className="group bg-white rounded-2xl border border-gray-100 flex gap-4 cursor-pointer shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
         onClick={() => navigate(`/property/${property.id}`)}
       >
@@ -108,6 +133,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   if (compact) {
     return (
       <div 
+        ref={cardRef}
         className="group bg-white rounded-2xl border border-gray-100 w-60 flex-shrink-0 overflow-hidden cursor-pointer shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
         onClick={() => navigate(`/property/${property.id}`)}
       >
@@ -138,6 +164,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   // Standard Grid Layout (Default)
   return (
     <div
+      ref={cardRef}
       className={cn(
         'group bg-white rounded-2xl border border-gray-100 shadow-md',
         'hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 cursor-pointer flex flex-col overflow-hidden'
