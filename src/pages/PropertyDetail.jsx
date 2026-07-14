@@ -121,7 +121,7 @@ export const PropertyDetail = () => {
     setIsGalleryOpen(true)
   }
 
-  if (loading || !currentProperty) {
+  if (loading) {
     return (
       <div className="pt-8 pb-20 bg-[#F9F8F6] min-h-screen">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -142,6 +142,23 @@ export const PropertyDetail = () => {
               <Skeleton className="h-96 w-full rounded-lg sm:rounded-xl" />
             </div>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!currentProperty) {
+    return (
+      <div className="pt-8 pb-20 bg-[#F9F8F6] min-h-screen flex items-center justify-center">
+        <div className="text-center p-8 bg-white rounded-2xl shadow-sm border border-gray-100 max-w-md mx-4">
+          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <X size={32} className="text-[#CA3433]" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2 font-display">Property Not Found</h2>
+          <p className="text-gray-500 mb-8">The property you're looking for doesn't exist or has been removed.</p>
+          <Button variant="primary" className="w-full rounded-xl bg-[#CA3433]" onClick={() => navigate('/')}>
+            Return Home
+          </Button>
         </div>
       </div>
     )
