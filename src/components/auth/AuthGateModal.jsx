@@ -31,7 +31,14 @@ export const AuthGateModal = () => {
     const e = {}
     if (tab === 'signup' && !form.name.trim()) e.name = 'Name required'
     if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) e.email = 'Valid email required'
-    if (form.password.length < 8) e.password = 'Min 8 characters'
+    if (tab === 'signup') {
+      const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
+      if (!strongPasswordRegex.test(form.password)) {
+        e.password = 'Must be 8+ chars, with 1 uppercase, 1 lowercase, 1 number, and 1 special char (@$!%*?&)'
+      }
+    } else {
+      if (form.password.length < 8) e.password = 'Min 8 characters'
+    }
     setErrors(e)
     return !Object.keys(e).length
   }
