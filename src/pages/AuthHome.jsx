@@ -60,14 +60,15 @@ export const AuthHome = () => {
   }
 
   const handleGoogle = async () => {
-    setGoogleLoading(true)
-    try {
-      await signInWithGoogle()
-    } catch (err) {
-      toast.error(err.message || 'Google sign-in failed')
-      setGoogleLoading(false)
-    }
+  setGoogleLoading(true)
+  try {
+    await signInWithGoogle()
+  } catch (err) {
+    toast.error(err.message || 'Google sign-in failed')
+  } finally {
+    setGoogleLoading(false)
   }
+}
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-white relative overflow-hidden">

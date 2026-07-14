@@ -79,17 +79,18 @@ export const AuthModal = () => {
   }
 
   const handleGoogle = async () => {
-    // Save current path to return back after OAuth redirect
-    localStorage.setItem('sb_return_to', window.location.pathname + window.location.search)
-    
-    setGoogleLoading(true)
-    try {
-      await signInWithGoogle()
-    } catch (err) {
-      toast.error(err.message || 'Google sign-in failed')
-      setGoogleLoading(false)
-    }
+  // Save current path to return back after OAuth redirect
+  localStorage.setItem('sb_return_to', window.location.pathname + window.location.search)
+  
+  setGoogleLoading(true)
+  try {
+    await signInWithGoogle()
+  } catch (err) {
+    toast.error(err.message || 'Google sign-in failed')
+  } finally {
+    setGoogleLoading(false)
   }
+}
 
   return (
     <Modal open={authModalOpen} onClose={() => dispatch(closeAuthModal())} size="sm">
