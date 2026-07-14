@@ -9,6 +9,8 @@ import { useSelector } from 'react-redux'
 import { supabase } from '../../lib/supabase'
 import toast from 'react-hot-toast'
 import { LocationPicker } from '../map/LocationPicker'
+import { useFileUpload } from '../../hooks/useFileUpload'
+import { FileUploadList } from '../ui/FileUploadList'
 
 // ── Success Overlay ───────────────────────────────────────────────────────────
 const ListingSuccessOverlay = () => (
@@ -93,8 +95,20 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   const [loading, setLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [step, setStep] = useState(1)
-  const [images, setImages] = useState([])
+  // previewUrls tracks both existing (remote) URLs and blob URLs for new files
   const [previewUrls, setPreviewUrls] = useState(initialData?.images || [])
+
+  // useFileUpload manages XHR-backed uploads with real progress events.
+  // We only pass userId when it is available; the hook will fetch the session token internally.
+  const {
+    fileStates,
+    uploadFiles,
+    retryFile,
+    removeFile: removeUploadEntry,
+    successUrls,
+    hasErrors,
+    hasUploading,
+  } = useFileUpload('property-images', user?.id ?? 'anon')
 
   const [form, setForm] = useState({
     title:             initialData?.title || '',
@@ -127,17 +141,25 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
     for (const file of files) {
       if (file.size > 7 * 1024 * 1024) { toast.error(`Image ${file.name} exceeds 7MB limit`); return }
     }
-    setImages(prev => [...prev, ...files])
+    // Show blob previews immediately
     setPreviewUrls(prev => [...prev, ...files.map(f => URL.createObjectURL(f))])
+    // Kick off XHR uploads right away — progress is tracked in fileStates
+    uploadFiles(files)
+    // Reset input so the same file can be re-selected if needed
+    e.target.value = ''
   }
 
   const removeImage = (index) => {
+    const existingCount = initialData?.images?.length || 0
+    const url = previewUrls[index]
     setPreviewUrls(prev => prev.filter((_, i) => i !== index))
-    if (index >= (initialData?.images?.length || 0)) {
-      setImages(prev => prev.filter((_, i) => i !== index - (initialData?.images?.length || 0)))
+    if (index >= existingCount) {
+      // It's a new file — find the matching upload entry by blob URL and remove it
+      const newFileIndex = index - existingCount
+      const entry = fileStates.filter(f => f.file !== null)[newFileIndex]
+      if (entry) removeUploadEntry(entry.id)
     }
   }
-
   const toggleAmenity = (id) => {
     setForm(f => ({
       ...f,
@@ -149,7 +171,14 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   const validateStep = (s) => {
     if (s === 1 && (!form.title || !form.price)) { toast.error('Title and Rent are required'); return false }
     if (s === 2 && (!form.city || !form.area))   { toast.error('City and Area are required'); return false }
-    if (s === 6 && previewUrls.length < 1)        { toast.error('Please upload at least 1 photo'); return false }
+    if (s === 3 && (!form.latitude || !form.longitude)) { toast.error('Please pin your property location on the map'); return false }
+    if (s === 4) {
+      if (!form.exact_location?.trim()) { toast.error('Exact property address is required'); return false }
+      if (!form.contact_phone?.trim())  { toast.error('Contact phone number is required'); return false }
+      if (!/^[+]?[\d\s-]{7,15}$/.test(form.contact_phone.trim())) { toast.error('Please enter a valid phone number'); return false }
+    }
+    if (s === 5 && form.amenities.length < 1) { toast.error('Please select at least one amenity'); return false }
+    if (s === 6 && previewUrls.length < 1)     { toast.error('Please upload at least 1 photo'); return false }
     return true
   }
 
@@ -159,6 +188,11 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   // ── Final submit ──────────────────────────────────────────────────────────
   const validateForm = () => {
     if (!form.title || !form.price || !form.city || !form.area) { toast.error('Please fill all required fields'); return false }
+    if (!form.latitude || !form.longitude)       { toast.error('Please pin your property location on the map (Step 3)'); return false }
+    if (!form.exact_location?.trim())            { toast.error('Exact property address is required (Step 4)'); return false }
+    if (!form.contact_phone?.trim())             { toast.error('Contact phone is required (Step 4)'); return false }
+    if (!/^[+]?[\d\s-]{7,15}$/.test(form.contact_phone.trim())) { toast.error('Please enter a valid phone number (Step 4)'); return false }
+    if (form.amenities.length < 1)               { toast.error('Please select at least one amenity (Step 5)'); return false }
     if (previewUrls.length < 1 || previewUrls.length > 3) { toast.error('Please upload between 1 and 3 images'); return false }
     return true
   }
@@ -179,21 +213,31 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   const handlePayToGoLive = async () => {
     if (!validateForm()) return
     if (loading) return
+
+    // Guard: don't proceed if uploads are still in flight or have failures
+    if (hasUploading) {
+      toast.error('Please wait for all photos to finish uploading')
+      return
+    }
+    if (hasErrors) {
+      toast.error('Some photos failed to upload. Please retry them before going live.')
+      return
+    }
+
     setLoading(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
       if (!token) { toast.error('Session expired — please log in again'); setLoading(false); return }
 
-      const uploadedUrls = []
-      for (const file of images) {
-        const ext = file.name.split('.').pop()
-        const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${ext}`
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('property-images').upload(`${session.user.id}/${fileName}`, file, { upsert: false })
-        if (uploadError) throw new Error('Image upload failed: ' + uploadError.message)
-        const { data: { publicUrl } } = supabase.storage.from('property-images').getPublicUrl(uploadData.path)
-        uploadedUrls.push(publicUrl)
+      // Merge pre-existing remote URLs with newly uploaded URLs
+      const existingUrls = (initialData?.images || []).filter(u => previewUrls.includes(u))
+      const uploadedUrls = [...existingUrls, ...successUrls]
+
+      if (uploadedUrls.length < 1) {
+        toast.error('Please upload at least 1 photo')
+        setLoading(false)
+        return
       }
 
       const loadRazorpay = () => new Promise(resolve => {
@@ -296,7 +340,7 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
       case 3: return (
         <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
           <div>
-            <h3 className="text-xl font-black text-gray-900 mb-1">Pin on Map</h3>
+            <h3 className="text-xl font-black text-gray-900 mb-1">Pin on Map *</h3>
             <p className="text-sm text-gray-400">Drop a pin on your exact property location. This helps renters find you easily.</p>
           </div>
           <div className="border border-gray-100 rounded-2xl p-4 bg-gray-50/50">
@@ -315,12 +359,12 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
             <h3 className="text-xl font-black text-gray-900 mb-1">Premium Contact Details</h3>
             <p className="text-sm text-gray-400">These details are only visible to tenants who unlock your listing. Keep them accurate.</p>
           </div>
-          <Input id="property-address" label="Exact Property Address"
+          <Input id="property-address" label="Exact Property Address *"
             placeholder="e.g. Flat 402, Building B, XYZ Apartments, Near Metro"
-            value={form.exact_location} onChange={e => set('exact_location', e.target.value)} />
+            value={form.exact_location} onChange={e => set('exact_location', e.target.value)} required />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input id="property-phone" label="Contact Phone" placeholder="+91 9876543210"
-              value={form.contact_phone} onChange={e => set('contact_phone', e.target.value)} />
+            <Input id="property-phone" label="Contact Phone *" placeholder="+91 9876543210"
+              value={form.contact_phone} onChange={e => set('contact_phone', e.target.value)} required />
             <Input id="property-email" label="Contact Email" type="email" placeholder="owner@email.com"
               value={form.contact_email} onChange={e => set('contact_email', e.target.value)} />
           </div>
@@ -334,8 +378,8 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
       case 5: return (
         <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
           <div>
-            <h3 className="text-xl font-black text-gray-900 mb-1">Amenities</h3>
-            <p className="text-sm text-gray-400">Select all amenities your property offers. More = better visibility.</p>
+            <h3 className="text-xl font-black text-gray-900 mb-1">Amenities *</h3>
+            <p className="text-sm text-gray-400">Select all amenities your property offers. At least one is required.</p>
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
             {AMENITIES.map(a => {
@@ -382,7 +426,8 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
               </label>
             )}
           </div>
-
+          {/* ── Upload progress list ───────────────────────────────────── */}
+          <FileUploadList fileStates={fileStates} onRetry={retryFile} />
           {/* Availability toggle */}
           <label htmlFor="property-availability" className="flex items-center gap-3 cursor-pointer p-3 rounded-xl bg-gray-50 border border-gray-100">
             <input id="property-availability" type="checkbox" className="w-5 h-5 rounded border-gray-300 text-[#CA3433] focus:ring-[#CA3433] accent-[#CA3433]"

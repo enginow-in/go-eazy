@@ -10,6 +10,8 @@ import { useServices } from '../hooks/useServices'
 import { Button } from '../components/ui/Button'
 import toast from 'react-hot-toast'
 import { LocationPicker } from '../components/map/LocationPicker'
+import { useFileUpload } from '../hooks/useFileUpload'
+import { FileUploadList } from '../components/ui/FileUploadList'
 
 const CATEGORIES = [
   { value: 'tiffin',   label: 'Tiffin 🍱',   docs: ['FSSAI License', 'Aadhaar Card', 'PAN Card'] },
@@ -65,11 +67,27 @@ export const ServiceNew = () => {
     name: '', category: 'tiffin', description: '', experience: '', speciality: '',
   })
 
-  // Step 1: Photo (Poster)
-  const [posterImages, setPosterImages] = useState([])
+  // Step 1: Photo (Poster) — useFileUpload gives XHR progress + retry
   const [posterPreviews, setPosterPreviews] = useState([])
+  const {
+    fileStates: posterStates,
+    uploadFiles: uploadPosters,
+    retryFile: retryPoster,
+    removeFile: removePosterEntry,
+    successUrls: posterUrls,
+    hasErrors: posterHasErrors,
+    hasUploading: posterUploading,
+  } = useFileUpload('service-images', user?.id ?? 'anon')
 
-  // Step 2: Location
+  // Step 5: Documents — separate useFileUpload instance
+  const {
+    fileStates: docStates,
+    uploadFiles: uploadDocs,
+    retryFile: retryDoc,
+    successUrls: docUrls,
+    hasErrors: docHasErrors,
+    hasUploading: docUploading,
+  } = useFileUpload('service-documents', user?.id ?? 'anon')
   const [location, setLocation] = useState({
     state: 'Uttarakhand', city: '', area: '', address: '', landmark: '',
     latitude: null, longitude: null, map_address: '',
@@ -89,8 +107,7 @@ export const ServiceNew = () => {
     { plan_name: 'Monthly', price: '', description: '' },
   ])
 
-  // Step 5: Documents
-  const [documentFiles, setDocumentFiles] = useState([])
+  // Step 5: Documents — now managed by useFileUpload, no local state needed
 
   // Step 6: Contact
   const [contact, setContact] = useState({ contact_phone: '', contact_email: '' })
@@ -113,7 +130,9 @@ export const ServiceNew = () => {
 
   const validateStep = () => {
     if (step === 0 && !basicInfo.name.trim()) { toast.error('Provider name is required'); return false }
-    if (step === 1 && posterImages.length < 1) { toast.error('Please upload at least 1 service photo'); return false }
+    if (step === 1 && posterPreviews.length < 1) { toast.error('Please upload at least 1 service photo'); return false }
+    if (step === 1 && posterHasErrors) { toast.error('Some photos failed — please retry them before continuing'); return false }
+    if (step === 1 && posterUploading) { toast.error('Please wait for photo uploads to complete'); return false }
     if (step === 2 && !location.city.trim())   { toast.error('City is required'); return false }
     if (step === 2 && !location.area.trim())   { toast.error('Area is required'); return false }
     if (step === 6 && !contact.contact_phone.trim()) { toast.error('Phone number is required'); return false }
@@ -130,6 +149,10 @@ export const ServiceNew = () => {
     if (!validateStep()) return
     if (!user) { toast.error('You must be logged in'); return }
 
+    // Guard on any pending doc uploads
+    if (docUploading) { toast.error('Please wait for document uploads to finish'); return }
+    if (docHasErrors) { toast.error('Some documents failed to upload — please retry them'); return }
+
     setSubmitting(true)
     try {
       const providerData = {
@@ -141,7 +164,8 @@ export const ServiceNew = () => {
       const validItems = serviceItems.filter(i => i.service_name.trim() && i.price)
       const validPlans = plans.filter(p => p.plan_name.trim() && p.price)
 
-      await createService(providerData, validItems, validPlans, documentFiles, posterImages)
+      // Pass pre-uploaded URLs instead of raw File objects
+      await createService(providerData, validItems, validPlans, docUrls, posterUrls)
       toast.success('Service listing created! Pending verification.')
       navigate('/service-provider')
     } catch (err) {
@@ -258,7 +282,7 @@ export const ServiceNew = () => {
                         className="hidden" 
                         onChange={e => {
                           const files = Array.from(e.target.files)
-                          if (files.length + posterImages.length > 3) {
+                          if (files.length + posterPreviews.length > 3) {
                             toast.error('Maximum 3 images allowed')
                             return
                           }
@@ -268,14 +292,17 @@ export const ServiceNew = () => {
                               return
                             }
                           }
-                          setPosterImages(v => [...v, ...files])
                           setPosterPreviews(v => [...v, ...files.map(f => URL.createObjectURL(f))])
+                          uploadPosters(files)
                           e.target.value = ''
                         }} 
                       />
                     </div>
                   )}
                 </div>
+
+                {/* Upload progress for poster images */}
+                <FileUploadList fileStates={posterStates} onRetry={retryPoster} />
               </div>
             </div>
           )}
@@ -389,25 +416,21 @@ export const ServiceNew = () => {
                 <Upload size={24} className="text-gray-300 mx-auto mb-2" />
                 <p className="text-sm font-semibold text-gray-500">Click to upload documents</p>
                 <p className="text-xs text-gray-400 mt-1">PDF, JPG, PNG (max 5MB each)</p>
-                <input id="doc-upload" type="file" multiple accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={handleFileChange} />
+                <input
+                  id="doc-upload"
+                  type="file"
+                  multiple
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  className="hidden"
+                  onChange={e => {
+                    uploadDocs(Array.from(e.target.files))
+                    e.target.value = ''
+                  }}
+                />
               </div>
 
-              {documentFiles.length > 0 && (
-                <div className="space-y-2">
-                  {documentFiles.map((file, i) => (
-                    <div key={i} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <FileText size={16} className="text-gray-400" />
-                        <span className="text-sm text-gray-700 truncate max-w-xs">{file.name}</span>
-                        <span className="text-xs text-gray-400">({(file.size / 1024).toFixed(0)} KB)</span>
-                      </div>
-                      <button type="button" onClick={() => removeFile(i)} className="text-gray-400 hover:text-red-500 transition-colors">
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {/* Upload progress for documents */}
+              <FileUploadList fileStates={docStates} onRetry={retryDoc} compact />
 
               <p className="text-xs text-gray-400 text-center">
                 Your documents are securely stored and only reviewed by GoEazy for verification purposes.
