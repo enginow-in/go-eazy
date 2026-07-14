@@ -75,6 +75,35 @@ serve(async (req: Request) => {
       })
     }
 
+    // Parse body parameters
+    let service_id = null
+    let purpose = 'property_listing'
+    try {
+      const body = await req.json()
+      if (body.purpose) purpose = body.purpose
+      if (body.service_id) service_id = body.service_id
+    } catch {
+      // ignore json parsing errors for backwards compatibility
+    }
+
+    if (purpose === 'service_listing') {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+      if (!service_id || !uuidRegex.test(service_id)) {
+        return new Response(JSON.stringify({ error: 'Invalid service_id format' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        })
+      }
+    }
+
+    const notes: Record<string, string> = {
+      user_id: user.id,
+      purpose
+    }
+    if (service_id) {
+      notes.service_id = service_id
+    }
+
     // 3. Create Razorpay Order for ₹199
     const auth = btoa(`${key_id}:${key_secret}`)
     const resp = await fetch('https://api.razorpay.com/v1/orders', {
@@ -87,10 +116,7 @@ serve(async (req: Request) => {
         amount: 19900,        // ₹199.00 in paise — hardcoded server-side
         currency: 'INR',
         receipt: `listing_${user.id.substring(0, 8)}_${Date.now()}`,
-        notes: {
-          user_id: user.id,
-          purpose: 'property_listing'
-        }
+        notes
       })
     })
 

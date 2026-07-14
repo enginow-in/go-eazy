@@ -35,7 +35,7 @@ const StatusBadge = ({ status }) => {
 export const ServiceProviderDashboard = () => {
   const navigate = useNavigate()
   const { profile } = useSelector(s => s.auth)
-  const { getMyServices, deleteService, payServiceListing } = useServices()
+  const { getMyServices, deleteService } = useServices()
 
   const [myServices, setMyServices] = useState([])
   const [loading, setLoading] = useState(true)
@@ -93,7 +93,11 @@ export const ServiceProviderDashboard = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
           'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
-        }
+        },
+        body: JSON.stringify({
+          service_id: serviceId,
+          purpose: 'service_listing'
+        })
       })
       if (!orderResp.ok) {
         const errJson = await orderResp.json().catch(() => ({}))
@@ -108,17 +112,36 @@ export const ServiceProviderDashboard = () => {
         name: 'GoEazy',
         description: 'Service Listing — Go Live',
         image: '/favicon.svg',
-        handler: async function() {
+        handler: async function(response) {
           try {
-            // Mark payment as paid in DB
-            await payServiceListing(serviceId)
+            // Verify payment on the secure backend Edge Function
+            const verifyResp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-service-payment`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                service_id: serviceId
+              })
+            })
+
+            if (!verifyResp.ok) {
+              const err = await verifyResp.json().catch(() => ({}))
+              throw new Error(err.error || 'Payment verification failed')
+            }
+
             // Refresh the service in UI
             setMyServices(prev => prev.map(s =>
               s.id === serviceId ? { ...s, payment_status: 'paid' } : s
             ))
             toast.success('🎉 Payment successful! Your listing is now LIVE on GoEazy.')
-          } catch {
-            toast.error('Payment recorded but DB update failed. Contact support.')
+          } catch (vErr) {
+            toast.error('Payment verification failed: ' + vErr.message)
           } finally { setPayingId(null) }
         },
         prefill: { name: profile?.full_name || '', email: '' },
