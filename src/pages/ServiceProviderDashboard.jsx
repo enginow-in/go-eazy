@@ -60,7 +60,7 @@ export const ServiceProviderDashboard = () => {
       await deleteService(id)
       setMyServices(v => v.filter(s => s.id !== id))
       toast.success('Listing deleted')
-    } catch (err) {
+    } catch (error) {
       toast.error('Failed to delete listing')
     }
   }
@@ -117,7 +117,7 @@ export const ServiceProviderDashboard = () => {
               s.id === serviceId ? { ...s, payment_status: 'paid' } : s
             ))
             toast.success('🎉 Payment successful! Your listing is now LIVE on GoEazy.')
-          } catch (err) {
+          } catch (error) {
             toast.error('Payment recorded but DB update failed. Contact support.')
           } finally { setPayingId(null) }
         },
@@ -130,8 +130,8 @@ export const ServiceProviderDashboard = () => {
         setPayingId(null)
       })
       rzp.open()
-    } catch (err) {
-      toast.error(err.message || 'Could not initiate payment')
+    } catch (error) {
+      toast.error(error.message || 'Could not initiate payment')
       setPayingId(null)
     }
   }

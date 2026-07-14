@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion';
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Sparkles } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { Button } from '../ui/Button'
@@ -149,7 +149,12 @@ export const AuthGateModal = () => {
                   placeholder="Password (min 8 chars)"
                   leftIcon={<Lock size={13} />}
                   rightIcon={
-                    <button type="button" onClick={() => setShowPass(!showPass)} className="cursor-pointer text-gray-400">
+                    <button 
+                      type="button" 
+                      onClick={() => setShowPass(!showPass)} 
+                      aria-label={showPass ? 'Hide password' : 'Show password'}
+                      className="cursor-pointer text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full p-1"
+                    >
                       {showPass ? <EyeOff size={13} /> : <Eye size={13} />}
                     </button>
                   }

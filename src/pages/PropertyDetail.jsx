@@ -280,7 +280,7 @@ export const PropertyDetail = () => {
                  setVisitDate('')
               }
             }
-          } catch (vErr) {
+          } catch (error) {
             toast.error('Payment verification failed')
           } finally {
             setUnlocking(false)
