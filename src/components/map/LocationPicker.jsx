@@ -173,6 +173,11 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
+  // Cleanup pending search debounce timer on unmount
+  useEffect(() => {
+    return () => clearTimeout(debounceRef.current)
+  }, [])
+
   return (
     <div className="space-y-3">
       <label className="block text-sm font-bold text-gray-700">
