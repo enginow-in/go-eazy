@@ -77,7 +77,7 @@ export const LandlordDashboard = () => {
     }
   }
 
-  const handleVisitAction = async (visitId, userId, propertyTitle, action) => {
+  const handleVisitAction = async (visitId, action) => {
     setActioningVisitId(visitId)
     try {
       const { error } = await supabase
@@ -85,12 +85,6 @@ export const LandlordDashboard = () => {
         .update({ status: action })
         .eq('id', visitId)
       if (error) throw error
-
-      const msg = `Your site visit request for "${propertyTitle || 'Property'}" has been ${action}.`
-      await supabase.from('notifications').insert({
-        user_id: userId,
-        message: msg
-      })
 
       toast.success(`Visit ${action} successfully`)
       setSiteVisits(prev => prev.filter(v => v.id !== visitId))
@@ -189,7 +183,7 @@ export const LandlordDashboard = () => {
                     <Button 
                       variant="primary" 
                       size="sm" 
-                      onClick={() => handleVisitAction(visit.id, visit.user_id, visit.property?.title, 'approved')}
+                      onClick={() => handleVisitAction(visit.id, 'approved')}
                       disabled={actioningVisitId === visit.id}
                       className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 shadow-md shadow-green-600/20"
                     >
@@ -198,7 +192,7 @@ export const LandlordDashboard = () => {
                     <Button 
                       variant="secondary" 
                       size="sm" 
-                      onClick={() => handleVisitAction(visit.id, visit.user_id, visit.property?.title, 'declined')}
+                      onClick={() => handleVisitAction(visit.id, 'declined')}
                       disabled={actioningVisitId === visit.id}
                       className="flex-1 sm:flex-none text-red-600 hover:bg-red-50 border-red-100"
                     >
