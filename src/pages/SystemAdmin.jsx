@@ -344,7 +344,7 @@ export const SystemAdmin = () => {
             {selectedDoc && (
               <div className="rounded-xl overflow-hidden bg-gray-50 border border-gray-200 flex items-center justify-center min-h-[400px]">
                 {selectedDoc.toLowerCase().endsWith('.pdf') ? (
-                  <iframe src={selectedDoc} className="w-full h-[60vh] rounded-xl" title="Document" />
+                  <iframe src={selectedDoc} className="w-full h-[60vh] rounded-xl" title="Document" sandbox="allow-same-origin" />
                 ) : (
                   <img src={selectedDoc} alt="Document" className="max-w-full max-h-[70vh] object-contain" />
                 )}
