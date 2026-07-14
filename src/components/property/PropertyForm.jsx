@@ -9,6 +9,7 @@ import { useSelector } from 'react-redux'
 import { supabase } from '../../lib/supabase'
 import toast from 'react-hot-toast'
 import { LocationPicker } from '../map/LocationPicker'
+import { validateImageFiles } from '../../utils/uploadValidation'
 
 // ── Success Overlay ───────────────────────────────────────────────────────────
 const ListingSuccessOverlay = () => (
@@ -124,9 +125,9 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files)
     if (files.length + previewUrls.length > 3) { toast.error('Maximum 3 images allowed'); return }
-    for (const file of files) {
-      if (file.size > 7 * 1024 * 1024) { toast.error(`Image ${file.name} exceeds 7MB limit`); return }
-    }
+    
+    const validationError = validateImageFiles(files)
+    if (validationError) { toast.error(validationError); return }
     setImages(prev => [...prev, ...files])
     setPreviewUrls(prev => [...prev, ...files.map(f => URL.createObjectURL(f))])
   }

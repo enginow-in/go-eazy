@@ -10,6 +10,7 @@ import { useServices } from '../hooks/useServices'
 import { Button } from '../components/ui/Button'
 import toast from 'react-hot-toast'
 import { LocationPicker } from '../components/map/LocationPicker'
+import { validateImageFiles, validateDocumentFiles } from '../utils/uploadValidation'
 
 const CATEGORIES = [
   { value: 'tiffin',   label: 'Tiffin 🍱',   docs: ['FSSAI License', 'Aadhaar Card', 'PAN Card'] },
@@ -107,6 +108,12 @@ export const ServiceNew = () => {
 
   const handleFileChange = e => {
     const files = Array.from(e.target.files)
+    const validationError = validateDocumentFiles(files)
+    if (validationError) {
+      toast.error(validationError)
+      e.target.value = ''
+      return
+    }
     setDocumentFiles(v => [...v, ...files])
   }
   const removeFile = (i) => setDocumentFiles(v => v.filter((_, idx) => idx !== i))
@@ -262,11 +269,11 @@ export const ServiceNew = () => {
                             toast.error('Maximum 3 images allowed')
                             return
                           }
-                          for (const file of files) {
-                            if (file.size > 7 * 1024 * 1024) {
-                              toast.error(`Image ${file.name} exceeds 7MB limit`)
-                              return
-                            }
+                          const validationError = validateImageFiles(files)
+                          if (validationError) {
+                            toast.error(validationError)
+                            e.target.value = ''
+                            return
                           }
                           setPosterImages(v => [...v, ...files])
                           setPosterPreviews(v => [...v, ...files.map(f => URL.createObjectURL(f))])
