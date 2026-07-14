@@ -29,6 +29,7 @@ const ServiceProviderDashboard = lazy(() => import('./pages/ServiceProviderDashb
 const ServiceNew              = lazy(() => import('./pages/ServiceNew').then(m => ({ default: m.ServiceNew })))
 const About                   = lazy(() => import('./pages/About').then(m => ({ default: m.About })))
 const SystemAdmin             = lazy(() => import('./pages/SystemAdmin').then(m => ({ default: m.SystemAdmin })))
+const Messages                = lazy(() => import('./pages/Messages').then(m => ({ default: m.default })))
 const PrivacyPolicy           = lazy(() => import('./pages/legal/PrivacyPolicy'))
 const TermsOfService          = lazy(() => import('./pages/legal/TermsOfService'))
 const CookiePolicy            = lazy(() => import('./pages/legal/CookiePolicy'))
@@ -101,6 +102,8 @@ function App() {
               <UserDashboard />
             </ProtectedRoute>
           } />
+
+          <Route path="/messages" element={<Messages />} />
           
           <Route path="/dashboard/saved" element={
             <ProtectedRoute>

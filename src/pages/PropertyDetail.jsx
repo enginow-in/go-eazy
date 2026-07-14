@@ -547,6 +547,9 @@ export const PropertyDetail = () => {
                         <a href={`mailto:${gatedData?.contact_email || ''}`} className="flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-full bg-white border border-gray-200 text-gray-900 font-bold hover:bg-gray-50 transition-colors shadow-sm text-[15px]">
                           <Mail size={18} /> {t('property.sections.sendEmail')}
                         </a>
+                        <button onClick={() => window.location.href = `/messages?landlord_id=${p.user_id}`} className="flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-full bg-green-50 border border-green-200 text-green-700 font-bold hover:bg-green-100 transition-colors shadow-sm text-[15px]">
+                          <Lock size={18} /> Secure E2EE Chat
+                        </button>
                       </div>
                     ) : (
                       <div className="border border-red-50 rounded-xl p-6 text-center bg-red-50/10 relative overflow-hidden h-48 flex flex-col items-center justify-center shadow-sm">

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { setUser, setProfile, logout, setLoading } from '../store/authSlice'
+import { generateKeyPair, exportPublicKey, storeLocalPrivateKey, getLocalPrivateKey } from '../utils/crypto'
 
 export const useAuth = () => {
   const dispatch = useDispatch()
@@ -104,6 +105,29 @@ export const useAuth = () => {
         throw error
       }
 
+      // E2EE Key Management: Ensure we have a keypair for this device
+      try {
+        const localPrivKey = await getLocalPrivateKey(userId)
+        if (!localPrivKey) {
+          console.log('Auth: No local private key found. Generating new E2EE keys for this device...')
+          const keyPair = await generateKeyPair()
+          const pubKeyBase64 = await exportPublicKey(keyPair.publicKey)
+          await storeLocalPrivateKey(userId, keyPair.privateKey)
+          
+          const { error: keyUpdateError } = await supabase
+            .from('profiles')
+            .update({ public_key: pubKeyBase64 })
+            .eq('id', userId)
+            
+          if (!keyUpdateError) {
+            data.public_key = pubKeyBase64
+          } else {
+            console.error('Auth: Failed to upload public key', keyUpdateError)
+          }
+        }
+      } catch (cryptoErr) {
+        console.error('Auth: Failed to setup E2EE crypto keys:', cryptoErr)
+      }
 
       dispatch(setProfile(data))
     } catch (err) {

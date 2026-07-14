@@ -149,6 +149,7 @@ export const Navbar = () => {
               <Link to="/nearby" className="hover:text-gray-900 transition-colors py-2">{t('nav.nearby')}</Link>
               <button onClick={() => user ? navigate('/landlord') : dispatch(openAuthModal('login'))} className="hover:text-gray-900 transition-colors">{t('nav.list')}</button>
               <Link to="/about" className="hover:text-gray-900 transition-colors py-2">{t('nav.about')}</Link>
+              <Link to="/messages" className="hover:text-gray-900 transition-colors py-2">Messages</Link>
             </div>
             
             <div className="w-px h-6 bg-gray-200"></div>
@@ -392,6 +393,7 @@ export const Navbar = () => {
             <Link to="/nearby" onClick={() => dispatch(closeMobileMenu())} className="block w-full text-left font-semibold text-gray-700 py-2">{t('nav.nearby')}</Link>
             <button onClick={() => { dispatch(closeMobileMenu()); user ? navigate(role === 'landlord' ? '/landlord' : role === 'service_provider' ? '/service-provider' : '/landlord') : dispatch(openAuthModal('login')) }} className="block w-full text-left font-semibold text-gray-700 py-2">{t('nav.list')}</button>
             <Link to="/about" onClick={() => dispatch(closeMobileMenu())} className="block w-full text-left font-semibold text-gray-700 py-2">{t('nav.about')}</Link>
+            <Link to="/messages" onClick={() => dispatch(closeMobileMenu())} className="block w-full text-left font-semibold text-gray-700 py-2">Messages</Link>
             
             <div className="w-full h-px bg-gray-100 my-4" />
             
