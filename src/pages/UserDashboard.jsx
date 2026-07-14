@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Heart, Clock, User as UserIcon, ChevronLeft, Bell, Calendar, MapPin } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
@@ -20,12 +20,15 @@ export const UserDashboard = () => {
   const [myVisits, setMyVisits] = useState([])
   const [loadingData, setLoadingData] = useState(true)
 
+  const favoritesKey = useMemo(() => JSON.stringify(favorites), [favorites])
+  const recentlyViewedKey = useMemo(() => JSON.stringify(recentlyViewed), [recentlyViewed])
+
   useEffect(() => {
     if (user) {
       loadProperties()
       loadUserData()
     }
-  }, [user, favorites, recentlyViewed]) // React to changes in the Redux IDs
+  }, [user, favoritesKey, recentlyViewedKey])
 
   const loadUserData = async () => {
     if (!user) return
