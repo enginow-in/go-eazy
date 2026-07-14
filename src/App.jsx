@@ -73,11 +73,7 @@ function App() {
           <Route path="/about" element={<About />} />
 
           {/* Admin Route */}
-          <Route path="/systemadmin" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <SystemAdmin />
-            </ProtectedRoute>
-          } />
+          <Route path="/systemadmin" element={<SystemAdmin />} />
 
           {/* Nearby Services Routes */}
           <Route path="/nearby" element={<NearbyServices />} />
