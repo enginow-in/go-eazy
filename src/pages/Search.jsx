@@ -13,6 +13,7 @@ import { AMENITY_ICONS, cn } from '../utils/helpers'
 import { Skeleton } from '../components/ui/Skeleton'
 import { useAuth } from '../hooks/useAuth'
 import { RecommendedSection } from '../components/property/RecommendedSection'
+import RecentlyViewedProperties from '../components/property/RecentlyViewedProperties'
 
 export const Search = () => {
   const { t } = useTranslation()
@@ -268,6 +269,11 @@ export const Search = () => {
 
         {/* Recommendation Section (if quiz done) */}
         <RecommendedSection viewMode={viewMode} />
+
+        {/* Recently Viewed Properties Section */}
+        <div className="mb-8">
+          <RecentlyViewedProperties />
+        </div>
 
         {/* Results Area */}
         {loading && listings.length === 0 ? (

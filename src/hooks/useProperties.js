@@ -131,6 +131,28 @@ export const useProperties = () => {
     }
   }, [user, dispatch])
 
+  // ✅ ADD THIS NEW FUNCTION HERE (inside the hook)
+  const fetchPropertiesByIds = useCallback(async (ids = []) => {
+    if (!ids || ids.length === 0) return [];
+
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .select(`${PUBLIC_PROPERTY_FIELDS}, profiles!properties_landlord_id_fkey(${PUBLIC_PROFILE_FIELDS})`)
+        .in('id', ids);
+
+      if (error) {
+        console.error('Error fetching properties by IDs:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (err) {
+      console.error('Exception in fetchPropertiesByIds:', err);
+      return [];
+    }
+  }, []);
+
   const fetchGatedData = useCallback(async (id) => {
     if (!user) return null
     try {
@@ -328,7 +350,7 @@ export const useProperties = () => {
   return {
     listings, featured, currentProperty, favorites, recentlyViewed, filters,
     loading, hasMore, page, totalCount,
-    fetchProperties, fetchFeatured, fetchByType, fetchPropertyById,
+    fetchProperties, fetchPropertiesByIds, fetchFeatured, fetchByType, fetchPropertyById,
     createProperty, updateProperty, deleteProperty,
     fetchFavorites, toggleFavorite, fetchRecentlyViewed, getLandlordProperties,
     updateFilters: useCallback((f) => dispatch(setFilters(f)), [dispatch]),
