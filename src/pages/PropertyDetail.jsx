@@ -30,6 +30,8 @@ const StarRating = ({ value, onChange, readonly = false }) => (
         type="button"
         disabled={readonly}
         onClick={() => onChange && onChange(n)}
+        aria-label={`${readonly ? 'Rated' : 'Rate'} ${n} out of 5 stars`}
+        aria-pressed={readonly ? undefined : value === n}
         className={`transition-transform ${!readonly ? 'hover:scale-125 cursor-pointer' : 'cursor-default'}`}
       >
         <Star

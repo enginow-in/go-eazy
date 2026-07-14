@@ -25,6 +25,38 @@ export const Navbar = () => {
   const [langMenuOpen, setLangMenuOpen] = useState(false)
   const [selectedCity, setSelectedCity] = useState(filters.city || 'All Cities')
   const [searchQuery, setSearchQuery] = useState(filters.query || '')
+
+  const openMenuFromKeyboard = (event, setOpen, menuId) => {
+    if (!['ArrowDown', 'Enter', ' '].includes(event.key)) return
+    event.preventDefault()
+    setOpen(true)
+    requestAnimationFrame(() => {
+      document.getElementById(menuId)?.querySelector('[role="menuitem"]')?.focus()
+    })
+  }
+
+  const handleMenuKeyDown = (event, closeMenu) => {
+    const items = [...event.currentTarget.querySelectorAll('[role="menuitem"]')]
+    const currentIndex = items.indexOf(document.activeElement)
+
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      closeMenu()
+      document.querySelector(`[aria-controls="${event.currentTarget.id}"]`)?.focus()
+      return
+    }
+
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return
+    event.preventDefault()
+
+    let nextIndex
+    if (event.key === 'Home') nextIndex = 0
+    else if (event.key === 'End') nextIndex = items.length - 1
+    else if (event.key === 'ArrowDown') nextIndex = (currentIndex + 1) % items.length
+    else nextIndex = (currentIndex - 1 + items.length) % items.length
+
+    items[nextIndex]?.focus()
+  }
   // Tracks if the user is actively typing in the Navbar's own search bar.
   // Without this guard, the debounce effect fires on any re-render where
   // searchQuery !== filters.query, causing rogue /search redirects (e.g. while
@@ -101,6 +133,11 @@ export const Navbar = () => {
           <div className="relative z-30">
             <button 
               onClick={() => setLangMenuOpen(!langMenuOpen)}
+              onKeyDown={(event) => openMenuFromKeyboard(event, setLangMenuOpen, 'language-menu')}
+              aria-label="Select language"
+              aria-haspopup="menu"
+              aria-expanded={langMenuOpen}
+              aria-controls="language-menu"
               className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-700 hover:text-[#CA3433] transition-colors uppercase px-1 py-2"
             >
               {currentLang.short} <ChevronDown size={14} className={`transition-transform duration-200 ${langMenuOpen ? 'rotate-180 text-[#CA3433]' : ''}`} />
@@ -109,10 +146,17 @@ export const Navbar = () => {
             {langMenuOpen && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setLangMenuOpen(false)} />
-                <div className="absolute left-0 top-full mt-2 w-32 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden py-1">
+                <div
+                  id="language-menu"
+                  role="menu"
+                  aria-label="Languages"
+                  onKeyDown={(event) => handleMenuKeyDown(event, () => setLangMenuOpen(false))}
+                  className="absolute left-0 top-full mt-2 w-32 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden py-1"
+                >
                   {languages.map(l => (
                     <button
                       key={l.code}
+                      role="menuitem"
                       onClick={() => changeLanguage(l.code)}
                       className={`w-full text-left px-4 py-3 text-sm font-bold transition-colors ${currentLang.code === l.code ? 'bg-[#fff5f5] text-[#CA3433]' : 'text-gray-700 hover:bg-gray-50'}`}
                     >
@@ -166,6 +210,11 @@ export const Navbar = () => {
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen(v => !v)}
+                  onKeyDown={(event) => openMenuFromKeyboard(event, setUserMenuOpen, 'user-menu')}
+                  aria-label="Open account menu"
+                  aria-haspopup="menu"
+                  aria-expanded={userMenuOpen}
+                  aria-controls="user-menu"
                   className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#0B0F19] text-white text-sm font-semibold hover:bg-[#CA3433] transition-all duration-300 transform hover:scale-105"
                 >
                   {profile?.avatar_url ? (
@@ -179,9 +228,16 @@ export const Navbar = () => {
                 {userMenuOpen && (
                   <>
                     <div className="fixed inset-0 z-10" onClick={() => setUserMenuOpen(false)} />
-                    <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-xl border border-gray-100 z-20 overflow-hidden">
+                    <div
+                      id="user-menu"
+                      role="menu"
+                      aria-label="Account actions"
+                      onKeyDown={(event) => handleMenuKeyDown(event, () => setUserMenuOpen(false))}
+                      className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-xl border border-gray-100 z-20 overflow-hidden"
+                    >
                       <div className="py-1">
                         <button
+                          role="menuitem"
                           onClick={() => { 
                             const dest = role === 'admin' ? '/systemadmin' : role === 'landlord' ? '/landlord' : role === 'service_provider' ? '/service-provider' : '/dashboard'
                             navigate(dest); setUserMenuOpen(false) 
@@ -191,12 +247,14 @@ export const Navbar = () => {
                           {role === 'admin' ? 'Admin Panel' : t('nav.dashboard')}
                         </button>
                         <button
+                          role="menuitem"
                           onClick={() => { navigate('/settings'); setUserMenuOpen(false) }}
                           className="w-full flex flex-col items-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-100"
                         >
                           {t('nav.settings')}
                         </button>
                         <button
+                          role="menuitem"
                           onClick={handleSignOut}
                           className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
                         >
@@ -269,8 +327,17 @@ export const Navbar = () => {
               </div>
             </div>
 
-            <div className="hidden lg:flex items-center h-16 border-l border-gray-100 pl-6 pr-8 bg-white min-w-max relative cursor-pointer shrink-0" onClick={() => setCityMenuOpen(!cityMenuOpen)}>
-                <div className="flex items-center gap-3">
+            <div className="hidden lg:flex items-center h-16 border-l border-gray-100 bg-white min-w-max relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setCityMenuOpen(!cityMenuOpen)}
+                onKeyDown={(event) => openMenuFromKeyboard(event, setCityMenuOpen, 'desktop-city-menu')}
+                aria-label={`Select city. Current city: ${selectedCity}`}
+                aria-haspopup="menu"
+                aria-expanded={cityMenuOpen}
+                aria-controls="desktop-city-menu"
+                className="flex items-center gap-3 h-full pl-6 pr-8"
+              >
                   <div className="relative w-10 h-10 rounded-full border border-[#CA3433] overflow-hidden bg-gray-50 flex items-center justify-center shrink-0">
                     <img src="/1.webp" alt="City" className="w-full h-full object-cover" />
                   </div>
@@ -279,14 +346,21 @@ export const Navbar = () => {
                     <span className="text-gray-500 text-xs">Uttarakhand</span>
                   </div>
                   <ChevronDown size={16} className={`text-gray-400 ml-4 transition-transform duration-200 ${cityMenuOpen ? 'rotate-180' : ''}`} />
-                </div>
+              </button>
 
                 {/* City Dropdown Menu */}
                 {cityMenuOpen && (
                   <>
-                    <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setCityMenuOpen(false); }} />
-                    <div className="absolute right-4 top-full mt-3 w-48 bg-white rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 z-50 overflow-hidden py-2" onClick={(e) => e.stopPropagation()}>
+                    <div className="fixed inset-0 z-10" onClick={() => setCityMenuOpen(false)} />
+                    <div
+                      id="desktop-city-menu"
+                      role="menu"
+                      aria-label="Cities"
+                      onKeyDown={(event) => handleMenuKeyDown(event, () => setCityMenuOpen(false))}
+                      className="absolute right-4 top-full mt-3 w-48 bg-white rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 z-50 overflow-hidden py-2"
+                    >
                       <button
+                        role="menuitem"
                         onClick={() => {
                           setSelectedCity('All Cities')
                           updateFilters({ city: '' })
@@ -299,6 +373,7 @@ export const Navbar = () => {
                       {CITIES.map(city => (
                         <button
                           key={city}
+                          role="menuitem"
                           onClick={() => {
                             setSelectedCity(city)
                             updateFilters({ city })
@@ -322,6 +397,11 @@ export const Navbar = () => {
             <div className="relative shrink-0">
               <button 
                 onClick={() => setCityMenuOpen(!cityMenuOpen)}
+                onKeyDown={(event) => openMenuFromKeyboard(event, setCityMenuOpen, 'mobile-city-menu')}
+                aria-label={`Select city. Current city: ${selectedCity}`}
+                aria-haspopup="menu"
+                aria-expanded={cityMenuOpen}
+                aria-controls="mobile-city-menu"
                 className="flex items-center gap-1.5 p-1 bg-gray-50 rounded-full border border-[#CA3433]"
               >
                 <div className="w-8 h-8 rounded-full overflow-hidden border border-white shadow-sm">
@@ -333,11 +413,18 @@ export const Navbar = () => {
               {cityMenuOpen && (
                 <>
                   <div className="fixed inset-0 z-[60]" onClick={() => setCityMenuOpen(false)} />
-                  <div className="absolute left-0 top-full mt-2 w-40 bg-white rounded-xl shadow-2xl border border-gray-100 z-[70] overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-200">
+                  <div
+                    id="mobile-city-menu"
+                    role="menu"
+                    aria-label="Cities"
+                    onKeyDown={(event) => handleMenuKeyDown(event, () => setCityMenuOpen(false))}
+                    className="absolute left-0 top-full mt-2 w-40 bg-white rounded-xl shadow-2xl border border-gray-100 z-[70] overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-200"
+                  >
                     <div className="px-3 py-2 border-b border-gray-50 mb-1">
                       <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t('search.filters')}</span>
                     </div>
                     <button
+                      role="menuitem"
                       onClick={() => {
                         setSelectedCity('All Cities')
                         updateFilters({ city: '' })
@@ -350,6 +437,7 @@ export const Navbar = () => {
                     {CITIES.map(city => (
                       <button
                         key={city}
+                        role="menuitem"
                         onClick={() => {
                           setSelectedCity(city)
                           updateFilters({ city })
