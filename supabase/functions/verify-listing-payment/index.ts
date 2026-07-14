@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
+import { fetchWithTimeout } from '../_shared/fetchWithTimeout.ts'
 
 const ALLOWED_ORIGINS = [
   'https://goeazy.in', 'https://www.goeazy.in',
@@ -90,7 +91,7 @@ serve(async (req: Request) => {
     // 3. Cross-validate with Razorpay API — ensure amount is exactly ₹199
     const keyId = Deno.env.get('RAZORPAY_KEY_ID')!
     const auth = btoa(`${keyId}:${secret}`)
-    const payResp = await fetch(`https://api.razorpay.com/v1/payments/${razorpay_payment_id}`, {
+    const payResp = await fetchWithTimeout(`https://api.razorpay.com/v1/payments/${razorpay_payment_id}`, {
       headers: { Authorization: `Basic ${auth}` }
     })
 

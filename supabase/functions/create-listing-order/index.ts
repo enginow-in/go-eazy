@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
+import { fetchWithTimeout } from '../_shared/fetchWithTimeout.ts'
 
 const ALLOWED_ORIGINS = [
   'https://goeazy.in',
@@ -77,7 +78,7 @@ serve(async (req: Request) => {
 
     // 3. Create Razorpay Order for ₹199
     const auth = btoa(`${key_id}:${key_secret}`)
-    const resp = await fetch('https://api.razorpay.com/v1/orders', {
+    const resp = await fetchWithTimeout('https://api.razorpay.com/v1/orders', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

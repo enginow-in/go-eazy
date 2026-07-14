@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
+import { fetchWithTimeout } from '../_shared/fetchWithTimeout.ts'
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
 // Restrict to your own origins. Add your production domain here.
@@ -70,7 +71,7 @@ async function validatePaymentWithRazorpay(
   keySecret: string
 ): Promise<{ valid: boolean; reason?: string }> {
   const auth = btoa(`${keyId}:${keySecret}`)
-  const resp = await fetch(`https://api.razorpay.com/v1/payments/${paymentId}`, {
+  const resp = await fetchWithTimeout(`https://api.razorpay.com/v1/payments/${paymentId}`, {
     headers: { Authorization: `Basic ${auth}` }
   })
 
