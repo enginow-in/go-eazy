@@ -18,6 +18,7 @@ import ScrollToTop from './components/common/ScrollToTop'
 // "Cannot access X before initialization" TDZ errors from
 // Rolldown bundling all module graphs together.
 const PropertyDetail          = lazy(() => import('./pages/PropertyDetail').then(m => ({ default: m.PropertyDetail })))
+const AuthHome                = lazy(() => import('./pages/AuthHome').then(m => ({ default: m.AuthHome })))
 const UserDashboard           = lazy(() => import('./pages/UserDashboard').then(m => ({ default: m.UserDashboard })))
 const SavedProperties         = lazy(() => import('./pages/SavedProperties').then(m => ({ default: m.SavedProperties })))
 const LandlordDashboard       = lazy(() => import('./pages/LandlordDashboard').then(m => ({ default: m.LandlordDashboard })))
@@ -61,8 +62,9 @@ function App() {
       <Layout>
         <Suspense fallback={<PageSpinner />}>
           <Routes>
-          <Route path="/" element={<Navigate to="/search" replace />} />
+          <Route path="/" element={<Home />} />
           <Route path="/search" element={<Search />} />
+          <Route path="/login" element={<AuthHome />} />
           <Route path="/property/:id" element={<PropertyDetail />} />
           
           {/* Legal Routes */}
