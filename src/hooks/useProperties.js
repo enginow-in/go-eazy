@@ -119,6 +119,7 @@ export const useProperties = () => {
         .maybeSingle()
       if (error) throw error
       dispatch(setCurrentProperty(data))
+      if (data) await supabase.rpc('increment_views', { property_id: id })
       
       if (user && data) {
         dispatch(addRecentlyViewed(id))
