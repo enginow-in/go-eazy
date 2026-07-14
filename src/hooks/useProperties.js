@@ -118,14 +118,20 @@ export const useProperties = () => {
         .eq('id', id)
         .maybeSingle()
       if (error) throw error
-      dispatch(setCurrentProperty(data))
-      
+      dispatch(setCurrentProperty(data ?? null))
       if (user && data) {
         dispatch(addRecentlyViewed(id))
-        await supabase.from('recently_viewed').upsert({ user_id: user.id, property_id: id, viewed_at: new Date().toISOString() })
+        await supabase
+          .from('recently_viewed')
+          .upsert({
+            user_id: user.id,
+            property_id: id,
+            viewed_at: new Date().toISOString(),
+          })
       }
     } catch (err) {
       console.error('Error fetching property:', err)
+      dispatch(setCurrentProperty(null))
     } finally {
       dispatch(setLoading(false))
     }

@@ -121,7 +121,7 @@ export const PropertyDetail = () => {
     setIsGalleryOpen(true)
   }
 
-  if (loading || !currentProperty) {
+  if (loading) {
     return (
       <div className="pt-8 pb-20 bg-[#F9F8F6] min-h-screen">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -143,6 +143,27 @@ export const PropertyDetail = () => {
             </div>
           </div>
         </div>
+      </div>
+    )
+  }
+
+  if (!currentProperty) {
+    return (
+      <div className="pt-32 pb-20 bg-[#F9F8F6] min-h-screen flex flex-col items-center justify-center">
+        <h1 className="text-3xl font-bold text-gray-900 mb-3">
+          Property not found
+        </h1>
+
+        <p className="text-gray-500 mb-6">
+          The property you're looking for doesn't exist.
+        </p>
+
+        <Button
+          variant="primary"
+          onClick={() => navigate('/')}
+        >
+          Back to Home
+        </Button>
       </div>
     )
   }
