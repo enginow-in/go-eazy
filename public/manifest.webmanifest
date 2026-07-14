@@ -1,0 +1,24 @@
+{
+  "name": "GoEazy",
+  "short_name": "GoEazy",
+  "description": "Find verified rooms, PGs, hostels, and nearby services in Uttarakhand.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#CA3433",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/1.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "any"
+    }
+  ]
+}
