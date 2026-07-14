@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { Skeleton } from '../ui/Skeleton'
 import { CITIES } from '../../utils/constants'
 import { BannerSlider } from './BannerSlider'
+import { ThemeToggle } from '../ui/ThemeToggle'
 
 export const Navbar = () => {
   const dispatch = useDispatch()
@@ -98,7 +99,8 @@ export const Navbar = () => {
           </div>
             
           {/* Language Picker (Left side) */}
-          <div className="relative z-30">
+          <div className="relative z-30 flex items-center gap-1">
+            <ThemeToggle />
             <button 
               onClick={() => setLangMenuOpen(!langMenuOpen)}
               className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-700 hover:text-[#CA3433] transition-colors uppercase px-1 py-2"
