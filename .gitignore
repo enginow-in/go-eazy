@@ -34,5 +34,6 @@ dist-ssr
 
 # Supabase local config/temp
 supabase/.temp/
+supabase/.branches/
 
 
