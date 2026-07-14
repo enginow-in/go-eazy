@@ -199,13 +199,32 @@ serve(async (req: Request) => {
       })
     }
 
-    // 5. Update database — only reached if all checks pass
     const supabaseAdmin = createClient(
       supabaseUrl,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
       { auth: { persistSession: false } }
     )
 
+    // 5. Atomically consume the payment before granting the contact unlock.
+    const { error: consumeError } = await supabaseAdmin
+      .from('consumed_payments')
+      .insert({ razorpay_payment_id, user_id: user.id, purpose: 'contact_unlock' })
+
+    if (consumeError) {
+      if (consumeError.code === '23505') {
+        return new Response(JSON.stringify({ error: 'This payment has already been used' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 409,
+        })
+      }
+      console.error('Failed to consume payment:', consumeError)
+      return new Response(JSON.stringify({ error: 'Failed to consume payment' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      })
+    }
+
+    // 6. Update database — only reached if all checks pass.
     const { error: dbError } = await supabaseAdmin
       .from('unlocked_properties')
       .upsert(

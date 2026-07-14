@@ -103,6 +103,17 @@ serve(async (req: Request) => {
       return new Response(JSON.stringify({ error: 'Payment validation failed' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 })
     }
 
+    const { error: consumeError } = await supabaseAdmin
+      .from('consumed_payments')
+      .insert({ razorpay_payment_id, user_id: authData.user.id, purpose: 'service_listing' })
+    if (consumeError) {
+      if (consumeError.code === '23505') {
+        return new Response(JSON.stringify({ error: 'This payment has already been used' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 })
+      }
+      console.error('Failed to consume payment:', consumeError)
+      return new Response(JSON.stringify({ error: 'Failed to consume payment' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 })
+    }
+
     const { error: updateError } = await supabaseAdmin.from('service_providers').update({ payment_status: 'paid' }).eq('id', service_id)
     if (updateError) {
       console.error('Failed to update payment status:', updateError)
