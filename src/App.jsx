@@ -35,8 +35,9 @@ const CookiePolicy            = lazy(() => import('./pages/legal/CookiePolicy'))
 const RefundPolicy            = lazy(() => import('./pages/legal/RefundPolicy'))
 
 const PageSpinner = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-50">
-    <div className="w-10 h-10 border-4 border-[#CA3433] border-t-transparent rounded-full animate-spin" />
+  <div className="min-h-screen flex items-center justify-center bg-gray-50" role="status" aria-label="Loading page content">
+    <div className="w-10 h-10 border-4 border-[#CA3433] border-t-transparent rounded-full animate-spin"></div>
+    <span className="sr-only">Loading...</span>
   </div>
 )
 
