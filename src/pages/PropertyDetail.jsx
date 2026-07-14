@@ -21,6 +21,7 @@ import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { Skeleton } from '../components/ui/Skeleton'
 import { LocationViewer } from '../components/map/LocationViewer'
+import { useRecentlyViewed } from '../hooks/useRecentlyViewed'
 
 const StarRating = ({ value, onChange, readonly = false }) => (
   <div className="flex gap-1">
@@ -53,6 +54,9 @@ export const PropertyDetail = () => {
     favorites, toggleFavorite, loading,
     reviews, fetchReviews, submitReview, deleteReview
   } = useProperties()
+
+  //  Recently Viewed Hook
+  const { addToRecentlyViewed } = useRecentlyViewed()
 
   const [showScrollToTop, setShowScrollToTop] = useState(false)
   const [gatedData, setGatedData] = useState(null)
@@ -92,6 +96,13 @@ export const PropertyDetail = () => {
     fetchReviews(id)
     checkUnlockStatus()
   }, [id, user, fetchPropertyById, fetchReviews])
+
+  // Track property as recently viewed
+  useEffect(() => {
+    if (currentProperty && currentProperty.id) {
+      addToRecentlyViewed(currentProperty.id)
+    }
+  }, [currentProperty, addToRecentlyViewed])
 
   const checkUnlockStatus = async () => {
     if (!user || !id) return
