@@ -168,6 +168,7 @@ export const useAuth = () => {
   }
 
   const updateProfile = async (updates) => {
+    if (!user) throw new Error('You must be signed in to update your profile')
     const { data, error } = await supabase
       .from('profiles')
       .update(updates)

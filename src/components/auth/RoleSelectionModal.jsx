@@ -14,7 +14,7 @@ const ROLE_OPTIONS = [
 
 export const RoleSelectionModal = () => {
   const navigate = useNavigate()
-  const { user, profile, role, updateProfile } = useAuth()
+  const { user, profile, role, loading: authLoading, updateProfile } = useAuth()
   const [selectedRole, setSelectedRole] = useState(null)
   const [loading, setLoading] = useState(false)
 
@@ -43,7 +43,12 @@ export const RoleSelectionModal = () => {
         localStorage.removeItem('sb_return_to')
       }
     } catch (err) {
-      toast.error(err.message || 'Failed to update role')
+      if (!user) {
+        toast.error('Your session expired — please sign in again.')
+        navigate('/')
+      } else {
+        toast.error(err.message || 'Failed to update role')
+      }
     } finally {
       setLoading(false)
     }
@@ -81,7 +86,7 @@ export const RoleSelectionModal = () => {
         className="w-full h-14 rounded-xl text-base bg-[#CA3433] hover:bg-[#ac2d2c] shadow-lg shadow-[#CA3433]/20" 
         loading={loading}
         onClick={handleConfirm}
-        disabled={!selectedRole}
+        disabled={!selectedRole || authLoading || !user}
       >
         Continue to GoEazy
       </Button>
