@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { setUser, setProfile, logout, setLoading } from '../store/authSlice'
@@ -6,6 +6,7 @@ import { setUser, setProfile, logout, setLoading } from '../store/authSlice'
 export const useAuth = () => {
   const dispatch = useDispatch()
   const { user, profile, role, loading, authModalOpen, authModalTab } = useSelector(s => s.auth)
+  const fetchingProfileFor = useRef(null)
 
   useEffect(() => {
     // Get initial session
@@ -36,6 +37,9 @@ export const useAuth = () => {
   }, [])
 
   const fetchProfile = async (userId) => {
+    if (fetchingProfileFor.current === userId) return
+    fetchingProfileFor.current = userId
+
     try {
       // First try to fetch
       let { data, error } = await supabase
@@ -109,6 +113,10 @@ export const useAuth = () => {
     } catch (err) {
       console.error('Auth: fetchProfile catch block', err)
       dispatch(setLoading(false))
+    } finally {
+      if (fetchingProfileFor.current === uid) {
+        fetchingProfileFor.current = null
+      }
     }
   }
 
