@@ -6,6 +6,7 @@ import { openAuthModal } from '../../store/authSlice'
 import { useProperties } from '../../hooks/useProperties'
 import { cn } from '../../utils/helpers'
 import { useTranslation } from 'react-i18next'
+import { FluidImage } from '../ui/FluidImage'
 
 const PropertyCardComponent = ({ property, layout = 'grid', compact = false, condensed = false, badge = null }) => {
   const navigate = useNavigate()
@@ -47,13 +48,11 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         onClick={() => navigate(`/property/${property.id}`)}
       >
         <div className="relative w-32 h-32 sm:w-40 sm:h-40 flex-shrink-0 overflow-hidden bg-gray-50 rounded-r-2xl shadow-sm">
-          <img 
+          <FluidImage 
             src={mainImage} 
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
-            onLoad={() => setImgLoaded(true)}
-            loading="lazy"
+            alt={property.title}
+            className="group-hover:scale-110 transition-transform duration-500" 
           />
-          {!imgLoaded && <div className="skeleton absolute inset-0" />}
           {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
           <button
             onClick={handleFav}
@@ -112,7 +111,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         onClick={() => navigate(`/property/${property.id}`)}
       >
         <div className="relative aspect-[4/3] overflow-hidden rounded-b-xl">
-          <img src={mainImage} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <FluidImage src={mainImage} alt={property.title} className="group-hover:scale-105 transition-transform duration-500" />
           <div className="absolute top-2 right-2 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-lg text-[8px] font-black text-brand-600 uppercase tracking-wider">
              {t(`property.types.${property.type}`) || property.type}
           </div>
@@ -145,17 +144,11 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
       onClick={() => navigate(`/property/${property.id}`)}
     >
       <div className="relative w-full aspect-[4/3] bg-gray-50 overflow-hidden rounded-b-2xl shadow-sm">
-        <img
+        <FluidImage
           src={mainImage}
           alt={property.title}
-          className={cn(
-            'w-full h-full object-cover group-hover:scale-110 transition-transform duration-700',
-            imgLoaded ? 'opacity-100' : 'opacity-0'
-          )}
-          onLoad={() => setImgLoaded(true)}
-          loading="lazy"
+          className="group-hover:scale-110 transition-transform duration-700"
         />
-        {!imgLoaded && <div className="skeleton absolute inset-0" />}
         {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
         <button
           onClick={handleFav}
