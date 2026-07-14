@@ -297,15 +297,30 @@ export const useServices = () => {
   }
 
   // ── Payment Function ────────────────────────────────────────────────
-  const payServiceListing = async (id) => {
-    // Only successful payments should call this
-    const { error } = await supabase
-      .from('service_providers')
-      .update({ payment_status: 'paid' })
-      .eq('id', id)
-      .eq('provider_id', user.id)
+  const payServiceListing = async (id, paymentId, orderId, signature) => {
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token
+    if (!token) throw new Error('Session expired — please log in again')
 
-    if (error) throw error
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-service-payment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({
+        service_id: id,
+        razorpay_payment_id: paymentId,
+        razorpay_order_id: orderId,
+        razorpay_signature: signature
+      })
+    })
+
+    if (!response.ok) {
+      const errJson = await response.json().catch(() => ({}))
+      throw new Error(errJson.error || 'Failed to verify payment')
+    }
   }
 
   // updateFilters is the primary alias used across all pages (NearbyServices, etc.)

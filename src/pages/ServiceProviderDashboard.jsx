@@ -111,7 +111,12 @@ export const ServiceProviderDashboard = () => {
         handler: async function(response) {
           try {
             // Mark payment as paid in DB
-            await payServiceListing(serviceId)
+            await payServiceListing(
+              serviceId,
+              response.razorpay_payment_id,
+              response.razorpay_order_id,
+              response.razorpay_signature
+            )
             // Refresh the service in UI
             setMyServices(prev => prev.map(s =>
               s.id === serviceId ? { ...s, payment_status: 'paid' } : s
