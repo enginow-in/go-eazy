@@ -21,6 +21,7 @@ import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { Skeleton } from '../components/ui/Skeleton'
 import { LocationViewer } from '../components/map/LocationViewer'
+import PriceHistoryTimeline from '../components/property/PriceHistoryTimeline'
 
 const StarRating = ({ value, onChange, readonly = false }) => (
   <div className="flex gap-1">
@@ -407,6 +408,9 @@ export const PropertyDetail = () => {
                 {(hasUnlocked || p.landlord_id === user?.id) ? (gatedData?.exact_location || `${p.area}, ${p.city}`) : `${p.area}, ${p.city} • ${p.pincode}`}
               </p>
             </div>
+
+            {/* Price History Timeline */}
+            <PriceHistoryTimeline propertyId={p.id} />
 
             {/* Amenities Card */}
             {p.amenities && p.amenities.length > 0 && (

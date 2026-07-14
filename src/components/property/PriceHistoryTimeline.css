@@ -1,0 +1,259 @@
+.price-history-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.price-history-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: #1f2937;
+}
+
+/* Loading State */
+.price-history-loading {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 1rem;
+  border: 3px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Error State */
+.price-history-error {
+  text-align: center;
+  padding: 2rem;
+  color: #ef4444;
+}
+
+/* Empty State */
+.price-history-empty {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+}
+
+.price-history-empty p {
+  font-size: 1.125rem;
+  margin-bottom: 0.5rem;
+}
+
+.price-history-empty small {
+  font-size: 0.875rem;
+  color: #9ca3af;
+}
+
+/* Timeline */
+.price-timeline {
+  position: relative;
+}
+
+.timeline-item {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.timeline-item:last-child {
+  margin-bottom: 0;
+}
+
+.timeline-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 0.25rem;
+}
+
+.marker-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: #d1d5db;
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.marker-dot.decrease {
+  background-color: #10b981;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+}
+
+.marker-dot.increase {
+  background-color: #ef4444;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2);
+}
+
+.marker-dot.neutral {
+  background-color: #6b7280;
+}
+
+.marker-line {
+  width: 2px;
+  flex: 1;
+  background-color: #e5e7eb;
+  margin-top: 0.25rem;
+  min-height: 30px;
+}
+
+.timeline-content {
+  flex: 1;
+  padding-bottom: 0.5rem;
+}
+
+.price-change-card {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  transition: all 0.2s;
+}
+
+.price-change-card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transform: translateX(2px);
+}
+
+.price-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.old-price {
+  font-size: 1rem;
+  color: #9ca3af;
+  text-decoration: line-through;
+}
+
+.arrow {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #6b7280;
+}
+
+.new-price {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.new-price.price-drop {
+  color: #10b981;
+}
+
+.new-price.price-rise {
+  color: #ef4444;
+}
+
+.price-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.badge-drop {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.badge-rise {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.percentage {
+  font-size: 0.75rem;
+  opacity: 0.9;
+}
+
+.change-date {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.price-history-footer {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.price-history-footer small {
+  color: #9ca3af;
+  font-size: 0.875rem;
+}
+
+/* Screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+  .price-history-section {
+    padding: 1rem;
+  }
+
+  .price-history-title {
+    font-size: 1.25rem;
+  }
+
+  .price-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .arrow {
+    transform: rotate(90deg);
+  }
+
+  .price-change-card {
+    padding: 0.75rem;
+  }
+
+  .old-price,
+  .new-price {
+    font-size: 0.875rem;
+  }
+}
+
+/* Accessibility - Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .price-change-card,
+  .spinner {
+    animation: none;
+    transition: none;
+  }
+}
