@@ -5,7 +5,7 @@
 -- Update profiles role to include service_provider
 ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
 ALTER TABLE public.profiles ADD CONSTRAINT profiles_role_check
-  CHECK (role IN ('user', 'landlord', 'service_provider'));
+  CHECK (role IN ('user', 'landlord', 'service_provider', 'admin'));
 
 -- ============================================================
 -- SERVICE PROVIDERS TABLE
