@@ -110,15 +110,15 @@ export const ServiceProviderDashboard = () => {
         image: '/favicon.svg',
         handler: async function(response) {
           try {
-            // Mark payment as paid in DB
-            await payServiceListing(serviceId)
+            // Verify payment server-side via Edge Function (HMAC + Razorpay API check)
+            await payServiceListing(serviceId, response)
             // Refresh the service in UI
             setMyServices(prev => prev.map(s =>
               s.id === serviceId ? { ...s, payment_status: 'paid' } : s
             ))
             toast.success('🎉 Payment successful! Your listing is now LIVE on GoEazy.')
           } catch (err) {
-            toast.error('Payment recorded but DB update failed. Contact support.')
+            toast.error('Payment verification failed: ' + (err.message || 'Contact support.'))
           } finally { setPayingId(null) }
         },
         prefill: { name: profile?.full_name || '', email: '' },

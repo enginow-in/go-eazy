@@ -9,6 +9,8 @@ import { useSelector } from 'react-redux'
 import { supabase } from '../../lib/supabase'
 import toast from 'react-hot-toast'
 import { LocationPicker } from '../map/LocationPicker'
+import { useFileUpload } from '../../hooks/useFileUpload'
+import { FileUploadList } from '../ui/FileUploadList'
 
 // ── Success Overlay ───────────────────────────────────────────────────────────
 const ListingSuccessOverlay = () => (
@@ -53,7 +55,7 @@ const STEPS = [
   { id: 5, label: 'Amenities',short: '5' },
   { id: 6, label: 'Photos',   short: '6' },
 ]
-
+const TITLE_REGEX = /^(?=.*[a-zA-Z0-9])[a-zA-Z0-9 ]+$/;
 // ── Timeline Progress Bar ─────────────────────────────────────────────────────
 const StepTimeline = ({ current }) => (
   <div className="flex items-center justify-between mb-8 px-1">
@@ -93,8 +95,20 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   const [loading, setLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [step, setStep] = useState(1)
-  const [images, setImages] = useState([])
+  // previewUrls tracks both existing (remote) URLs and blob URLs for new files
   const [previewUrls, setPreviewUrls] = useState(initialData?.images || [])
+
+  // useFileUpload manages XHR-backed uploads with real progress events.
+  // We only pass userId when it is available; the hook will fetch the session token internally.
+  const {
+    fileStates,
+    uploadFiles,
+    retryFile,
+    removeFile: removeUploadEntry,
+    successUrls,
+    hasErrors,
+    hasUploading,
+  } = useFileUpload('property-images', user?.id ?? 'anon')
 
   const [form, setForm] = useState({
     title:             initialData?.title || '',
@@ -127,17 +141,25 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
     for (const file of files) {
       if (file.size > 7 * 1024 * 1024) { toast.error(`Image ${file.name} exceeds 7MB limit`); return }
     }
-    setImages(prev => [...prev, ...files])
+    // Show blob previews immediately
     setPreviewUrls(prev => [...prev, ...files.map(f => URL.createObjectURL(f))])
+    // Kick off XHR uploads right away — progress is tracked in fileStates
+    uploadFiles(files)
+    // Reset input so the same file can be re-selected if needed
+    e.target.value = ''
   }
 
   const removeImage = (index) => {
+    const existingCount = initialData?.images?.length || 0
+    const url = previewUrls[index]
     setPreviewUrls(prev => prev.filter((_, i) => i !== index))
-    if (index >= (initialData?.images?.length || 0)) {
-      setImages(prev => prev.filter((_, i) => i !== index - (initialData?.images?.length || 0)))
+    if (index >= existingCount) {
+      // It's a new file — find the matching upload entry by blob URL and remove it
+      const newFileIndex = index - existingCount
+      const entry = fileStates.filter(f => f.file !== null)[newFileIndex]
+      if (entry) removeUploadEntry(entry.id)
     }
   }
-
   const toggleAmenity = (id) => {
     setForm(f => ({
       ...f,
@@ -149,7 +171,14 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   const validateStep = (s) => {
     if (s === 1 && (!form.title || !form.price)) { toast.error('Title and Rent are required'); return false }
     if (s === 2 && (!form.city || !form.area))   { toast.error('City and Area are required'); return false }
-    if (s === 6 && previewUrls.length < 1)        { toast.error('Please upload at least 1 photo'); return false }
+    if (s === 3 && (!form.latitude || !form.longitude)) { toast.error('Please pin your property location on the map'); return false }
+    if (s === 4) {
+      if (!form.exact_location?.trim()) { toast.error('Exact property address is required'); return false }
+      if (!form.contact_phone?.trim())  { toast.error('Contact phone number is required'); return false }
+      if (!/^[+]?[\d\s-]{7,15}$/.test(form.contact_phone.trim())) { toast.error('Please enter a valid phone number'); return false }
+    }
+    if (s === 5 && form.amenities.length < 1) { toast.error('Please select at least one amenity'); return false }
+    if (s === 6 && previewUrls.length < 1)     { toast.error('Please upload at least 1 photo'); return false }
     return true
   }
 
@@ -159,6 +188,11 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   // ── Final submit ──────────────────────────────────────────────────────────
   const validateForm = () => {
     if (!form.title || !form.price || !form.city || !form.area) { toast.error('Please fill all required fields'); return false }
+    if (!form.latitude || !form.longitude)       { toast.error('Please pin your property location on the map (Step 3)'); return false }
+    if (!form.exact_location?.trim())            { toast.error('Exact property address is required (Step 4)'); return false }
+    if (!form.contact_phone?.trim())             { toast.error('Contact phone is required (Step 4)'); return false }
+    if (!/^[+]?[\d\s-]{7,15}$/.test(form.contact_phone.trim())) { toast.error('Please enter a valid phone number (Step 4)'); return false }
+    if (form.amenities.length < 1)               { toast.error('Please select at least one amenity (Step 5)'); return false }
     if (previewUrls.length < 1 || previewUrls.length > 3) { toast.error('Please upload between 1 and 3 images'); return false }
     return true
   }
@@ -179,21 +213,31 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   const handlePayToGoLive = async () => {
     if (!validateForm()) return
     if (loading) return
+
+    // Guard: don't proceed if uploads are still in flight or have failures
+    if (hasUploading) {
+      toast.error('Please wait for all photos to finish uploading')
+      return
+    }
+    if (hasErrors) {
+      toast.error('Some photos failed to upload. Please retry them before going live.')
+      return
+    }
+
     setLoading(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
       if (!token) { toast.error('Session expired — please log in again'); setLoading(false); return }
 
-      const uploadedUrls = []
-      for (const file of images) {
-        const ext = file.name.split('.').pop()
-        const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${ext}`
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('property-images').upload(`${session.user.id}/${fileName}`, file, { upsert: false })
-        if (uploadError) throw new Error('Image upload failed: ' + uploadError.message)
-        const { data: { publicUrl } } = supabase.storage.from('property-images').getPublicUrl(uploadData.path)
-        uploadedUrls.push(publicUrl)
+      // Merge pre-existing remote URLs with newly uploaded URLs
+      const existingUrls = (initialData?.images || []).filter(u => previewUrls.includes(u))
+      const uploadedUrls = [...existingUrls, ...successUrls]
+
+      if (uploadedUrls.length < 1) {
+        toast.error('Please upload at least 1 photo')
+        setLoading(false)
+        return
       }
 
       const loadRazorpay = () => new Promise(resolve => {
@@ -252,51 +296,152 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
       case 1: return (
         <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
           <div>
-            <h3 className="text-xl font-black text-gray-900 mb-1">Basic Details</h3>
-            <p className="text-sm text-gray-400">Start with the most important information about your property.</p>
+          <h3 className="text-xl font-black text-gray-900 mb-1">Basic Details</h3>
+          <p
+          id="property-basics-help"
+          className="text-sm text-gray-400">Start with the most important information about your property.</p>
           </div>
-          <Input id="property-title" label="Property Title *" placeholder="e.g. Spacious 1BHK in Rajpur Road"
-            value={form.title} onChange={e => set('title', e.target.value)} required />
+          <Input
+          id="property-title"
+          label="Property Title *"
+          placeholder="e.g. Spacious 1BHK in Rajpur Road"
+          value={form.title}
+          onChange={e => set('title', e.target.value)}
+          required
+          aria-describedby="property-basics-help"/>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input id="property-price" label="Rent (₹/month) *" type="number" placeholder="e.g. 12000"
-              rightIcon={<span className="text-sm font-bold text-gray-400">/ mo</span>}
-              value={form.price} onChange={e => set('price', Number(e.target.value))} required />
-            <Select id="property-type" label="Property Type *" value={form.type} onChange={e => set('type', e.target.value)}>
-              {PROPERTY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+          <Input
+            id="property-price"
+            label="Rent (₹/month) *"
+            type="number"
+            placeholder="e.g. 12000"
+            rightIcon={
+              <span className="text-sm font-bold text-gray-400">
+                / mo
+              </span>
+            }
+            value={form.price}
+            onChange={e => set('price', Number(e.target.value))}
+            required
+            aria-describedby="property-basics-help"/>
+            <Select
+            id="property-type"
+            label="Property Type *"
+            value={form.type}
+            onChange={e => set('type', e.target.value)}
+            aria-describedby="property-basics-help">
+              {PROPERTY_TYPES.map(t => (
+                <option
+                key={t}
+                value={t}>
+                  {t}</option>
+              ))}
             </Select>
           </div>
-          <Textarea id="property-description" label="Description" placeholder="Tell renters what makes this place special..."
-            rows={4} value={form.description} onChange={e => set('description', e.target.value)} />
+          <Textarea
+          id="property-description"
+          label="Description"
+          placeholder="Tell renters what makes this place special..."
+          rows={4}
+          value={form.description}
+          onChange={e => set('description', e.target.value)}
+          aria-describedby="property-basics-help"
+          />
         </div>
       )
 
-      case 2: return (
-        <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
-          <div>
-            <h3 className="text-xl font-black text-gray-900 mb-1">Location</h3>
-            <p className="text-sm text-gray-400">Where is your property located?</p>
+      case 2:
+        return (
+          <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+            <div>
+              <h3 className="text-xl font-black text-gray-900 mb-1">
+                Location
+              </h3>
+              <p
+                id="property-location-help"
+                className="text-sm text-gray-400"
+              >
+                Where is your property located?
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Select
+                id="property-city"
+                label="City *"
+                value={form.city}
+                onChange={(e) =>
+                  set('city', e.target.value)
+                }
+                required
+                aria-describedby="property-location-help"
+              >
+                <option
+                  value=""
+                  disabled
+                >
+                  Select city
+                </option>
+                {[
+                  'Dehradun',
+                  'Srinagar',
+                  'Rishikesh',
+                  'Haldwani',
+                  'Nainital',
+                  'Haridwar',
+                  'Roorkee',
+                  'Rudrapur',
+                ].map((c) => (
+                  <option
+                    key={c}
+                    value={c}
+                  >
+                    {c}
+                  </option>
+                ))}
+              </Select>
+
+              <Input
+                id="property-area"
+                label="Area / Locality *"
+                placeholder="e.g. Rajpur Road"
+                value={form.area}
+                onChange={(e) =>
+                  set('area', e.target.value)
+                }
+                required
+                aria-describedby="property-location-help"
+              />
+
+              <Input
+                id="property-pincode"
+                label="Pincode"
+                placeholder="e.g. 248001"
+                value={form.pincode}
+                onChange={(e) =>
+                  set('pincode', e.target.value)
+                }
+                aria-describedby="property-location-help"
+              />
+            </div>
+
+            <Input
+              id="property-landmarks"
+              label="Nearby Landmarks"
+              placeholder="e.g. 500m from Clock Tower, Near FRI"
+              value={form.nearby_landmarks}
+              onChange={(e) =>
+                set('nearby_landmarks', e.target.value)
+              }
+              aria-describedby="property-location-help"
+            />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Select id="property-city" label="City *" value={form.city} onChange={e => set('city', e.target.value)} required>
-              <option value="" disabled>Select city</option>
-              {['Dehradun','Srinagar','Rishikesh','Haldwani','Nainital','Haridwar','Roorkee','Rudrapur'].map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </Select>
-            <Input id="property-area" label="Area / Locality *" placeholder="e.g. Rajpur Road"
-              value={form.area} onChange={e => set('area', e.target.value)} required />
-            <Input id="property-pincode" label="Pincode" placeholder="e.g. 248001"
-              value={form.pincode} onChange={e => set('pincode', e.target.value)} />
-          </div>
-          <Input id="property-landmarks" label="Nearby Landmarks" placeholder="e.g. 500m from Clock Tower, Near FRI"
-            value={form.nearby_landmarks} onChange={e => set('nearby_landmarks', e.target.value)} />
-        </div>
-      )
+        )
 
       case 3: return (
         <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
           <div>
-            <h3 className="text-xl font-black text-gray-900 mb-1">Pin on Map</h3>
+            <h3 className="text-xl font-black text-gray-900 mb-1">Pin on Map *</h3>
             <p className="text-sm text-gray-400">Drop a pin on your exact property location. This helps renters find you easily.</p>
           </div>
           <div className="border border-gray-100 rounded-2xl p-4 bg-gray-50/50">
@@ -309,33 +454,78 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
         </div>
       )
 
-      case 4: return (
-        <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
-          <div>
-            <h3 className="text-xl font-black text-gray-900 mb-1">Premium Contact Details</h3>
-            <p className="text-sm text-gray-400">These details are only visible to tenants who unlock your listing. Keep them accurate.</p>
+      case 4:
+        return (
+          <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+            <div>
+              <h3 className="text-xl font-black text-gray-900 mb-1">
+                Premium Contact Details
+              </h3>
+              <p
+                id="property-contact-help"
+                className="text-sm text-gray-400"
+              >
+                These details are only visible to tenants who unlock
+                your listing. Keep them accurate.
+              </p>
+            </div>
+
+            <Input
+              id="property-address"
+              label="Exact Property Address *"
+              placeholder="e.g. Flat 402, Building B, XYZ Apartments, Near Metro"
+              value={form.exact_location}
+              onChange={(e) =>
+                set('exact_location', e.target.value)
+              }
+              required
+              aria-describedby="property-contact-help property-contact-privacy"
+            />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                id="property-phone"
+                label="Contact Phone *"
+                placeholder="+91 9876543210"
+                value={form.contact_phone}
+                onChange={(e) =>
+                  set('contact_phone', e.target.value)
+                }
+                required
+                aria-describedby="property-contact-help property-contact-privacy"
+              />
+
+              <Input
+                id="property-email"
+                label="Contact Email"
+                type="email"
+                placeholder="owner@email.com"
+                value={form.contact_email}
+                onChange={(e) =>
+                  set('contact_email', e.target.value)
+                }
+                aria-describedby="property-contact-help property-contact-privacy"
+              />
+            </div>
+
+            <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-100">
+              <span className="text-amber-500 text-lg">🔒</span>
+              <p
+                id="property-contact-privacy"
+                className="text-xs text-amber-700 font-medium"
+              >
+                These details are hidden from public view. Only unlocked
+                tenants (who pay ₹49) can see them.
+              </p>
+            </div>
           </div>
-          <Input id="property-address" label="Exact Property Address"
-            placeholder="e.g. Flat 402, Building B, XYZ Apartments, Near Metro"
-            value={form.exact_location} onChange={e => set('exact_location', e.target.value)} />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input id="property-phone" label="Contact Phone" placeholder="+91 9876543210"
-              value={form.contact_phone} onChange={e => set('contact_phone', e.target.value)} />
-            <Input id="property-email" label="Contact Email" type="email" placeholder="owner@email.com"
-              value={form.contact_email} onChange={e => set('contact_email', e.target.value)} />
-          </div>
-          <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-100">
-            <span className="text-amber-500 text-lg">🔒</span>
-            <p className="text-xs text-amber-700 font-medium">These details are hidden from public view. Only unlocked tenants (who pay ₹49) can see them.</p>
-          </div>
-        </div>
-      )
+        )
 
       case 5: return (
         <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
           <div>
-            <h3 className="text-xl font-black text-gray-900 mb-1">Amenities</h3>
-            <p className="text-sm text-gray-400">Select all amenities your property offers. More = better visibility.</p>
+            <h3 className="text-xl font-black text-gray-900 mb-1">Amenities *</h3>
+            <p className="text-sm text-gray-400">Select all amenities your property offers. At least one is required.</p>
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
             {AMENITIES.map(a => {
@@ -358,31 +548,61 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
         </div>
       )
 
-      case 6: return (
-        <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
-          <div>
-            <h3 className="text-xl font-black text-gray-900 mb-1">Photos & Go Live</h3>
-            <p className="text-sm text-gray-400">Upload up to 3 photos. Better photos = more inquiries. (Max 7MB each)</p>
+case 6:
+        return (
+          <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+            <div>
+              <h3 className="text-xl font-black text-gray-900 mb-1">
+                Photos &amp; Go Live
+              </h3>
+              <p
+                id="property-photos-help"
+                className="text-sm text-gray-400"
+              >
+                Upload up to 3 photos. Better photos = more inquiries.
+                (Max 7MB each)
+              </p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {previewUrls.map((url, i) => (
+                <div
+                  key={i}
+                  className="relative aspect-video rounded-xl overflow-hidden group border border-gray-100"
+                >
+                  <img
+                    src={url}
+                    alt={`Preview ${i}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(i)}
+                    className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+              {previewUrls.length < 3 && (
+                <label className="aspect-video rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:border-[#CA3433] hover:bg-red-50/30 transition-colors text-gray-500">
+                  <ImageIcon size={24} className="mb-2" />
+                  <span className="text-sm font-semibold">
+                    Add Photo
+                  </span>
+                  <input
+                    id="property-images"
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageChange}
+                    aria-describedby="property-photos-help"
+                  />
+                </label>
+              )}
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {previewUrls.map((url, i) => (
-              <div key={i} className="relative aspect-video rounded-xl overflow-hidden group border border-gray-100">
-                <img src={url} alt={`Preview ${i}`} className="w-full h-full object-cover" />
-                <button type="button" onClick={() => removeImage(i)}
-                  className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                  <X size={14} />
-                </button>
-              </div>
-            ))}
-            {previewUrls.length < 3 && (
-              <label className="aspect-video rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:border-[#CA3433] hover:bg-red-50/30 transition-colors text-gray-500">
-                <ImageIcon size={24} className="mb-2" />
-                <span className="text-sm font-semibold">Add Photo</span>
-                <input id="property-images" type="file" multiple accept="image/*" className="hidden" onChange={handleImageChange} />
-              </label>
-            )}
-          </div>
-
+          {/* ── Upload progress list ───────────────────────────────────── */}
+          <FileUploadList fileStates={fileStates} onRetry={retryFile} />
           {/* Availability toggle */}
           <label htmlFor="property-availability" className="flex items-center gap-3 cursor-pointer p-3 rounded-xl bg-gray-50 border border-gray-100">
             <input id="property-availability" type="checkbox" className="w-5 h-5 rounded border-gray-300 text-[#CA3433] focus:ring-[#CA3433] accent-[#CA3433]"

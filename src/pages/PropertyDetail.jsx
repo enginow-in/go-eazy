@@ -719,11 +719,15 @@ export const PropertyDetail = () => {
               pagination={{ type: 'fraction' }}
               className="w-full h-full"
             >
-              {images.map((img, i) => (
-                <SwiperSlide key={i} className="flex items-center justify-center">
-                  <img src={img} className="max-w-full max-h-full object-contain" alt="" />
-                </SwiperSlide>
-              ))}
+             {images.map((img, i) => (
+  <SwiperSlide key={i} className="flex items-center justify-center">
+    <img 
+      src={img} 
+      className="max-w-full max-h-full object-contain" 
+      alt={`Image ${i + 1} of ${property.title || "Property"}`}   // ✅ use i instead of index
+    />
+  </SwiperSlide>
+))}
               <button ref={setGalleryPrevEl} className="absolute left-6 top-1/2 -translate-y-1/2 z-50 p-4 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white">
                 <ArrowLeft size={24} />
               </button>
