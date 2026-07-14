@@ -10,6 +10,7 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { AppInitializer } from './components/common/AppInitializer'
 import { RoleSelectionModal } from './components/auth/RoleSelectionModal'
 import { OnboardingQuiz } from './components/common/OnboardingQuiz'
+import { CommandPalette } from './components/common/CommandPalette'
 import { useSelector } from 'react-redux'
 import { useAuth } from './hooks/useAuth'
 import ScrollToTop from './components/common/ScrollToTop'
@@ -58,6 +59,7 @@ function App() {
       <AppInitializer />
       <OnboardingQuiz />
       <RoleSelectionModal />
+      <CommandPalette />
       <Layout>
         <Suspense fallback={<PageSpinner />}>
           <Routes>
