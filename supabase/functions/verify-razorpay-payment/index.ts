@@ -3,23 +3,35 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
 // Restrict to your own origins. Add your production domain here.
+// Allowed frontend origins
 const ALLOWED_ORIGINS = [
-  'https://goeazy.in',
-  'https://www.goeazy.in',
-  'https://goeazy.vercel.app',
-  'https://goeazy.app',
-  'https://www.goeazy.app',
-]
+  "https://goeazy.in",
+  "https://www.goeazy.in",
+  "https://goeazy.vercel.app",
+  "https://goeazy.app",
+  "https://www.goeazy.app",
+];
 
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get('origin') || ''
-  const isLocalhost = origin.startsWith('http://localhost:')
-  const allowed = (ALLOWED_ORIGINS.includes(origin) || isLocalhost) ? origin : ALLOWED_ORIGINS[0]
-  return {
-    'Access-Control-Allow-Origin': allowed,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get("origin") || "";
+  const isLocalhost = origin.startsWith("http://localhost:");
+
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+
+  // Only return Access-Control-Allow-Origin for trusted origins
+  if (origin && (ALLOWED_ORIGINS.includes(origin) || isLocalhost)) {
+    headers["Access-Control-Allow-Origin"] = origin;
+
+    // Uncomment if your frontend uses cookies or credentials
+    // headers["Access-Control-Allow-Credentials"] = "true";
   }
+
+  return headers;
 }
 
 // ── TIMING-SAFE HMAC COMPARISON ───────────────────────────────────────────────
