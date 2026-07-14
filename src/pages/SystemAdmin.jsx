@@ -73,6 +73,20 @@ export const SystemAdmin = () => {
     }
   }
 
+  const handleViewDocument = async (serviceId, documentPath) => {
+    const toastId = toast.loading('Preparing secure document link...')
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-get-service-document', {
+        body: { service_id: serviceId, document_path: documentPath }
+      })
+      if (error) throw error
+      setSelectedDoc({ url: data.signed_url, path: data.document_path })
+      toast.success('Document ready', { id: toastId })
+    } catch {
+      toast.error('Could not access document', { id: toastId })
+    }
+  }
+
   const handleGoogleLogin = async () => {
     // Set the return path so they land back here after Google auth
     localStorage.setItem('sb_return_to', '/systemadmin')
@@ -321,7 +335,7 @@ export const SystemAdmin = () => {
                           Reject
                         </button>
                         {p.documents?.length > 0 && (
-                          <button onClick={() => setSelectedDoc(p.documents[0])} className="flex-none basis-[30%] md:w-full py-2.5 px-2 md:px-4 text-xs font-bold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 flex items-center justify-center gap-1.5 transition-colors shadow-sm">
+                          <button onClick={() => handleViewDocument(p.id, p.documents[0])} className="flex-none basis-[30%] md:w-full py-2.5 px-2 md:px-4 text-xs font-bold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 flex items-center justify-center gap-1.5 transition-colors shadow-sm">
                             <FileText size={14} className="md:mr-1 shrink-0" /> <span className="hidden md:inline">Docs</span>
                           </button>
                         )}
@@ -343,10 +357,10 @@ export const SystemAdmin = () => {
             </div>
             {selectedDoc && (
               <div className="rounded-xl overflow-hidden bg-gray-50 border border-gray-200 flex items-center justify-center min-h-[400px]">
-                {selectedDoc.toLowerCase().endsWith('.pdf') ? (
-                  <iframe src={selectedDoc} className="w-full h-[60vh] rounded-xl" title="Document" />
+                {selectedDoc.path.toLowerCase().endsWith('.pdf') ? (
+                  <iframe src={selectedDoc.url} className="w-full h-[60vh] rounded-xl" title="Document" />
                 ) : (
-                  <img src={selectedDoc} alt="Document" className="max-w-full max-h-[70vh] object-contain" />
+                  <img src={selectedDoc.url} alt="Document" className="max-w-full max-h-[70vh] object-contain" />
                 )}
               </div>
             )}

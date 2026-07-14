@@ -180,7 +180,7 @@ export const useServices = () => {
     }
 
     // 2. Upload documents
-    const documentUrls = []
+    const documentPaths = []
     if (documentFiles?.length) {
       for (const file of documentFiles) {
         const path = `${user.id}/${Date.now()}_doc_${file.name.replace(/\s+/g, '_')}`
@@ -188,10 +188,7 @@ export const useServices = () => {
           .from('service-documents')
           .upload(path, file)
         if (!uploadError) {
-          const { data: { publicUrl } } = supabase.storage
-            .from('service-documents')
-            .getPublicUrl(path)
-          documentUrls.push(publicUrl)
+          documentPaths.push(path)
         }
       }
     }
@@ -202,7 +199,7 @@ export const useServices = () => {
       .insert({ 
         ...providerData, 
         provider_id: user.id, 
-        documents: documentUrls,
+        documents: documentPaths,
         images: imageUrls
       })
       .select()
