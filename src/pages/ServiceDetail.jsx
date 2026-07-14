@@ -54,7 +54,7 @@ export const ServiceDetail = () => {
   const { 
     currentService, reviews, reviewsLoading, 
     fetchServiceById, fetchReviews, submitReview, deleteReview,
-    fetchServiceGatedData 
+    fetchServiceGatedData, unlockServiceContact
   } = useServices()
   const { t } = useTranslation()
 
@@ -117,14 +117,20 @@ export const ServiceDetail = () => {
     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
     : '0.0'
 
-  const handleUnlockContact = () => {
+  const handleUnlockContact = async () => {
     if (!user) {
       dispatch(openAuthModal('login'))
       return
     }
-    setContactUnlocked(true)
-    fetchServiceGatedData(id).then(setGatedData)
-    toast.success(t('services.reviews.contactUnlocked'))
+    const success = await unlockServiceContact(id)
+    if (success) {
+      setContactUnlocked(true)
+      const gated = await fetchServiceGatedData(id)
+      setGatedData(gated)
+      toast.success(t('services.reviews.contactUnlocked'))
+    } else {
+      toast.error(t('services.reviews.unlockError') || 'Failed to unlock contact details')
+    }
   }
 
   const handleShare = () => {

@@ -100,6 +100,21 @@ export const useServices = () => {
     }
   }, [user])
 
+  const unlockServiceContact = useCallback(async (id) => {
+    if (!user) return false
+    try {
+      const { error } = await supabase
+        .from('unlocked_services')
+        .insert({ user_id: user.id, service_provider_id: id })
+      if (error && error.code !== '23505') throw error
+      return true
+    } catch (err) {
+      console.error('Error unlocking service contact:', err)
+      return false
+    }
+  }, [user])
+
+
   // ── Fetch Reviews for a Provider ───────────────────────────────────
   const fetchReviews = useCallback(async (serviceProviderId) => {
     dispatch(setReviewsLoading(true))
@@ -327,6 +342,7 @@ export const useServices = () => {
     payServiceListing,
     updateFilters,
     setServiceFilters: updateFilters,
-    fetchServiceGatedData
+    fetchServiceGatedData,
+    unlockServiceContact
   }
 }
