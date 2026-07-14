@@ -26,6 +26,7 @@ export const BackToTop = () => {
     <AnimatePresence>
       {visible && (
         <motion.button
+          aria-label="Scroll back to top"
           initial={{ opacity: 0, scale: 0.5, y: 40 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.5, y: 40 }}
@@ -42,7 +43,7 @@ export const BackToTop = () => {
 fixed
 bottom-6
 right-6
-z-[999]
+z-[40]
 w-14
 h-14
 rounded-full
