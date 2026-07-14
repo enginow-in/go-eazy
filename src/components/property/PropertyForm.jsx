@@ -9,6 +9,7 @@ import { useSelector } from 'react-redux'
 import { supabase } from '../../lib/supabase'
 import toast from 'react-hot-toast'
 import { LocationPicker } from '../map/LocationPicker'
+import { sanitizeObject, validateEmail, validatePhone, validatePincode } from '../../utils/validation'
 
 // ── Success Overlay ───────────────────────────────────────────────────────────
 const ListingSuccessOverlay = () => (
@@ -160,6 +161,9 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   const validateForm = () => {
     if (!form.title || !form.price || !form.city || !form.area) { toast.error('Please fill all required fields'); return false }
     if (previewUrls.length < 1 || previewUrls.length > 3) { toast.error('Please upload between 1 and 3 images'); return false }
+    if (form.contact_email && !validateEmail(form.contact_email)) { toast.error('Please enter a valid email address'); return false }
+    if (form.contact_phone && !validatePhone(form.contact_phone)) { toast.error('Please enter a valid phone number'); return false }
+    if (form.pincode && !validatePincode(form.pincode)) { toast.error('Please enter a valid 6-digit pincode'); return false }
     return true
   }
 
@@ -168,7 +172,8 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
     if (!validateForm()) return
     setLoading(true)
     try {
-      await updateProperty(initialData.id, { ...form, images: previewUrls.filter(u => !u.startsWith('blob:')) }, images)
+      const sanitizedForm = sanitizeObject(form)
+      await updateProperty(initialData.id, { ...sanitizedForm, images: previewUrls.filter(u => !u.startsWith('blob:')) }, images)
       toast.success('Property updated successfully!')
       navigate('/landlord')
     } catch (err) {
@@ -228,7 +233,7 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
             const verifyResp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-listing-payment`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s2?.access_token}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
-              body: JSON.stringify({ ...response, property_data: { ...form, images: uploadedUrls } })
+              body: JSON.stringify({ ...response, property_data: { ...sanitizeObject(form), images: uploadedUrls } })
             })
             if (!verifyResp.ok) { const e = await verifyResp.json().catch(() => ({})); throw new Error(e.error || 'Payment verification failed') }
             setShowSuccess(true)
