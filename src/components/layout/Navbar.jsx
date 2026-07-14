@@ -169,7 +169,7 @@ export const Navbar = () => {
                   className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#0B0F19] text-white text-sm font-semibold hover:bg-[#CA3433] transition-all duration-300 transform hover:scale-105"
                 >
                   {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt="Avatar" className="w-5 h-5 rounded-full object-cover" />
+                    <img src={profile.avatar_url} alt="Avatar" className="w-5 h-5 rounded-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + (user?.email || 'default') }} />
                   ) : (
                     <User size={16} />
                   )}
