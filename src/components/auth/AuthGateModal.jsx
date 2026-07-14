@@ -1,14 +1,14 @@
 import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Sparkles } from 'lucide-react'
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import toast from 'react-hot-toast'
 
 const ROLE_OPTIONS = [
-  { value: 'user',             label: 'Tenant',           emoji: '🎓' },
+  { value: 'user',             label: 'Tenant',          emoji: '🎓' },
   { value: 'landlord',         label: 'Landlord',         emoji: '🏠' },
   { value: 'service_provider', label: 'Service Provider', emoji: '🍱' },
 ]
@@ -29,9 +29,12 @@ export const AuthGateModal = () => {
 
   const validate = () => {
     const e = {}
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    
     if (tab === 'signup' && !form.name.trim()) e.name = 'Name required'
-    if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) e.email = 'Valid email required'
+    if (!form.email.trim().match(emailRegex)) e.email = 'Valid email required'
     if (form.password.length < 8) e.password = 'Min 8 characters'
+    
     setErrors(e)
     return !Object.keys(e).length
   }
@@ -40,16 +43,24 @@ export const AuthGateModal = () => {
     e.preventDefault()
     if (!validate()) return
     setFormLoading(true)
+    
+    const targetEmail = form.email.trim()
+    
     try {
       if (tab === 'login') {
-        await signIn({ email: form.email, password: form.password })
+        await signIn({ email: targetEmail, password: form.password })
         toast.success('Welcome back!')
       } else {
-        await signUp({ email: form.email, password: form.password, name: form.name, role: selectedRole })
+        await signUp({ 
+          email: targetEmail, 
+          password: form.password, 
+          name: form.name.trim(), 
+          role: selectedRole 
+        })
         toast.success('Account created!')
       }
     } catch (err) {
-      toast.error(err.message || 'Something went wrong')
+      toast.error(err.message || 'Authentication failed. Please check credentials.')
     } finally {
       setFormLoading(false)
     }
@@ -61,7 +72,8 @@ export const AuthGateModal = () => {
       await signInWithGoogle()
     } catch (err) {
       toast.error(err.message || 'Google sign-in failed')
-      setGoogleLoading(false)
+    } finally {
+      setGoogleLoading(false) // Fixed hanging loading state bug
     }
   }
 
@@ -82,7 +94,6 @@ export const AuthGateModal = () => {
         transition={{ duration: 0.35, ease: 'easeOut' }}
         className="relative w-full max-w-sm mx-4 bg-white rounded-xl shadow-2xl overflow-hidden"
       >
-        {/* Top gradient bar */}
         <div className="h-1 w-full bg-gradient-to-r from-[#CA3433] to-rose-400" />
 
         <div className="px-6 pt-5 pb-5">
@@ -103,6 +114,7 @@ export const AuthGateModal = () => {
             {['login', 'signup'].map(t => (
               <button
                 key={t}
+                type="button"
                 onClick={() => { setTab(t); setErrors({}) }}
                 className={`flex-1 py-1.5 rounded-md text-xs font-bold transition-all ${
                   tab === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'
@@ -149,7 +161,7 @@ export const AuthGateModal = () => {
                   placeholder="Password (min 8 chars)"
                   leftIcon={<Lock size={13} />}
                   rightIcon={
-                    <button type="button" onClick={() => setShowPass(!showPass)} className="cursor-pointer text-gray-400">
+                    <button type="button" onClick={() => setShowPass(!showPass)} className="cursor-pointer text-gray-400 focus:outline-none">
                       {showPass ? <EyeOff size={13} /> : <Eye size={13} />}
                     </button>
                   }
@@ -159,7 +171,6 @@ export const AuthGateModal = () => {
                   className="text-sm py-2"
                 />
 
-                {/* Role Selector — compact pill row for signup */}
                 {tab === 'signup' && (
                   <div>
                     <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">I am a...</p>
@@ -200,18 +211,16 @@ export const AuthGateModal = () => {
             </Button>
           </form>
 
-          {/* Divider */}
           <div className="relative flex items-center gap-2 my-3">
             <div className="flex-1 h-px bg-gray-100" />
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">or</span>
             <div className="flex-1 h-px bg-gray-100" />
           </div>
 
-          {/* Google */}
           <button
             onClick={handleGoogle}
             disabled={googleLoading}
-            className="w-full flex items-center justify-center gap-2.5 py-2.5 border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all"
+            className="w-full flex items-center justify-center gap-2.5 py-2.5 border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all focus:outline-none"
           >
             {googleLoading ? (
               <div className="w-4 h-4 border-2 border-gray-300 border-t-[#CA3433] rounded-full animate-spin" />
