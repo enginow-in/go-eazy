@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { setUser, setProfile, logout, setLoading } from '../store/authSlice'
+import { isDisposableEmail } from '../utils/emailValidation'
 
 export const useAuth = () => {
   const dispatch = useDispatch()
@@ -113,6 +114,10 @@ export const useAuth = () => {
   }
 
   const signUp = async ({ email, password, name, role }) => {
+    if (isDisposableEmail(email)) {
+      throw new Error('Disposable email addresses are not allowed. Please use a permanent email address.')
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email, password,
       options: { 
