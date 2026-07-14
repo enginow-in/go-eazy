@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /search
+Allow: /property/
+Allow: /services/
+Allow: /nearby
+Allow: /about
+Allow: /privacy
+Allow: /terms
+Allow: /cookies
+Allow: /refund
+
+Disallow: /systemadmin
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /landlord
+Disallow: /service-provider
+
+Sitemap: https://go-eazy.vercel.app/sitemap.xml
