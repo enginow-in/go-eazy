@@ -68,11 +68,11 @@ export const Hero = () => {
         <div className="flex flex-wrap justify-center gap-2.5 mb-12 animate-fadeInUp" style={{ animationDelay: '300ms' }}>
           {CITIES.slice(0, 8).map(city => (
             <button
-              key={city.name}
-              onClick={() => { dispatch(setFilters({ city: city.name })); navigate('/search') }}
+              key={city}
+              onClick={() => { dispatch(setFilters({ city })); navigate('/search') }}
               className="flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-200 rounded-full text-sm font-medium text-gray-600 hover:border-brand-400 hover:text-brand-700 hover:bg-brand-50 transition-all shadow-sm hover:shadow-md"
             >
-              {city.name}
+              {t(`cities.${city}`) || city}
             </button>
           ))}
         </div>
