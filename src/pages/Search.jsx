@@ -13,12 +13,14 @@ import { AMENITY_ICONS, cn } from '../utils/helpers'
 import { Skeleton } from '../components/ui/Skeleton'
 import { useAuth } from '../hooks/useAuth'
 import { RecommendedSection } from '../components/property/RecommendedSection'
+import { useDebounce } from "../hooks/useDebounce";
 
 export const Search = () => {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const [searchParams] = useSearchParams()
   const { listings, filters, loading, hasMore, fetchProperties, updateFilters, totalCount } = useProperties()
+
   
   const [viewMode, setViewMode] = useState('grid')
   const [showFilters, setShowFilters] = useState(false)
@@ -31,6 +33,7 @@ export const Search = () => {
     sortBy: filters.sortBy || 'created_at', 
     sortOrder: filters.sortOrder || 'desc'
   })
+  const debouncedFilters = useDebounce(localFilters, 400);
 
   // Read ?type= from URL and apply as filter
   useEffect(() => {
@@ -63,8 +66,8 @@ export const Search = () => {
   }
 
   useEffect(() => {
-    fetchProperties(true)
-  }, [filters, fetchProperties])
+  updateFilters(debouncedFilters);
+}, [debouncedFilters, updateFilters]);
 
   // Use the actual totalCount from database
   const count = useMemo(() => totalCount, [totalCount])
@@ -214,13 +217,32 @@ export const Search = () => {
                 </div>
 
                 <div className="relative">
-                  <button 
-                    onClick={() => setShowFilters(!showFilters)} 
-                    className={`flex items-center justify-center p-2.5 bg-white border rounded-xl transition-all shadow-sm ${showFilters ? 'border-brand-500 text-brand-600 ring-2 ring-brand-50' : 'border-gray-200 text-gray-700 hover:border-gray-300'}`}
-                    aria-label="Toggle Filters"
-                  >
-                    <Filter size={20} />
-                  </button>
+                  <button
+  onClick={() => setShowFilters(!showFilters)}
+  className={`flex items-center justify-center gap-2 p-2.5 bg-white border rounded-xl transition-all shadow-sm ${
+    showFilters
+      ? 'border-brand-500 text-brand-600 ring-2 ring-brand-50'
+      : 'border-gray-200 text-gray-700 hover:border-gray-300'
+  }`}
+>
+  <Filter size={20} />
+
+  {[
+    filters.city,
+    filters.area,
+    filters.type,
+    filters.priceMax < 100000,
+  ].filter(Boolean).length > 0 && (
+    <span className="bg-brand-500 text-white text-[10px] rounded-full px-1.5 py-0.5">
+      {[
+        filters.city,
+        filters.area,
+        filters.type,
+        filters.priceMax < 100000,
+      ].filter(Boolean).length}
+    </span>
+  )}
+</button>
                   
                   {showFilters && (
                     <>
@@ -250,7 +272,23 @@ export const Search = () => {
              <div className="relative z-20">
                <button onClick={() => setShowFilters(!showFilters)} className={`flex items-center gap-2 px-6 py-2.5 bg-white border rounded-xl text-sm font-semibold transition-all ml-4 ${showFilters ? 'border-brand-500 text-brand-600 shadow-sm' : 'border-gray-200 text-gray-700 hover:shadow-sm'}`}>
                   <Filter size={16} />
-                  <span>{t('search.filters')}</span>
+                  <span>{t("search.filters")}</span>
+
+{[
+  filters.city,
+  filters.area,
+  filters.type,
+  filters.priceMax < 100000,
+].filter(Boolean).length > 0 && (
+  <span className="bg-brand-500 text-white text-xs rounded-full px-2 py-0.5">
+    {[
+      filters.city,
+      filters.area,
+      filters.type,
+      filters.priceMax < 100000,
+    ].filter(Boolean).length}
+  </span>
+)}
                   <ChevronDown size={14} className={`ml-2 transition-transform duration-300 ${showFilters ? 'rotate-180 text-brand-500' : 'text-gray-400'}`} />
                </button>
                
