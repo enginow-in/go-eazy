@@ -118,7 +118,24 @@ serve(async (req: Request) => {
       })
     }
 
-    // 4. All checks pass — create the property using the same admin client
+    // 4. Atomically consume the payment before granting the listing.
+    const { error: consumeError } = await supabaseAdmin
+      .from('consumed_payments')
+      .insert({ razorpay_payment_id, user_id: user.id, purpose: 'property_listing' })
+
+    if (consumeError) {
+      if (consumeError.code === '23505') {
+        return new Response(JSON.stringify({ error: 'This payment has already been used' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409,
+        })
+      }
+      console.error('Failed to consume payment:', consumeError)
+      return new Response(JSON.stringify({ error: 'Failed to consume payment' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500,
+      })
+    }
+
+    // 5. All checks pass — create the property using the same admin client
     const { data: property, error: insertError } = await supabaseAdmin
       .from('properties')
       .insert({
