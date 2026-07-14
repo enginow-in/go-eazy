@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
 import { useAuth } from '../../hooks/useAuth'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { Home, GraduationCap } from 'lucide-react'
 
@@ -19,7 +19,7 @@ export const RoleSelectionModal = () => {
   const [loading, setLoading] = useState(false)
 
   // Show for any logged-in user who has a profile but no role yet
-  const location = window.location
+const location = useLocation()
   const isOpen = !!user && !!profile && !role && location.pathname !== '/systemadmin'
 
   const handleConfirm = async () => {
