@@ -92,17 +92,20 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
       placeMarker(e.lngLat.lng, e.lngLat.lat)
     })
 
-    if (value?.latitude && value?.longitude) {
-      map.current.on('load', () => {
-        placeMarker(value.longitude, value.latitude, value.map_address)
-      })
-    }
-
     return () => {
       map.current?.remove()
       map.current = null
     }
   }, []) // eslint-disable-line
+
+  // Fix: Handle async coordinate loads and Mapbox CDN race conditions
+  useEffect(() => {
+    if (map.current && value?.latitude && value?.longitude && !hasPin) {
+      const dropPin = () => placeMarker(value.longitude, value.latitude, value.map_address)
+      if (map.current.loaded()) dropPin()
+      else map.current.once('load', dropPin)
+    }
+  }, [value?.latitude, value?.longitude, hasPin]) // eslint-disable-line
 
   // GPS: Use Current Location
   const handleGPS = () => {
