@@ -267,20 +267,7 @@ export const PropertyDetail = () => {
             toast.success('Payment verified! Contact details unlocked.')
             setHasUnlocked(true)
             checkUnlockStatus() 
-            if (visitDateRef.current) {
-              const { error: visitErr } = await supabase.from('site_visits').insert({
-                 property_id: p.id,
-                 user_id: user.id,
-                 landlord_id: p.landlord_id,
-                 visit_date: visitDateRef.current,
-                 status: 'pending'
-              });
-              if (!visitErr) {
-                 toast.success('Visit Request Sent! Track it in your dashboard.')
-                 setVisitDate('')
-              }
-            }
-          } catch (vErr) {
+            catch (vErr) {
             toast.error('Payment verification failed')
           } finally {
             setUnlocking(false)
