@@ -106,9 +106,18 @@ serve(async (req: Request) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403,
       })
     }
-    // In test mode, status is 'authorized'; in live mode, it's 'captured'
-    if (!['captured', 'authorized'].includes(payment.status)) {
+    // Only allow 'authorized' in test mode. On live keys require a captured
+    // payment, otherwise a merely-authorized (uncaptured, still voidable)
+    // payment would be enough to create a listing.
+    const isLiveMode = keyId.startsWith('rzp_live_')
+    const acceptedStatuses = isLiveMode ? ['captured'] : ['captured', 'authorized']
+    if (!acceptedStatuses.includes(payment.status)) {
       return new Response(JSON.stringify({ error: `Payment not completed: ${payment.status}` }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403,
+      })
+    }
+    if (payment.currency !== 'INR') {
+      return new Response(JSON.stringify({ error: 'Invalid currency' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403,
       })
     }
@@ -118,17 +127,26 @@ serve(async (req: Request) => {
       })
     }
 
-    // 4. All checks pass — create the property using the same admin client
+    // 4. All checks pass — create the property. Stamp the payment id (after the
+    // spread so the client can't override it) so the unique index rejects any
+    // replay of the same payment.
     const { data: property, error: insertError } = await supabaseAdmin
       .from('properties')
       .insert({
         ...property_data,
         landlord_id: user.id,
+        razorpay_payment_id,
       })
       .select()
       .single()
 
     if (insertError) {
+      // 23505 = unique_violation → this payment already created a listing
+      if (insertError.code === '23505') {
+        return new Response(JSON.stringify({ error: 'This payment has already been used to create a listing' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409,
+        })
+      }
       console.error('Failed to insert property:', insertError)
       return new Response(JSON.stringify({ error: 'Failed to create listing: ' + insertError.message }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500,
