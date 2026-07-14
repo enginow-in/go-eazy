@@ -64,7 +64,8 @@ export const Search = () => {
 
   useEffect(() => {
     fetchProperties(true)
-  }, [filters, fetchProperties])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters])
 
   // Use the actual totalCount from database
   const count = useMemo(() => totalCount, [totalCount])

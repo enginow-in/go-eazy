@@ -58,7 +58,8 @@ export const NearbyServices = () => {
   // Fetch whenever filters change
   useEffect(() => {
     fetchServices(true)
-  }, [filters, fetchServices])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters])
 
   useEffect(() => {
     // eslint-disable-next-line
