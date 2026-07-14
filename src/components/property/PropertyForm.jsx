@@ -238,9 +238,24 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
         },
         prefill: { name: user?.user_metadata?.full_name || 'Landlord', email: user?.email || '' },
         theme: { color: '#CA3433' },
-        modal: { ondismiss: () => setLoading(false) }
+        modal: { 
+          ondismiss: async () => {
+            setLoading(false)
+            if (uploadedUrls.length > 0) {
+              const paths = uploadedUrls.map(u => u.split('/property-images/')[1]).filter(Boolean)
+              if (paths.length > 0) await supabase.storage.from('property-images').remove(paths)
+            }
+          } 
+        }
       })
-      rzp.on('payment.failed', resp => { toast.error('Payment failed: ' + (resp.error?.description || '')); setLoading(false) })
+      rzp.on('payment.failed', async (resp) => { 
+        toast.error('Payment failed: ' + (resp.error?.description || ''))
+        setLoading(false) 
+        if (uploadedUrls.length > 0) {
+          const paths = uploadedUrls.map(u => u.split('/property-images/')[1]).filter(Boolean)
+          if (paths.length > 0) await supabase.storage.from('property-images').remove(paths)
+        }
+      })
       rzp.open()
     } catch (err) { toast.error(err.message || 'Something went wrong'); setLoading(false) }
   }
