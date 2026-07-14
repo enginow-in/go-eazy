@@ -1,293 +1,654 @@
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Heart, Clock, User as UserIcon, ChevronLeft, Bell, Calendar, MapPin } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import {
+  Heart, Clock, Search, MapPin, Settings as SettingsIcon, User, BrainCircuit, Briefcase, BarChart2, ChevronRight,
+  X, Edit, FileText, Calendar, MessageSquare, CheckCircle, ArrowRight, UploadCloud,
+  Shield, Trash2, Palette, Languages, Layers, GitCompare, Star, History, LayoutGrid, UserCircle
+} from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
-import { useProperties } from '../hooks/useProperties'
-import { PropertyCard } from '../components/property/PropertyCard'
 import { supabase } from '../lib/supabase'
-import { MOCK_PROPERTIES } from '../utils/constants'
+import { PropertyCard } from '../components/property/PropertyCard'
 import { Skeleton } from '../components/ui/Skeleton'
+import { formatDistanceToNow } from 'date-fns'
+import { SearchHistory } from '../components/dashboard/SearchHistory'
+import { NotificationCard } from '../components/dashboard/NotificationCard'
+import { AIRecommendations } from '../components/dashboard/AIRecommendations'
+import { NearbyProperties } from '../components/dashboard/NearbyProperties'
+import { UserPreferences } from '../components/dashboard/UserPreferences'
+
+const StatCard = ({ icon, label, value, loading }) => (
+  <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
+    <div className="w-10 h-10 rounded-lg bg-gray-50 text-gray-500 flex items-center justify-center">
+      {icon}
+    </div>
+    <div>
+      <p className="text-xs text-gray-500 font-medium">{label}</p>
+      {loading ? (
+        <Skeleton className="h-6 w-12 mt-1" />
+      ) : (
+        <h3 className="text-xl font-bold text-gray-900">{value}</h3>
+      )}
+    </div>
+  </div>
+)
 
 export const UserDashboard = () => {
-  const { user, profile } = useAuth()
-  const { favorites, recentlyViewed } = useProperties()
-  const [favProps, setFavProps] = useState([])
-  const [recentProps, setRecentProps] = useState([])
-  const [loading, setLoading] = useState(true)
-
+  const navigate = useNavigate()
+  const { user, profile, loading: authLoading } = useAuth()
+  const [favorites, setFavorites] = useState([])
+  const [recentViews, setRecentViews] = useState([])
+  const [recommendations, setRecommendations] = useState([])
+  const [applications, setApplications] = useState([])
+  const [siteVisits, setSiteVisits] = useState([])
+  const [documents, setDocuments] = useState([])
   const [notifications, setNotifications] = useState([])
-  const [showNotifications, setShowNotifications] = useState(false)
-  const [myVisits, setMyVisits] = useState([])
-  const [loadingData, setLoadingData] = useState(true)
+  const [stats, setStats] = useState({ applications: 0, bookings: 0, messages: 0, notifications: 0 })
+  const [dataLoading, setDataLoading] = useState(true)
+  const [showPreferences, setShowPreferences] = useState(false)
 
   useEffect(() => {
-    if (user) {
-      loadProperties()
-      loadUserData()
+    if (user && profile) {
+      loadData() // eslint-disable-line
     }
-  }, [user, favorites, recentlyViewed]) // React to changes in the Redux IDs
+  }, [user, profile])
 
-  const loadUserData = async () => {
-    if (!user) return
+  const loadData = async () => {
     try {
-      setLoadingData(true)
-      const [notifRes, visitRes] = await Promise.all([
-        supabase.from('notifications').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
-        supabase.from('site_visits').select('*, property:properties(title, city)').eq('user_id', user.id).order('created_at', { ascending: false })
+      const [favRes, recentRes, recommendationsRes, appsRes, visitsRes, docsRes, notificationsRes] = await Promise.all([
+        supabase
+          .from('favorites')
+          .select('property:properties(*)', { count: 'exact' })
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(3),
+        supabase
+          .from('recently_viewed')
+          .select('property:properties(*)')
+          .eq('user_id', user.id)
+          .order('viewed_at', { ascending: false })
+          .limit(3),
+        // AI recommendations - for now, fetch most popular properties
+        supabase
+          .from('properties')
+          .select('*')
+          .order('views', { ascending: false })
+          .limit(3),
+        // Fetch rental applications
+        supabase
+          .from('rental_applications')
+          .select('*, property:properties(id, title, images, city, area)')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false }),
+        // Fetch site visits
+        supabase
+          .from('site_visits')
+          .select('*, property:properties(id, title, images, city, area)')
+          .eq('user_id', user.id)
+          .order('visit_date', { ascending: false }),
+        // Fetch user documents
+        supabase
+          .from('user_documents')
+          .select('*')
+          .eq('user_id', user.id),
+        // Fetch notifications
+        supabase
+          .from('notifications')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('is_read', false)
+          .order('created_at', { ascending: false })
+          .limit(5)
       ])
-      
-      if (!notifRes.error) setNotifications(notifRes.data || [])
-      if (!visitRes.error) setMyVisits(visitRes.data || [])
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoadingData(false)
-    }
-  }
 
-  const markAsRead = async () => {
-    try {
-      await supabase.from('notifications').update({ is_read: true }).eq('user_id', user.id).eq('is_read', false)
-      setNotifications(prev => prev.map(n => ({...n, is_read: true})))
-    } catch (err) {
-      console.error(err)
-    }
-  }
-  
-  const unreadCount = notifications.filter(n => !n.is_read).length
+      if (favRes.error) throw favRes.error
+      if (recentRes.error) throw recentRes.error
+      if (recommendationsRes.error) throw recommendationsRes.error
 
-  const loadProperties = async () => {
-    if (!user) return
-    
-    // Only set loading if we don't have any data yet
-    if (favProps.length === 0 && recentProps.length === 0) {
-      setLoading(true)
-    }
+      setFavorites(favRes.data?.map(item => item.property).filter(Boolean) || [])
+      setRecentViews(recentRes.data?.map(item => item.property).filter(Boolean) || [])
+      setRecommendations(recommendationsRes.data || [])
 
-    try {
-      // Fetch details for favorited ids
-      if (favorites.length > 0) {
-        const { data } = await supabase.from('properties').select('*').in('id', favorites)
-        if (data) {
-           // preserve order based on favorites array
-           const ordered = favorites.map(id => data.find(p => p.id === id)).filter(Boolean)
-           setFavProps(ordered)
-        }
-      } else {
-        setFavProps([])
+      // Handle applications with error fallback
+      if (appsRes.data) {
+        setApplications(appsRes.data || [])
       }
 
-      // Fetch details for recently viewed ids
-      if (recentlyViewed.length > 0) {
-        const { data } = await supabase.from('properties').select('*').in('id', recentlyViewed)
-        if (data) {
-          // preserve order based on recentlyViewed array
-          const ordered = recentlyViewed.map(id => data.find(p => p.id === id)).filter(Boolean)
-          setRecentProps(ordered)
-        }
-      } else {
-        setRecentProps([])
+      // Handle visits with error fallback
+      if (visitsRes.data) {
+        setSiteVisits(visitsRes.data || [])
       }
-    } catch (err) {
-      console.error('[UserDashboard] Load error:', err)
-      // Fallback
-      setFavProps(MOCK_PROPERTIES.filter(p => favorites.includes(p.id)))
-      setRecentProps(recentlyViewed.map(id => MOCK_PROPERTIES.find(p => p.id === id)).filter(Boolean))
+
+      // Handle documents with error fallback
+      if (docsRes.data) {
+        setDocuments(docsRes.data || [])
+      }
+
+      // Handle notifications with error fallback
+      if (notificationsRes.data) {
+        setNotifications(notificationsRes.data || [])
+      }
+
+      setStats({ 
+        applications: appsRes.data?.length || 0, 
+        bookings: visitsRes.data?.filter(v => v.status === 'approved').length || 0, 
+        messages: 0,
+        notifications: notificationsRes.data?.length || 0
+      })
+
+    } catch (error) {
+      console.error('❌ Dashboard data error:', error)
     } finally {
-      setLoading(false)
+      setDataLoading(false)
     }
   }
 
-  const LoadingRow = () => (
-    <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide">
-      {[1, 2, 3, 4].map(i => (
-        <div key={i} className="flex-shrink-0 w-64 rounded-xl bg-white border border-gray-100 p-3 space-y-3">
-          <Skeleton className="h-44 w-full rounded-xl" />
-          <div className="space-y-2 px-1">
-            <Skeleton className="h-5 w-4/5" />
-            <Skeleton className="h-4 w-3/5" />
-            <div className="pt-1 flex gap-2">
-              <Skeleton className="h-3 w-1/4 rounded-full" />
-              <Skeleton className="h-3 w-1/4 rounded-full" />
-            </div>
-          </div>
+  const getProfileCompletion = () => {
+    if (!profile) return 0
+    let score = 0
+    if (profile.full_name) score += 40
+    if (profile.avatar_url) score += 30
+    if (profile.phone) score += 30
+    return score
+  }
+
+  // Show loading while auth is initializing
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-[#CA3433] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 font-medium">Loading your dashboard...</p>
         </div>
-      ))}
-    </div>
-  )
+      </div>
+    )
+  }
+
+  // Must have user and profile to show dashboard
+  if (!user || !profile) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center p-8 bg-white rounded-2xl shadow-sm">
+          <p className="text-gray-600 mb-4">Unable to load dashboard</p>
+          <Link to="/" className="text-[#CA3433] hover:underline">
+            Go Home
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="pt-4 pb-20 bg-gray-50 min-h-screen">
-      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
-
+    <div className="min-h-screen bg-gray-50/50 pt-6 pb-32 md:pb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
         {/* Header */}
-        <div className="flex items-center justify-between gap-4 mb-10 w-full relative">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-2 border-brand-200 bg-gray-200 shadow-sm flex-shrink-0">
-              {profile ? (
-                <img src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`} alt="Avatar" className="w-full h-full object-cover" />
-              ) : (
-                <Skeleton variant="circle" className="w-full h-full" />
-              )}
+            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-md bg-gray-200 shrink-0">
+              <img 
+                src={profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`}
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
             </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-black text-gray-900 font-display leading-tight">
-                {profile ? `Hi, ${profile?.full_name?.split(' ')[0] || 'User'}!` : <Skeleton className="h-8 w-32" />}
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold text-gray-900 truncate">
+                Hello, {profile.full_name?.split(' ')[0] || 'User'}! 👋
               </h1>
-              <p className="text-xs sm:text-sm text-gray-500 font-medium">Pick up exactly where you left off.</p>
-            </div>
-          </div>
-
-          {/* Notifications Bell */}
-          <div className="relative">
-            <button 
-              onClick={() => setShowNotifications(!showNotifications)}
-              className={`p-2 text-yellow-500 hover:text-yellow-600 transition-all relative cursor-pointer active:scale-95`}
-            >
-              <Bell size={24} className="fill-current" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-white shadow-sm ring-2 ring-red-500/20 animate-pulse">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
-
-            {/* Notification Dropdown */}
-            {showNotifications && (
-               <div className="absolute top-full right-0 mt-3 w-80 sm:w-96 bg-white rounded-2xl shadow-[0_10px_40px_rgb(0,0,0,0.1)] border border-gray-100 p-4 z-50">
-                 <div className="flex items-center justify-between mb-3 border-b border-gray-50 pb-2">
-                   <h3 className="font-bold text-gray-900">Notifications</h3>
-                   {unreadCount > 0 && <button onClick={markAsRead} className="text-xs font-bold text-[#CA3433] hover:underline px-2 py-1 rounded-md hover:bg-red-50 transition-colors">Mark all read</button>}
-                 </div>
-                 <div className="space-y-3 max-h-80 overflow-y-auto pr-1 customize-scrollbar">
-                   {notifications.length === 0 ? (
-                     <div className="text-center py-6">
-                       <Bell size={24} className="mx-auto text-gray-300 mb-2" />
-                       <p className="text-sm text-gray-500 font-medium">No notifications yet</p>
-                     </div>
-                   ) : (
-                     notifications.map(n => (
-                       <div key={n.id} className={`p-3 rounded-xl border transition-colors ${n.is_read ? 'bg-white border-gray-100 text-gray-500' : 'bg-[#fffcf0] border-yellow-200 text-gray-900'}`}>
-                         <p className={`text-[13px] leading-relaxed ${n.is_read ? 'font-medium' : 'font-semibold'}`}>{n.message}</p>
-                         <p className="text-[10px] mt-2 text-gray-400 font-bold uppercase tracking-wider">{new Date(n.created_at).toLocaleDateString()}</p>
-                       </div>
-                     ))
-                   )}
-                 </div>
-               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Saved Properties */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <Heart size={24} className="text-[#CA3433]" fill="currentColor" />
-              <div>
-                <h2 className="text-xl font-black text-gray-900 font-display leading-none">Saved Properties</h2>
-                {!loading && <span className="text-xs font-bold text-gray-400 mt-1 block uppercase tracking-wider">{favProps.length} Items</span>}
-              </div>
-            </div>
-            
-            {favProps.length > 0 && (
-              <Link 
-                to="/dashboard/saved" 
-                className="text-sm font-extrabold text-[#CA3433] hover:underline flex items-center gap-1 group"
-              >
-                View all
-                <ChevronLeft size={16} className="rotate-180 group-hover:translate-x-0.5 transition-transform" />
-              </Link>
-            )}
-          </div>
-
-          {loading ? (
-            <LoadingRow />
-          ) : favProps.length === 0 ? (
-            <div className="bg-white p-10 rounded-3xl border border-gray-100 text-center shadow-sm">
-              <p className="text-gray-500 font-medium mb-4">You haven't saved any properties yet.</p>
-              <Link to="/search" className="bg-[#fdf2f2] text-[#CA3433] px-6 py-2.5 rounded-xl font-bold hover:bg-[#fbe1e1] transition-colors inline-block">Explore listings</Link>
-            </div>
-          ) : (
-            <div className="scroll-row px-1 -mx-1">
-              {favProps.slice(0, 3).map(p => (
-                <div key={p.id} className="flex-shrink-0">
-                  <PropertyCard property={p} compact />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Recently Viewed */}
-        <div className="mb-12">
-          <div className="flex items-center gap-3 mb-6">
-            <Clock size={24} className="text-[#CA3433]" />
-            <div>
-              <h2 className="text-xl font-black text-gray-900 font-display leading-none">Recently Viewed</h2>
-              <p className="text-[10px] text-gray-400 mt-1 font-medium bg-gray-50 px-2 py-0.5 rounded-md inline-block">
-                Auto-clears after 72 hours
+              <p className="text-sm text-gray-500 font-medium flex items-center gap-4">
+                <span>Member since {new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+                <span className="hidden sm:inline">•</span>
+                <span className="hidden sm:inline">Last login: {formatDistanceToNow(new Date(user.last_sign_in_at || user.created_at), { addSuffix: true })}</span>
               </p>
             </div>
           </div>
 
-          {loading ? (
-            <LoadingRow />
-          ) : recentProps.length === 0 ? (
-            <div className="bg-white p-10 rounded-3xl border border-gray-100 text-center shadow-sm">
-              <p className="text-gray-500 font-medium">No recently viewed properties.</p>
+          {/* Profile Completion */}
+          <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm w-full sm:w-auto sm:max-w-xs">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs font-bold text-gray-500">Profile Completion</p>
+              <p className="text-xs font-bold text-[#CA3433]">{getProfileCompletion()}%</p>
+            </div>
+            <div className="w-full bg-gray-100 rounded-full h-1.5">
+              <div className="bg-[#CA3433] h-1.5 rounded-full" style={{ width: `${getProfileCompletion()}%` }}></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Dashboard Statistics */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-10">
+          <StatCard icon={<Heart size={18} />} label="Saved Properties" value={favorites.length} loading={dataLoading} />
+          <StatCard icon={<FileText size={18} />} label="Applications" value={stats.applications} loading={dataLoading} />
+          <StatCard icon={<Calendar size={18} />} label="Bookings" value={stats.bookings} loading={dataLoading} />
+          <StatCard icon={<MessageSquare size={18} />} label="Messages" value={stats.messages} loading={dataLoading} />
+          <StatCard icon={<CheckCircle size={18} />} label="Notifications" value={stats.notifications} loading={dataLoading} />
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-10">
+          {[
+            { to: '/search', icon: Search, label: 'New Search' },
+            { to: '/dashboard/saved', icon: Heart, label: 'Saved' },
+            { to: '/nearby', icon: MapPin, label: 'Nearby' },
+            { to: '/dashboard/applications', icon: FileText, label: 'Applications' },
+            { to: '/dashboard/visits', icon: Calendar, label: 'Visits' },
+            { onClick: () => setShowPreferences(!showPreferences), icon: SettingsIcon, label: 'Preferences' }
+          ].map((action, index) => (
+            action.to ? (
+              <Link
+                key={action.to}
+                to={action.to}
+                className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-[#CA3433]/30 transition-all text-center group flex flex-col items-center justify-center"
+              >
+                <div className="w-10 h-10 bg-red-50 text-[#CA3433] rounded-lg flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                  <action.icon size={20} />
+                </div>
+                <p className="font-bold text-gray-800 text-xs">{action.label}</p>
+              </Link>
+            ) : (
+              <button
+                key={index}
+                onClick={action.onClick}
+                className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-[#CA3433]/30 transition-all text-center group flex flex-col items-center justify-center"
+              >
+                <div className="w-10 h-10 bg-red-50 text-[#CA3433] rounded-lg flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                  <action.icon size={20} />
+                </div>
+                <p className="font-bold text-gray-800 text-xs">{action.label}</p>
+              </button>
+            )
+          ))}
+        </div>
+
+        {/* User Preferences Modal */}
+        {showPreferences && (
+          <div className="mb-12">
+            <UserPreferences />
+          </div>
+        )}
+
+        {/* Notifications */}
+        {notifications.length > 0 && (
+          <section className="mb-12">
+            <div className="flex items-center gap-2 mb-6">
+              <CheckCircle size={20} className="text-[#CA3433]" />
+              <h2 className="text-xl font-bold text-gray-900">Recent Notifications</h2>
+            </div>
+            <div className="space-y-3">
+              {notifications.slice(0, 3).map((notification) => (
+                <NotificationCard
+                  key={notification.id}
+                  notification={notification}
+                  onDismiss={(id) => setNotifications(prev => prev.filter(n => n.id !== id))}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Saved Properties */}
+        <section id="saved" className="mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <Heart size={20} className="text-[#CA3433]" />
+              Saved Properties
+            </h2>
+            {favorites.length > 3 && (
+              <Link to="/dashboard/saved" className="text-[#CA3433] hover:underline text-sm font-bold flex items-center gap-1">
+                View All <ArrowRight size={14} />
+              </Link>
+            )}
+          </div>
+
+          {dataLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1,2,3].map(i => <Skeleton key={i} className="h-64 w-full rounded-2xl" />)}
+            </div>
+          ) : favorites.length === 0 ? (
+            <div className="bg-white p-12 rounded-2xl border border-dashed border-gray-200 text-center">
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Heart size={28} className="text-gray-300" />
+              </div>
+              <h3 className="font-bold text-gray-800 mb-1">No Saved Properties</h3>
+              <p className="text-sm text-gray-500 mb-6">Click the heart icon on a listing to save it.</p>
+              <Link 
+                to="/search"
+                className="bg-[#CA3433] text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-red-600 transition-colors text-sm"
+              >
+                Browse Properties
+              </Link>
             </div>
           ) : (
-            <div className="scroll-row px-1 -mx-1">
-              {recentProps.map(p => (
-                <div key={p.id} className="flex-shrink-0">
-                  <PropertyCard property={p} compact />
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {favorites.slice(0, 3).map((property) => (
+                <PropertyCard key={property.id} property={property} />
               ))}
             </div>
           )}
-        </div>
+        </section>
 
-        {/* My Site Visits */}
-        <div className="mb-12">
-          <div className="flex items-center gap-3 mb-6">
-            <Calendar size={24} className="text-orange-500" />
-            <div>
-              <h2 className="text-xl font-black text-gray-900 font-display leading-none">My Site Visits</h2>
-              {!loadingData && <span className="text-[10px] text-gray-400 mt-1 font-medium bg-gray-50 px-2 py-0.5 rounded-md inline-block uppercase tracking-wider">
-                {myVisits.length} Requests
-              </span>}
+        {/* AI Recommendations */}
+        <section id="recommendations" className="mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <BrainCircuit size={20} className="text-[#CA3433]" />
+              Recommended For You
+            </h2>
+          </div>
+          <AIRecommendations />
+        </section>
+
+        {/* Nearby Properties */}
+        <section id="nearby" className="mb-12">
+          <div className="flex items-center gap-2 mb-6">
+            <MapPin size={20} className="text-[#CA3433]" />
+            <h2 className="text-xl font-bold text-gray-900">Nearby Properties</h2>
+          </div>
+          <NearbyProperties />
+        </section>
+
+        {/* Rental Applications */}
+        <section id="applications" className="mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <Briefcase size={20} className="text-[#CA3433]" />
+              Rental Applications
+            </h2>
+          </div>
+          {dataLoading ? (
+            <div className="space-y-3">
+              {[1, 2].map(i => <Skeleton key={i} className="h-24 w-full rounded-2xl" />)}
             </div>
+          ) : applications.length === 0 ? (
+            <div className="bg-white p-12 rounded-2xl border border-dashed border-gray-200 text-center">
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Briefcase size={28} className="text-gray-300" />
+              </div>
+              <h3 className="font-bold text-gray-800 mb-1">No Applications Sent</h3>
+              <p className="text-sm text-gray-500">Your submitted applications will appear here.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {applications.slice(0, 3).map(app => {
+                const statusConfig = {
+                  pending: { text: 'Pending', color: 'bg-yellow-100 text-yellow-700' },
+                  approved: { text: 'Approved', color: 'bg-green-100 text-green-700' },
+                  rejected: { text: 'Rejected', color: 'bg-red-100 text-red-700' },
+                }[app.status] || { text: 'Unknown', color: 'bg-gray-100 text-gray-700' }
+
+                return (
+                  <div key={app.id} className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+                    <img src={app.property?.images?.[0]} alt={app.property?.title} className="w-20 h-20 rounded-xl object-cover" />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-gray-900 truncate">{app.property?.title}</h4>
+                      <p className="text-xs text-gray-500">{app.property?.area}, {app.property?.city}</p>
+                      <p className="text-xs text-gray-400 mt-1">Applied on {new Date(app.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md ${statusConfig.color}`}>
+                        {statusConfig.text}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* Property Visits */}
+        <section id="visits" className="mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <Calendar size={20} className="text-[#CA3433]" />
+              Property Visits
+            </h2>
+          </div>
+          {dataLoading ? (
+            <div className="space-y-3">
+              {[1, 2].map(i => <Skeleton key={i} className="h-24 w-full rounded-2xl" />)}
+            </div>
+          ) : siteVisits.length === 0 ? (
+            <div className="bg-white p-12 rounded-2xl border border-dashed border-gray-200 text-center">
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Calendar size={28} className="text-gray-300" />
+              </div>
+              <h3 className="font-bold text-gray-800 mb-1">No Visits Scheduled</h3>
+              <p className="text-sm text-gray-500 mb-6">Book a visit from a property's detail page.</p>
+              <Link 
+                to="/search"
+                className="bg-[#CA3433] text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-red-600 transition-colors text-sm"
+              >
+                Find Properties
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {siteVisits.slice(0, 3).map(visit => {
+                const statusConfig = {
+                  pending: { text: 'Pending Approval', color: 'bg-yellow-100 text-yellow-700' },
+                  approved: { text: 'Approved', color: 'bg-green-100 text-green-700' },
+                  declined: { text: 'Declined', color: 'bg-red-100 text-red-700' },
+                  completed: { text: 'Completed', color: 'bg-blue-100 text-blue-700' },
+                }[visit.status] || { text: 'Unknown', color: 'bg-gray-100 text-gray-700' }
+
+                return (
+                  <div key={visit.id} className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+                    <img src={visit.property?.images?.[0]} alt={visit.property?.title} className="w-20 h-20 rounded-xl object-cover" />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-gray-900 truncate">{visit.property?.title}</h4>
+                      <p className="text-xs text-gray-500">Visit on: <span className="font-semibold text-gray-700">{new Date(visit.visit_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</span></p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md ${statusConfig.color}`}>
+                          {statusConfig.text}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <button className="p-2 rounded-lg bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-600 transition-colors">
+                        <X size={14} />
+                      </button>
+                      <button className="p-2 rounded-lg bg-gray-100 text-gray-500 hover:bg-blue-100 hover:text-blue-600 transition-colors">
+                        <Edit size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* Recent Views */}
+        <section id="recent" className="mb-12">
+          <div className="flex items-center gap-2 mb-6">
+            <Clock size={20} className="text-[#CA3433]" />
+            <h2 className="text-xl font-bold text-gray-900">Recently Viewed</h2>
           </div>
 
-          {loadingData ? (
-             <LoadingRow />
-          ) : myVisits.length === 0 ? (
-             <div className="bg-white p-10 rounded-3xl border border-gray-100 text-center shadow-sm">
-               <Calendar size={32} className="mx-auto text-gray-300 mb-3" />
-               <p className="text-gray-500 font-medium font-display">You haven't requested any site visits.</p>
-             </div>
+          {dataLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1,2,3].map(i => <Skeleton key={i} className="h-64 w-full rounded-2xl" />)}
+            </div>
+          ) : recentViews.length === 0 ? (
+            <div className="bg-white p-12 rounded-2xl border border-dashed border-gray-200 text-center">
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Clock size={28} className="text-gray-300" />
+              </div>
+              <h3 className="font-bold text-gray-800 mb-1">No Recent Activity</h3>
+              <p className="text-sm text-gray-500">Properties you view will appear here.</p>
+            </div>
           ) : (
-             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-               {myVisits.map(visit => (
-                 <div key={visit.id} className="bg-white border border-gray-100 rounded-xl p-4 flex flex-col gap-3 shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:shadow-[0_4px_16px_rgb(0,0,0,0.05)] transition-all cursor-pointer" onClick={() => navigate(`/property/${visit.property_id}`)}>
-                   <div className="flex justify-between items-start">
-                     <div className="pr-2">
-                       <h3 className="font-bold text-gray-900 line-clamp-1 text-[15px] hover:text-[#CA3433] transition-colors">{visit.property?.title || 'Property Unavaliable'}</h3>
-                       <p className="text-[13px] text-gray-500 mt-1 flex items-center gap-1"><MapPin size={12} className="text-gray-400"/>{visit.property?.city || 'Unknown'}</p>
-                     </div>
-                     <span className={`text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-widest border ${visit.status === 'approved' ? 'bg-green-50 text-green-700 border-green-200' : visit.status === 'declined' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
-                       {visit.status}
-                     </span>
-                   </div>
-                   <div className="pt-3 border-t border-gray-50 flex items-center gap-2 text-sm text-gray-700 font-semibold bg-gray-50/50 rounded-lg p-2">
-                     <Calendar size={14} className="text-gray-400" />
-                     {new Date(visit.visit_date).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
-                   </div>
-                 </div>
-               ))}
-             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {recentViews.slice(0, 3).map((property) => (
+                <PropertyCard key={property.id} property={property} />
+              ))}
+            </div>
           )}
+        </section>
+
+        {/* Interactive Map */}
+        <section id="map" className="mb-12">
+          <div className="flex items-center gap-2 mb-6">
+            <MapPin size={20} className="text-[#CA3433]" />
+            <h2 className="text-xl font-bold text-gray-900">Explore on Map</h2>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm text-center">
+            <div className="bg-gray-100 h-80 rounded-xl flex flex-col items-center justify-center p-4">
+              <MapPin size={48} className="text-gray-400 mb-4" />
+              <h3 className="font-bold text-gray-800 mb-2">Interactive Map Coming Soon</h3>
+              <p className="text-sm text-gray-500 max-w-md">You'll be able to explore nearby properties, check travel times, and see local schools, hospitals, and metro stops right here.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Search History */}
+        <section id="history" className="mb-12">
+          <div className="flex items-center gap-2 mb-6">
+            <History size={20} className="text-[#CA3433]" />
+            <h2 className="text-xl font-bold text-gray-900">Search History</h2>
+          </div>
+          <SearchHistory />
+        </section>
+
+        {/* Dashboard Analytics */}
+        <section id="analytics" className="mb-12">
+          <div className="flex items-center gap-2 mb-6">
+            <BarChart2 size={20} className="text-[#CA3433]" />
+            <h2 className="text-xl font-bold text-gray-900">Dashboard Analytics</h2>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm text-center">
+            <div className="bg-gray-100 h-80 rounded-xl flex flex-col items-center justify-center p-4">
+              <BarChart2 size={48} className="text-gray-400 mb-4" />
+              <h3 className="font-bold text-gray-800 mb-2">Analytics Coming Soon</h3>
+              <p className="text-sm text-gray-500 max-w-md">Visualize your property search journey with charts on properties viewed, applications sent, and more.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* New Placeholder Sections */}
+        <div className="grid md:grid-cols-2 gap-8 mb-12">
+          {/* Compare Properties */}
+          <section id="compare">
+            <div className="flex items-center gap-2 mb-6">
+              <GitCompare size={20} className="text-[#CA3433]" />
+              <h2 className="text-xl font-bold text-gray-900">Compare Properties</h2>
+            </div>
+            <div className="bg-white p-8 rounded-2xl border border-dashed border-gray-200 text-center h-full flex flex-col justify-center">
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <GitCompare size={28} className="text-gray-300" />
+              </div>
+              <h3 className="font-bold text-gray-800 mb-1">Compare up to 4 Properties</h3>
+              <p className="text-sm text-gray-500">This feature is coming soon!</p>
+            </div>
+          </section>
+
+          {/* Wishlist Collections */}
+          <section id="wishlist">
+            <div className="flex items-center gap-2 mb-6">
+              <Layers size={20} className="text-[#CA3433]" />
+              <h2 className="text-xl font-bold text-gray-900">Wishlist Collections</h2>
+            </div>
+            <div className="bg-white p-8 rounded-2xl border border-dashed border-gray-200 text-center h-full flex flex-col justify-center">
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Layers size={28} className="text-gray-300" />
+              </div>
+              <h3 className="font-bold text-gray-800 mb-1">Organize Your Favorites</h3>
+              <p className="text-sm text-gray-500">Soon you'll be able to create collections for vacations, family, or budget finds.</p>
+            </div>
+          </section>
+        </div>
+
+        {/* Document Management */}
+        <section id="documents" className="mb-12">
+          <div className="flex items-center gap-2 mb-6">
+            <FileText size={20} className="text-[#CA3433]" />
+            <h2 className="text-xl font-bold text-gray-900">My Documents</h2>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+            {documents.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <UploadCloud size={28} className="text-gray-400" />
+                </div>
+                <h3 className="font-bold text-gray-800 mb-1">Upload Your Documents</h3>
+                <p className="text-sm text-gray-500 mb-4">Store your Aadhar, PAN, and other documents for faster applications.</p>
+                <button className="bg-gray-800 text-white px-4 py-2 rounded-lg font-semibold text-sm">Upload Now</button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {documents.map(doc => (
+                  <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <p className="font-medium text-sm">{doc.document_type}</p>
+                    <button><Trash2 size={16} className="text-gray-400 hover:text-red-500" /></button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Settings & Security */}
+        <section id="settings-security" className="mb-12">
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Appearance & Language */}
+            <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+              <h3 className="font-bold text-lg mb-4">Appearance & Language</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="font-medium text-sm flex items-center gap-2"><Palette size={16} /> Theme</span>
+                  <div className="text-xs font-semibold flex gap-1 bg-gray-200 p-1 rounded-md">
+                    <button className="px-2 py-0.5 rounded bg-white shadow">Light</button>
+                    <button className="px-2 py-0.5">Dark</button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="font-medium text-sm flex items-center gap-2"><Languages size={16} /> Language</span>
+                  <div className="text-xs font-semibold flex gap-1 bg-gray-200 p-1 rounded-md">
+                    <button className="px-2 py-0.5 rounded bg-white shadow">EN</button>
+                    <button className="px-2 py-0.5">HI</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Security & Account */}
+            <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+              <h3 className="font-bold text-lg mb-4">Security & Account</h3>
+              <div className="space-y-2">
+                <Link to="/settings" className="block text-sm font-medium text-blue-600 hover:underline">Two-Factor Authentication</Link>
+                <Link to="/settings" className="block text-sm font-medium text-blue-600 hover:underline">Active Sessions</Link>
+                <Link to="/settings" className="block text-sm font-medium text-red-600 hover:underline">Deactivate Account</Link>
+                <Link to="/settings" className="block text-sm font-medium text-red-600 hover:underline">Delete Account</Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Mobile Sticky Nav */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-50">
+          <div className="grid grid-cols-5">
+            <Link to="/dashboard" className="flex flex-col items-center justify-center p-2 text-[#CA3433]">
+              <LayoutGrid size={20} />
+              <span className="text-[10px] font-bold">Home</span>
+            </Link>
+            <a href="#applications" className="flex flex-col items-center justify-center p-2 text-gray-500">
+              <Briefcase size={20} />
+              <span className="text-[10px] font-bold">Apps</span>
+            </a>
+            <a href="#saved" className="flex flex-col items-center justify-center p-2 text-gray-500">
+              <Heart size={20} />
+              <span className="text-[10px] font-bold">Saved</span>
+            </a>
+            <a href="#visits" className="flex flex-col items-center justify-center p-2 text-gray-500">
+              <Calendar size={20} />
+              <span className="text-[10px] font-bold">Visits</span>
+            </a>
+            <Link to="/settings" className="flex flex-col items-center justify-center p-2 text-gray-500">
+              <UserCircle size={20} />
+              <span className="text-[10px] font-bold">Profile</span>
+            </Link>
+          </div>
         </div>
 
       </div>
