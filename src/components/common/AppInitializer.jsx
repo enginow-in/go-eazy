@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
-import { useAuth } from '../../hooks/useAuth'
+import { useSelector } from 'react-redux'
 import { useProperties } from '../../hooks/useProperties'
 
 export const AppInitializer = () => {
-  const { user } = useAuth()
+  const { user } = useSelector(s => s.auth)
   const { fetchFavorites, fetchRecentlyViewed } = useProperties()
 
   // Initialize global data once on login — use user.id to avoid re-firing
