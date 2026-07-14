@@ -113,6 +113,12 @@ export const useAuth = () => {
   }
 
   const signUp = async ({ email, password, name, role }) => {
+    // SECURITY: Enforce RBAC - prevent 'admin' injection
+    const allowedRoles = ['user', 'landlord', 'service_provider']
+    if (role && !allowedRoles.includes(role)) {
+      throw new Error(`Security Error: Cannot assign restricted role '${role}' during public signup.`)
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email, password,
       options: { 
@@ -168,6 +174,14 @@ export const useAuth = () => {
   }
 
   const updateProfile = async (updates) => {
+    // SECURITY: Enforce RBAC - prevent 'admin' injection
+    if (updates.role) {
+      const allowedRoles = ['user', 'landlord', 'service_provider']
+      if (!allowedRoles.includes(updates.role)) {
+        throw new Error(`Security Error: Cannot escalate privileges to restricted role '${updates.role}'.`)
+      }
+    }
+
     const { data, error } = await supabase
       .from('profiles')
       .update(updates)

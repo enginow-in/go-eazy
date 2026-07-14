@@ -16,42 +16,50 @@ export const SavedProperties = () => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let ignore = false
+
+    const loadProperties = async () => {
+      if (!user) return
+      
+      // Only set loading if we don't have any data yet
+      if (favProps.length === 0) {
+        setLoading(true)
+      }
+
+      try {
+        if (favorites.length > 0) {
+          const { data, error } = await supabase
+            .from('properties')
+            .select('*')
+            .in('id', favorites)
+          
+          if (error) throw error
+          if (data && !ignore) {
+            // preserve order based on favorites array
+            const ordered = favorites.map(id => data.find(p => p.id === id)).filter(Boolean)
+            setFavProps(ordered)
+          }
+        } else if (!ignore) {
+          setFavProps([])
+        }
+      } catch (err) {
+        console.error('Error loading saved properties:', err)
+        if (!ignore) {
+          setFavProps(MOCK_PROPERTIES.filter(p => favorites.includes(p.id)))
+        }
+      } finally {
+        if (!ignore) setLoading(false)
+      }
+    }
+
     if (user) {
       loadProperties()
     }
+
+    return () => {
+      ignore = true
+    }
   }, [user, favorites]) // React to changes in favorites list
-
-  const loadProperties = async () => {
-    if (!user) return
-    
-    // Only set loading if we don't have any data yet
-    if (favProps.length === 0) {
-      setLoading(true)
-    }
-
-    try {
-      if (favorites.length > 0) {
-        const { data, error } = await supabase
-          .from('properties')
-          .select('*')
-          .in('id', favorites)
-        
-        if (error) throw error
-        if (data) {
-          // preserve order based on favorites array
-          const ordered = favorites.map(id => data.find(p => p.id === id)).filter(Boolean)
-          setFavProps(ordered)
-        }
-      } else {
-        setFavProps([])
-      }
-    } catch (err) {
-      console.error('Error loading saved properties:', err)
-      setFavProps(MOCK_PROPERTIES.filter(p => favorites.includes(p.id)))
-    } finally {
-      setLoading(false)
-    }
-  }
 
   return (
     <div className="pt-24 pb-20 bg-gray-50 min-h-screen">
