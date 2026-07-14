@@ -1,7 +1,7 @@
-import React, { forwardRef, useId } from 'react'
+import React, { forwardRef, useId, memo } from 'react'
 import { cn } from '../../utils/helpers'
 
-export const Input = forwardRef(({
+export const Input = memo(forwardRef(({
   label,
   error,
   leftIcon,
@@ -49,10 +49,10 @@ export const Input = forwardRef(({
       {error && <p className="text-xs text-[#CA3433] font-medium">{error}</p>}
     </div>
   )
-})
+}))
 Input.displayName = 'Input'
 
-export const Textarea = forwardRef(({ label, error, className = '', ...props }, ref) => {
+export const Textarea = memo(forwardRef(({ label, error, className = '', ...props }, ref) => {
   const generatedId = useId()
   const id = props.id || generatedId
   
@@ -74,10 +74,11 @@ export const Textarea = forwardRef(({ label, error, className = '', ...props }, 
     />
     {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
   </div>
-)})
+  )
+}))
 Textarea.displayName = 'Textarea'
 
-export const Select = forwardRef(({ label, error, children, className = '', ...props }, ref) => {
+export const Select = memo(forwardRef(({ label, error, children, className = '', ...props }, ref) => {
   const generatedId = useId()
   const id = props.id || generatedId
 
@@ -101,5 +102,6 @@ export const Select = forwardRef(({ label, error, children, className = '', ...p
     </select>
     {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
   </div>
-)})
+  )
+}))
 Select.displayName = 'Select'
