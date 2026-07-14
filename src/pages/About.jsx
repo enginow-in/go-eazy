@@ -26,7 +26,7 @@ export const About = () => {
             {t('aboutPage.title', 'The Story of GoEazy')}
           </h1>
           
-          <div className="space-y-10 text-[22px] sm:text-2xl text-gray-600 italic font-medium leading-[1.8] sm:leading-[1.9] tracking-wide relative">
+          <div className="space-y-10 text-lg sm:text-2xl text-gray-600 italic font-medium leading-[1.8] sm:leading-[1.9] tracking-wide relative">
             
             {/* Top Quote Mark Icon for aesthetics */}
             <div className="absolute -top-6 -left-8 text-[#ffc9c9] text-6xl hidden sm:block opacity-50 font-serif">"</div>
