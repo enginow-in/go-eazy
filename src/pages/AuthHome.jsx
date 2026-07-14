@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { Mail, Lock, User, Eye, EyeOff, Home, GraduationCap, Utensils, CheckCircle2, Sparkles, ArrowRight } from 'lucide-react'
 import { Button } from '../components/ui/Button'
@@ -15,7 +14,6 @@ const ROLE_OPTIONS = [
 ]
 
 export const AuthHome = () => {
-  const dispatch = useDispatch()
   const navigate = useNavigate()
   const { signIn, signUp, signInWithGoogle } = useAuth()
 
