@@ -11,7 +11,7 @@ export const PropertyEdit = () => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchPropertyById(id).then(() => setLoading(false))
+    fetchPropertyById(id).finally(() => setLoading(false))
   }, [id])
 
   if (loading) {
