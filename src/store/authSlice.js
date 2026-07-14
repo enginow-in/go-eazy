@@ -8,7 +8,7 @@ const authSlice = createSlice({
     role: null, // 'landlord' | 'user' | 'service_provider'
     loading: true,
     authModalOpen: false,
-    authModalTab: 'login', // 'login' | 'signup'
+    authModalTab: 'login', // 'login' | 'signup' | 'forgot'
   },
   reducers: {
     setUser: (state, action) => {

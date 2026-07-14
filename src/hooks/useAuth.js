@@ -179,5 +179,28 @@ export const useAuth = () => {
     return data
   }
 
-  return { user, profile, role, loading, authModalOpen, authModalTab, signUp, signIn, signInWithGoogle, signOut, updateProfile }
+  // Sends a password-recovery email. Supabase redirects the user back to
+  // `redirectTo` with a recovery token in the URL, which supabase-js
+  // automatically exchanges for a temporary session (detectSessionInUrl
+  // is on by default), letting updatePassword() below work once they land.
+  const resetPasswordForEmail = async (email) => {
+    const redirectUrl = `${window.location.origin}/reset-password`
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: redirectUrl,
+    })
+    if (error) throw error
+  }
+
+  // Called on the /reset-password page once the recovery session from the
+  // emailed link is active.
+  const updatePassword = async (newPassword) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) throw error
+  }
+
+  return {
+    user, profile, role, loading, authModalOpen, authModalTab,
+    signUp, signIn, signInWithGoogle, signOut, updateProfile,
+    resetPasswordForEmail, updatePassword,
+  }
 }
