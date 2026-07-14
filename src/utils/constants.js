@@ -45,6 +45,8 @@ export const MOCK_PROPERTIES = [
     ],
     landlord: { name: 'Rajesh Negi', phone: '+91 98765 43210', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rajesh' },
     created_at: '2026-01-15',
+    latitude: 30.3165,
+    longitude: 78.0322,
   },
   {
     id: 'f3eb6265-2617-5c58-0ed5-253f2f693e0g',
@@ -65,6 +67,8 @@ export const MOCK_PROPERTIES = [
     ],
     landlord: { name: 'Priya Rawat', phone: '+91 87654 32109', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Priya' },
     created_at: '2026-01-20',
+    latitude: 30.2223,
+    longitude: 78.7845,
   },
   {
     id: 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
@@ -85,6 +89,8 @@ export const MOCK_PROPERTIES = [
     ],
     landlord: { name: 'Aisha Bisht', phone: '+91 76543 21098', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aisha' },
     created_at: '2026-01-10',
+    latitude: 30.0869,
+    longitude: 78.2676,
   },
   {
     id: 'd5e6f7g8-h9i0-4j1k-2l3m-4n5o6p7q8r9s',
@@ -105,6 +111,8 @@ export const MOCK_PROPERTIES = [
     ],
     landlord: { name: 'Mohammed Ali', phone: '+91 65432 10987', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mohammed' },
     created_at: '2026-01-25',
+    latitude: 29.2183,
+    longitude: 79.5126,
   },
   {
     id: 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e',
@@ -125,6 +133,8 @@ export const MOCK_PROPERTIES = [
     ],
     landlord: { name: 'Sunita Chauhan', phone: '+91 54321 09876', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sunita' },
     created_at: '2026-02-01',
+    latitude: 30.3000,
+    longitude: 78.0350,
   },
   {
     id: 'f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8a9b0c',
@@ -145,6 +155,8 @@ export const MOCK_PROPERTIES = [
     ],
     landlord: { name: 'Kavitha Pundir', phone: '+91 43210 98765', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Kavitha' },
     created_at: '2026-02-05',
+    latitude: 30.3350,
+    longitude: 77.9650,
   },
   {
     id: 'd0e1f2a3-b4c5-4d6e-7f8a-9b0c1d2e3f4g',
@@ -165,6 +177,8 @@ export const MOCK_PROPERTIES = [
     ],
     landlord: { name: 'Vikram Desai', phone: '+91 32109 87654', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Vikram' },
     created_at: '2026-01-08',
+    latitude: 18.5900,
+    longitude: 73.7300,
   },
   {
     id: 'a9b0c1d2-e3f4-4a5b-6c7d-8e9f0a1b2c3d',
@@ -185,6 +199,8 @@ export const MOCK_PROPERTIES = [
     ],
     landlord: { name: 'Anand Gupta', phone: '+91 21098 76543', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Anand' },
     created_at: '2026-02-10',
+    latitude: 28.6900,
+    longitude: 77.2000,
   },
 ]
 
