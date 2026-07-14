@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo, useRef } from 'react'
 import { useDispatch } from 'react-redux'
 import { useSearchParams } from 'react-router-dom'
 import { Search, Filter, ChevronDown, Grid, List as ListIcon, RefreshCw, MapPin, ArrowLeft } from 'lucide-react'
@@ -25,6 +25,7 @@ export const NearbyServices = () => {
   const [searchInput, setSearchInput] = useState('')
   const [showCityDropdown, setShowCityDropdown] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
+  const debounceRef = useRef(null)
   const [localFilters, setLocalFilters] = useState({
     city: filters.city || '', 
     area: filters.area || '', 
@@ -155,7 +156,8 @@ export const NearbyServices = () => {
   const handleSearch = (e) => {
     const val = e.target.value
     setSearchInput(val)
-    updateFilters({ query: val })
+    clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => updateFilters({ query: val }), 500)
   }
 
   return (
