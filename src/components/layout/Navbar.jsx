@@ -153,13 +153,12 @@ export const Navbar = () => {
             
             <div className="w-px h-6 bg-gray-200"></div>
 
-            <button className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-              <div className="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center text-xs overflow-hidden border border-brand-100">
-                <img src="/INR.webp" alt="INR" className="w-full h-full object-cover" />
-              </div>
-              INR <ChevronDown size={14} />
-            </button>
-
+            <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+  <div className="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center text-xs overflow-hidden border border-brand-100">
+    <img src="/INR.webp" alt="INR" className="w-full h-full object-cover" />
+  </div>
+  INR
+</div>
             {loading ? (
               <Skeleton className="h-10 w-28 rounded-full" />
             ) : user ? (
