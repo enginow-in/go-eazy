@@ -210,21 +210,6 @@ export const useProperties = () => {
     dispatch(removeReview(reviewId))
   }
 
-  const createProperty = async (propertyData, images) => {
-    const imageUrls = []
-    for (const img of images) {
-      const ext = img.name.split('.').pop()
-      const path = `properties/${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`
-      const { error: uploadError } = await supabase.storage.from('property-images').upload(path, img)
-      if (uploadError) throw new Error(`Image upload failed: ${uploadError.message}`)
-      const { data: { publicUrl } } = supabase.storage.from('property-images').getPublicUrl(path)
-      imageUrls.push(publicUrl)
-    }
-    const { data, error } = await supabase.from('properties').insert({ ...propertyData, landlord_id: user.id, images: imageUrls, views: 0 }).select().maybeSingle()
-    if (error) throw error
-    return data
-  }
-
   const updateProperty = async (id, updates, newImages) => {
     let imageUrls = updates.images || []
     if (newImages?.length) {
@@ -329,7 +314,7 @@ export const useProperties = () => {
     listings, featured, currentProperty, favorites, recentlyViewed, filters,
     loading, hasMore, page, totalCount,
     fetchProperties, fetchFeatured, fetchByType, fetchPropertyById,
-    createProperty, updateProperty, deleteProperty,
+    updateProperty, deleteProperty,
     fetchFavorites, toggleFavorite, fetchRecentlyViewed, getLandlordProperties,
     updateFilters: useCallback((f) => dispatch(setFilters(f)), [dispatch]),
     resetFilters: useCallback(() => dispatch(resetFilters()), [dispatch]),

@@ -1,0 +1,260 @@
+{
+  "nav": {
+    "home": "Home",
+    "list": "List",
+    "nearby": "Nearby",
+    "about": "About Us",
+    "allCategory": "ALL CATEGORY",
+    "login": "Login",
+    "dashboard": "Dashboard",
+    "settings": "Settings",
+    "signOut": "Sign Out",
+    "state": "Uttarakhand"
+  },
+  "cities": {
+    "Dehradun": "Dehradun",
+    "Srinagar": "Srinagar",
+    "Rishikesh": "Rishikesh",
+    "Haldwani": "Haldwani",
+    "Nainital": "Nainital",
+    "Haridwar": "Haridwar",
+    "Roorkee": "Roorkee",
+    "Rudrapur": "Rudrapur"
+  },
+  "hero": {
+    "titlePrefix": "GO",
+    "titleSuffix": "EAZY",
+    "subtitle": "Find your perfect home, wherever you go.",
+    "desc": "Rooms · Flats · Hostels · PGs — verified, affordable, and right where you need to be.",
+    "searchPlaceholder": "Search by city or area... (e.g. Rajpur Road, Dehradun)",
+    "searchBtn": "Search",
+    "trusted": "Trusted by 50,000+ students & professionals",
+    "stats": {
+      "listings": "Active Listings",
+      "rating": "Average Rating",
+      "verified": "Verified Landlords"
+    }
+  },
+  "search": {
+    "quoteStart": "\"Less searching, more living — that’s",
+    "quoteEnd": "Eazy Living",
+    "resultsFound": "Explore {{count}} {{type}} ready for you",
+    "properties": "Properties",
+    "filters": "Filters",
+    "resetAll": "Reset All",
+    "apply": "Apply Filters",
+    "sortBy": "Sort By",
+    "priceRange": "Rent Range (₹ / mo)",
+    "cityArea": "City & Area",
+    "allTypes": "All Types",
+    "sort": {
+      "created_at_desc": "Newest First",
+      "created_at_asc": "Oldest First",
+      "price_asc": "Price: Low to High",
+      "price_desc": "Price: High to Low",
+      "views_desc": "Most Popular"
+    }
+  },
+  "property": {
+    "types": {
+      "Room": "Room",
+      "Flat": "Flat",
+      "Hostel": "Hostel",
+      "PG": "PG"
+    },
+    "labels": {
+      "from": "From",
+      "guests": "guests",
+      "beds": "beds",
+      "bedrooms": "bedrooms",
+      "views": "views",
+      "active": "Active",
+      "inactive": "Inactive",
+      "back": "Back to Search",
+      "reviews": "Reviews",
+      "pincode": "Pincode",
+      "pay": "Pay",
+      "toUnlock": "to Unlock Details"
+    },
+    "sections": {
+      "about": "About",
+      "keyDetails": "Key Details",
+      "amenities": "Amenities",
+      "nearby": "Nearby Landmarks",
+      "agent": "Listing Agent",
+      "requestContact": "Request contact",
+      "owner": "Property Owner",
+      "detailsLocked": "Details Locked",
+      "lockDesc": "Pay a small fee to see the owner's exact address and phone number for direct contact.",
+      "unlockBtn": "UNLOCK DETAILS",
+      "processing": "Processing...",
+      "signinPrompt": "Please sign in to unlock owner contact details.",
+      "callNow": "Call Now",
+      "sendEmail": "Send Email",
+      "contactLocked": "Contact details locked. Unlock to view.",
+      "descLocked": "Full description locked",
+      "landmarksLocked": "Nearby landmarks locked",
+      "locationLocked": "Location Locked",
+      "locationMap": "Location on Map",
+      "reviews": "Ratings & Reviews",
+      "noReviews": "No reviews yet",
+      "beTheFirst": "Be the first to share your experience!",
+      "linkCopied": "Link copied to clipboard!",
+      "emailLocked": "Email provided after unlock",
+      "phoneLocked": "Phone provided after unlock",
+      "authenticFeedback": "Authentic feedback from students & professionals",
+      "postReview": "Post a Review",
+      "yourRating": "Your Rating",
+      "yourFeedback": "Your Feedback",
+      "reviewPlaceholder": "Share your experience staying here...",
+      "reviewSuccess": "Review posted successfully!",
+      "reviewError": "Failed to post review",
+      "posting": "Posting...",
+      "anonymous": "Anonymous",
+      "bookVisit": "Book a Site Visit",
+      "book": "Book Now"
+    }
+  },
+  "services": {
+    "labels": {
+      "verifiedProvider": "Verified Provider",
+      "aboutProvider": "About Provider",
+      "experience": "Experience",
+      "speciality": "Speciality",
+      "pricing": "Services & Pricing",
+      "plans": "Subscription Plans",
+      "businessOwner": "Business Owner",
+      "locationDetail": "Location Detail",
+      "near": "Near",
+      "locked": "Locked",
+      "startingFrom": "Starting From",
+      "from": "From",
+      "back": "Back to Services",
+      "contact": "Provider Contact",
+      "aboutFallback": "Premium service provider committed to quality and reliability in the GoEazy marketplace.",
+      "experienceFallback": "Experienced Provider",
+      "specialityFallback": "General Services",
+      "loginPrompt": "Login to View Contact"
+    },
+    "reviews": {
+      "header": "Customer Reviews",
+      "shareExperience": "Share Your Experience",
+      "updateFeedback": "Update Your Feedback",
+      "sharePrompt": "Tell others what you think...",
+      "reviewUpdated": "Review updated!",
+      "reviewSubmitted": "Review submitted!",
+      "reviewDeleted": "Review deleted",
+      "noReviewsYet": "No reviews yet. Be the first to share your experience!",
+      "anonymousUser": "Anonymous User"
+    }
+  },
+  "footer": {
+    "description": "Uttarakhand's premium platform for students and professionals to find their perfect home away from home.",
+    "forRenters": "For Renters",
+    "forLandlords": "For Landlords",
+    "contact": "Contact",
+    "allRights": "© 2026 GoEazy. All rights reserved.",
+    "availableIndia": "Available across Uttarakhand",
+    "cities": "Dehradun · Srinagar · Nainital · Rishikesh · Haridwar · and more...",
+    "links": {
+      "rooms": "Browse Rooms",
+      "flats": "Browse Flats",
+      "hostels": "Browse Hostels",
+      "pgs": "Browse PGs",
+      "searchCity": "Search by City",
+      "list": "List a Property",
+      "manage": "Manage Listings",
+      "analytics": "View Analytics",
+      "dashboard": "Landlord Dashboard",
+      "pricing": "Pricing Plans",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service",
+      "cookie": "Cookie Policy",
+      "refund": "Refund Policy"
+    }
+  },
+  "legal": {
+    "privacy": {
+      "title": "Privacy Policy",
+      "lastUpdated": "Last Updated: April 2026",
+      "intro": "At GoEazy, we value your privacy. This policy explains how we collect and use your data to provide a better property search experience.",
+      "sections": [
+        { "h": "Data Collection", "p": "We collect your name, email, and phone number when you register or unlock property details." },
+        { "h": "How We Use Data", "p": "Your data is used to provide contact information for property listings and to improve our services." },
+        { "h": "Data Security", "p": "We take industry-standard measures to protect your personal information from unauthorized access." },
+        { "h": "Data Sharing & Marketing Usage", "p": "For security and service continuity, contact details are shared mutually between landlords and tenants. Additionally, your contact information and platform usage may be securely used for future marketing purposes." }
+      ]
+    },
+    "terms": {
+      "title": "Terms of Service",
+      "lastUpdated": "Last Updated: April 2026",
+      "sections": [
+        { "h": "Platform Usage", "p": "Users must provide accurate information when listing or searching for properties." },
+        { "h": "Listing Rules", "p": "Landlords are responsible for the accuracy of their property details and images." },
+        { "h": "Limitation of Liability", "p": "GoEazy is a connector and is not responsible for disputes between landlords and tenants." },
+        { "h": "Information Sharing Agreement", "p": "By using this platform, you agree that your contact information may be mutually shared between landlords and tenants to facilitate housing arrangements, and may also be utilized by GoEazy for future promotional and marketing initiatives." }
+      ]
+    },
+    "cookies": {
+      "title": "Cookie Policy",
+      "lastUpdated": "Last Updated: April 2026",
+      "sections": [
+        { "h": "What are Cookies?", "p": "Cookies are small text files used to remember your preferences and login state." },
+        { "h": "Our Usage", "p": "We use cookies for authentication and to save your search filters and favorites." }
+      ]
+    },
+    "refund": {
+      "title": "Refund Policy",
+      "lastUpdated": "Last Updated: April 2026",
+      "sections": [
+        { "h": "Unlock Fees", "p": "GoEazy charges a small convenience fee (₹9) to unlock property owner contact details." },
+        { "h": "Non-Refundable Policy", "p": "The ₹9 fee is strictly NON-REFUNDABLE. This fee covers the immediate service of providing restricted contact information." },
+        { "h": "Exceptions", "p": "Refunds are only processed in case of technical payment failures where the details were not unlocked despite a successful charge." }
+      ]
+    }
+  },
+  "nearby": {
+    "header": "Nearby",
+    "services": "Services",
+    "backHome": "Back to Home",
+    "locationSel": "Location Selection",
+    "cityPlaceholder": "City (e.g. Dehradun)",
+    "areaPlaceholder": "Area / Landmark",
+    "sortBy": "Sort By",
+    "category": "Service Category",
+    "reset": "Reset All",
+    "showResults": "Show Results",
+    "allCities": "All Cities",
+    "selectCity": "Select City",
+    "searchPlaceholder": "Search services, providers...",
+    "areaSearchPlaceholder": "Enter specific area or landmark (e.g. Rajpur Road)",
+    "providersFound_one": "{{count}} provider found",
+    "providersFound_other": "{{count}} providers found",
+    "searching": "Searching...",
+    "noFound": "No services found",
+    "noFoundDesc": "Try adjusting your search query or filters to find what you're looking for.",
+    "loadMore": "Load More Services",
+    "filters": "Filters",
+    "categories": {
+      "all": "All Services",
+      "tiffin": "Tiffin",
+      "laundry": "Laundry",
+      "cleaning": "Cleaning"
+    },
+    "sort": {
+      "newest": "Newest First",
+      "oldest": "Oldest First",
+      "popular": "Most Popular"
+    }
+  },
+  "aboutPage": {
+    "title": "The Story of GoEazy",
+    "subtitle": "Born out of the frustration of endless property hunting.",
+    "section1Heading": "How We Started",
+    "section1Text": "It all started during our early college days. We vividly remember the struggle—wandering from street to street, knocking on random doors just hoping to find a decent, affordable room in a good location. Instead of focusing on our new college life, we were wasting weeks going door-to-door and dealing with unresponsive brokers.",
+    "section2Heading": "Our Promise",
+    "section2Text": "We realized there had to be a better way, and that's how GoEazy was born. We built the exact platform we desperately needed back then. Today, we personally verify every listing and connect you directly with genuine owners, so no other student or professional has to go through that exhausting door-to-door hunt ever again.",
+    "thankYouNote": "\"Thank you for trusting GoEazy. We are constantly working to bring you better homes, better experiences, and complete peace of mind.\"",
+    "back": "Back to Search"
+  }
+}
