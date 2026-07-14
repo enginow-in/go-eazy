@@ -121,7 +121,16 @@ export const useProperties = () => {
       dispatch(setCurrentProperty(data))
 
       if (data) {
-        await supabase.rpc('increment_views', { property_id: id })
+        const viewedPropertiesKey = 'goeazy_viewed_properties'
+        let viewed = []
+        try {
+          viewed = JSON.parse(sessionStorage.getItem(viewedPropertiesKey) || '[]')
+        } catch (e) {}
+        if (!viewed.includes(id)) {
+          await supabase.rpc('increment_views', { property_id: id })
+          viewed.push(id)
+          sessionStorage.setItem(viewedPropertiesKey, JSON.stringify(viewed))
+        }
       }
       
       if (user && data) {
