@@ -77,9 +77,18 @@ export const useServices = () => {
       if (error) throw error
       dispatch(setCurrentService(data))
 
-      // Increment views for verified (publicly visible) listings
+      // Increment views for verified (publicly visible) listings (session rate-limited)
       if (data?.verification_status === 'verified') {
-        await supabase.rpc('increment_service_views', { p_service_id: id })
+        const viewedServicesKey = 'goeazy_viewed_services'
+        let viewed = []
+        try {
+          viewed = JSON.parse(sessionStorage.getItem(viewedServicesKey) || '[]')
+        } catch (e) {}
+        if (!viewed.includes(id)) {
+          await supabase.rpc('increment_service_views', { p_service_id: id })
+          viewed.push(id)
+          sessionStorage.setItem(viewedServicesKey, JSON.stringify(viewed))
+        }
       }
     } catch (err) {
       console.error('fetchServiceById error:', err)
