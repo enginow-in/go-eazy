@@ -1,5 +1,6 @@
 import { defineConfig, createLogger } from 'vite'
 import react from '@vitejs/plugin-react'
+import { VitePWA } from 'vite-plugin-pwa'
 
 // Plugin to silence [vite] HMR browser console messages
 const silenceViteLogs = () => ({
@@ -25,6 +26,31 @@ export default defineConfig({
   plugins: [
     react(),
     silenceViteLogs(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.svg'],
+      manifest: {
+        name: 'GoEazy Platform',
+        short_name: 'GoEazy',
+        start_url: '/',
+        display: 'standalone',
+        description: 'The Housing Standard for Uttarakhand',
+        theme_color: '#CA3433',
+        background_color: '#ffffff',
+        icons: [
+          {
+            src: 'pwa-192x192.svg',
+            sizes: '192x192',
+            type: 'image/svg+xml'
+          },
+          {
+            src: 'pwa-512x512.svg',
+            sizes: '512x512',
+            type: 'image/svg+xml'
+          }
+        ]
+      }
+    })
   ],
   customLogger: logger,
   resolve: {

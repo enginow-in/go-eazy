@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect x="5" y="5" width="90" height="90" rx="20" fill="white" stroke="#CA3433" stroke-width="8" transform="rotate(3 50 50)"/>
+  <text x="50" y="65" font-family="system-ui, sans-serif" font-weight="900" font-size="55" fill="#CA3433" text-anchor="middle" transform="rotate(-3 50 50)">
+    G<tspan dy="-10" font-size="35">E</tspan>
+  </text>
+</svg>

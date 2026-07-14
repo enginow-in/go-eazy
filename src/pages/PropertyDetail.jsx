@@ -334,6 +334,7 @@ export const PropertyDetail = () => {
               <img 
                 src={img} 
                 alt={`${p.title} - View ${i + 1}`} 
+                style={{ viewTransitionName: i === 0 ? `property-img-${p.id}` : 'none' }}
                 className="w-full h-full object-contain" 
               />
             </div>
