@@ -26,6 +26,7 @@ export const Layout = ({ children }) => {
       {location.pathname !== '/systemadmin' && <Navbar />}
       <AnimatePresence mode="wait">
         <motion.main
+          id="main-content"
           key={location.pathname}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
