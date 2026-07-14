@@ -56,6 +56,12 @@ export const PropertyDetail = () => {
 
   const [showScrollToTop, setShowScrollToTop] = useState(false)
   const [gatedData, setGatedData] = useState(null)
+
+  // Public property pages remain mounted after sign-out, so never retain
+  // session-scoped contact or location data in component state.
+  useEffect(() => {
+    if (!user) setGatedData(null)
+  }, [user])
   
   const [reviewRating, setReviewRating] = useState(0)
   const [reviewText, setReviewText] = useState('')
