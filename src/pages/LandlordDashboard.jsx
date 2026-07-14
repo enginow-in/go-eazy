@@ -13,7 +13,7 @@ import { supabase } from '../lib/supabase'
 
 export const LandlordDashboard = () => {
   const { user, profile } = useAuth()
-  const { getLandlordProperties, deleteProperty } = useProperties()
+  const { getLandlordProperties, deleteProperty, toggleAvailability } = useProperties()
   const navigate = useNavigate()
   
   const [properties, setProperties] = useState([])
@@ -22,6 +22,7 @@ export const LandlordDashboard = () => {
   const [siteVisits, setSiteVisits] = useState([])
   const [loadingVisits, setLoadingVisits] = useState(true)
   const [actioningVisitId, setActioningVisitId] = useState(null)
+  const [togglingId, setTogglingId] = useState(null)
 
   useEffect(() => {
     if (user) {
@@ -39,6 +40,24 @@ export const LandlordDashboard = () => {
       toast.error('Failed to load listings')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleToggleAvailability = async (e, id, currentAvailability) => {
+    e.stopPropagation()
+    if (togglingId === id) return
+    setTogglingId(id)
+    // Optimistic update
+    setProperties(prev => prev.map(p => p.id === id ? { ...p, availability: !p.availability } : p))
+    try {
+      await toggleAvailability(id, currentAvailability)
+      toast.success(currentAvailability ? 'Marked as Rented' : 'Marked as Available')
+    } catch (err) {
+      // Revert on failure
+      setProperties(prev => prev.map(p => p.id === id ? { ...p, availability: currentAvailability } : p))
+      toast.error('Failed to update availability')
+    } finally {
+      setTogglingId(null)
     }
   }
 
@@ -287,6 +306,17 @@ export const LandlordDashboard = () => {
                       <Trash2 size={14} /> Delete
                     </button>
                   </div>
+                  <button
+                    onClick={(e) => handleToggleAvailability(e, p.id, p.availability)}
+                    disabled={togglingId === p.id}
+                    className={`text-xs font-bold px-2 py-1 rounded-lg border transition-all disabled:opacity-50 ${
+                      p.availability
+                        ? 'text-green-700 bg-green-50 border-green-200 hover:bg-green-100'
+                        : 'text-gray-500 bg-gray-50 border-gray-200 hover:bg-gray-100'
+                    }`}
+                  >
+                    {togglingId === p.id ? '...' : p.availability ? 'Available' : 'Rented'}
+                  </button>
                 </div>
               </div>
             ))}
@@ -357,6 +387,18 @@ export const LandlordDashboard = () => {
                         title="Edit"
                       >
                         <Edit size={16} /> <span className="hidden sm:inline">Edit</span>
+                      </button>
+                      <button
+                        onClick={(e) => handleToggleAvailability(e, p.id, p.availability)}
+                        disabled={togglingId === p.id}
+                        title={p.availability ? 'Mark as Rented' : 'Mark as Available'}
+                        className={`text-xs font-bold px-2.5 py-1 rounded-lg border transition-all disabled:opacity-50 ${
+                          p.availability
+                            ? 'text-green-700 bg-green-50 border-green-200 hover:bg-green-100'
+                            : 'text-gray-500 bg-gray-50 border-gray-200 hover:bg-gray-100'
+                        }`}
+                      >
+                        {togglingId === p.id ? '...' : p.availability ? 'Available' : 'Rented'}
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDelete(p.id) }}
