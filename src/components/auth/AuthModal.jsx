@@ -30,7 +30,14 @@ export const AuthModal = () => {
   const [errors, setErrors] = useState({})
 
   React.useEffect(() => { setTab(authModalTab) }, [authModalTab])
-
+React.useEffect(() => {
+  if (authModalOpen) {
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = 'unset';
+  }
+  return () => { document.body.style.overflow = 'unset'; };
+}, [authModalOpen]);
   const validate = () => {
     const e = {}
     if (tab === 'signup' && !form.name.trim()) e.name = 'Name is required'
