@@ -8,11 +8,18 @@ export const HeroCarousel = () => {
   const navigate = useNavigate()
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrent(c => (c + 1) % CAROUSEL_SLIDES.length)
-    }, 5000)
-    return () => clearInterval(timer)
-  }, [])
+  const prefersReducedMotion = window.matchMedia(
+    '(prefers-reduced-motion: reduce)'
+  ).matches
+
+  if (prefersReducedMotion) return
+
+  const timer = setInterval(() => {
+    setCurrent((c) => (c + 1) % CAROUSEL_SLIDES.length)
+  }, 5000)
+
+  return () => clearInterval(timer)
+}, [])
 
   const slide = CAROUSEL_SLIDES[current]
 
