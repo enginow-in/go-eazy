@@ -13,12 +13,16 @@ import { AMENITY_ICONS, cn } from '../utils/helpers'
 import { Skeleton } from '../components/ui/Skeleton'
 import { useAuth } from '../hooks/useAuth'
 import { RecommendedSection } from '../components/property/RecommendedSection'
+import { useDebounce } from "../hooks/useDebounce";
+import { RangeSlider } from "../components/ui/RangeSlider";
+import { useInfiniteScroll } from "../hooks/useInfiniteScroll";
 
 export const Search = () => {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const [searchParams] = useSearchParams()
   const { listings, filters, loading, hasMore, fetchProperties, updateFilters, totalCount } = useProperties()
+
   
   const [viewMode, setViewMode] = useState('grid')
   const [showFilters, setShowFilters] = useState(false)
@@ -31,6 +35,12 @@ export const Search = () => {
     sortBy: filters.sortBy || 'created_at', 
     sortOrder: filters.sortOrder || 'desc'
   })
+  const debouncedFilters = useDebounce(localFilters, 400);
+  const loadMoreRef = useInfiniteScroll({
+  loading,
+  hasMore,
+  onLoadMore: () => fetchProperties(false),
+});
 
   // Read ?type= from URL and apply as filter
   useEffect(() => {
@@ -61,13 +71,24 @@ export const Search = () => {
     updateFilters(localFilters)
     setShowFilters(false)
   }
+  const loadMoreRef = useInfiniteScroll({
+  loading,
+  hasMore,
+  onLoadMore: () => fetchProperties(false),
+});
 
   useEffect(() => {
-    fetchProperties(true)
-  }, [filters, fetchProperties])
+  updateFilters(debouncedFilters);
+}, [debouncedFilters, updateFilters]);
 
   // Use the actual totalCount from database
   const count = useMemo(() => totalCount, [totalCount])
+  const activeFilterCount = [
+  filters.city,
+  filters.area,
+  filters.type,
+  filters.priceMax < 100000,
+].filter(Boolean).length
 
   const renderFilterContent = () => (
     <div className="space-y-6">
@@ -113,15 +134,23 @@ export const Search = () => {
           <div className="grid grid-cols-2 gap-2">
             {SORT_OPTIONS.map(opt => (
               <button
-                key={opt.value}
-                onClick={() => {
-                  const [by, ord] = opt.value.split(':');
-                  setLocalFilters(prev => ({ ...prev, sortBy: by, sortOrder: ord }));
-                }}
-                className={`px-3 py-2 rounded-xl text-[11px] font-semibold transition-all border ${localFilters.sortBy + ':' + localFilters.sortOrder === opt.value ? 'bg-brand-50 text-brand-600 border-brand-200 shadow-sm' : 'border-gray-100 text-gray-600 hover:bg-gray-50'}`}
-              >
-                {opt.label}
-              </button>
+  key={opt.value}
+  onClick={() => {
+    const [by, ord] = opt.value.split(":")
+    setLocalFilters(prev => ({
+      ...prev,
+      sortBy: by,
+      sortOrder: ord,
+    }))
+  }}
+  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all border ${
+    localFilters.sortBy + ":" + localFilters.sortOrder === opt.value
+      ? "bg-brand-500 text-white border-brand-500 shadow"
+      : "bg-white border-gray-200 hover:bg-gray-50"
+  }`}
+>
+  {opt.label}
+</button>
             ))}
           </div>
         </div>
@@ -132,19 +161,23 @@ export const Search = () => {
              <span className="text-sm font-bold text-brand-600">₹{localFilters.priceMax >= 100000 ? '1L+' : localFilters.priceMax.toLocaleString()}</span>
            </div>
            <div className="pt-4 pb-2">
-             <input 
-               type="range" 
-               min="0" 
-               max="100000" 
-               step="1000"
-               value={localFilters.priceMax} 
-               onChange={e => setLocalFilters(prev => ({...prev, priceMax: Number(e.target.value)}))}
-               className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#CA3433]"
-             />
-              <div className="flex justify-between mt-2 text-[10px] font-bold text-gray-400">
-                <span>₹0</span>
-                <span>₹1L</span>
-              </div>
+             <RangeSlider
+  min={0}
+  max={100000}
+  step={1000}
+  value={localFilters.priceMax}
+  onChange={(value) =>
+    setLocalFilters(prev => ({
+      ...prev,
+      priceMax: value,
+    }))
+  }
+  showValue={false}
+  formatValue={(value) =>
+    `₹${value >= 100000 ? "1L+" : value.toLocaleString("en-IN")}`
+  }
+/>
+
            </div>
         </div>
       </div>
@@ -214,13 +247,22 @@ export const Search = () => {
                 </div>
 
                 <div className="relative">
-                  <button 
-                    onClick={() => setShowFilters(!showFilters)} 
-                    className={`flex items-center justify-center p-2.5 bg-white border rounded-xl transition-all shadow-sm ${showFilters ? 'border-brand-500 text-brand-600 ring-2 ring-brand-50' : 'border-gray-200 text-gray-700 hover:border-gray-300'}`}
-                    aria-label="Toggle Filters"
-                  >
-                    <Filter size={20} />
-                  </button>
+                  <button
+  onClick={() => setShowFilters(!showFilters)}
+  className={`flex items-center justify-center gap-2 p-2.5 bg-white border rounded-xl transition-all shadow-sm ${
+    showFilters
+      ? 'border-brand-500 text-brand-600 ring-2 ring-brand-50'
+      : 'border-gray-200 text-gray-700 hover:border-gray-300'
+  }`}
+>
+  <Filter size={20} />
+
+  {activeFilterCount > 0 && (
+  <span className="bg-brand-500 text-white text-[10px] rounded-full px-2 py-0.5">
+    {activeFilterCount} Filters
+  </span>
+)}
+</button>
                   
                   {showFilters && (
                     <>
@@ -250,7 +292,13 @@ export const Search = () => {
              <div className="relative z-20">
                <button onClick={() => setShowFilters(!showFilters)} className={`flex items-center gap-2 px-6 py-2.5 bg-white border rounded-xl text-sm font-semibold transition-all ml-4 ${showFilters ? 'border-brand-500 text-brand-600 shadow-sm' : 'border-gray-200 text-gray-700 hover:shadow-sm'}`}>
                   <Filter size={16} />
-                  <span>{t('search.filters')}</span>
+                  <span>{t("search.filters")}</span>
+
+{activeFilterCount > 0 && (
+  <span className="bg-brand-500 text-white text-[10px] rounded-full px-2 py-0.5">
+    {activeFilterCount} Filters
+  </span>
+)}
                   <ChevronDown size={14} className={`ml-2 transition-transform duration-300 ${showFilters ? 'rotate-180 text-brand-500' : 'text-gray-400'}`} />
                </button>
                
@@ -268,6 +316,43 @@ export const Search = () => {
 
         {/* Recommendation Section (if quiz done) */}
         <RecommendedSection viewMode={viewMode} />
+        <div className="flex flex-wrap gap-2 mt-6 mb-6">
+  {filters.city && (
+    <button
+      onClick={() => updateFilters({ city: "" })}
+      className="px-3 py-1 rounded-full bg-brand-50 text-brand-600 text-sm font-medium"
+    >
+      📍 {filters.city} ✕
+    </button>
+  )}
+
+  {filters.area && (
+    <button
+      onClick={() => updateFilters({ area: "" })}
+      className="px-3 py-1 rounded-full bg-brand-50 text-brand-600 text-sm font-medium"
+    >
+      🏠 {filters.area} ✕
+    </button>
+  )}
+
+  {filters.type && (
+    <button
+      onClick={() => updateFilters({ type: "" })}
+      className="px-3 py-1 rounded-full bg-brand-50 text-brand-600 text-sm font-medium"
+    >
+      🏢 {filters.type} ✕
+    </button>
+  )}
+
+  {filters.priceMax < 100000 && (
+    <button
+      onClick={() => updateFilters({ priceMax: 100000 })}
+      className="px-3 py-1 rounded-full bg-brand-50 text-brand-600 text-sm font-medium"
+    >
+      💰 Under ₹{filters.priceMax.toLocaleString()} ✕
+    </button>
+  )}
+</div>
 
         {/* Results Area */}
         {loading && listings.length === 0 ? (
@@ -298,23 +383,38 @@ export const Search = () => {
               {listings.map(p => <PropertyCard key={p.id} property={p} layout={viewMode} />)}
             </div>
             {hasMore && (
-              <div className="mt-10 text-center">
-                <Button variant="secondary" onClick={() => fetchProperties(false)} loading={loading}>
-                  Load More
-                </Button>
-              </div>
-            )}
+  <div
+    ref={loadMoreRef}
+    className="h-16 flex items-center justify-center"
+  >
+    {loading && (
+      <span className="text-sm text-gray-500">
+        Loading more properties...
+      </span>
+    )}
+  </div>
+)}
           </>
         ) : (
           <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">No properties found</h3>
-            <p className="text-gray-500 max-w-sm mx-auto mb-6">
-              We couldn't find any properties matching your current filters. Try adjusting your search criteria.
-            </p>
-            <Button variant="secondary" onClick={() => dispatch(resetFilters())}>
-              Clear all filters
-            </Button>
-          </div>
+  <div className="text-6xl mb-4">🏠</div>
+
+  <h3 className="text-2xl font-bold text-gray-900">
+    No Properties Found
+  </h3>
+
+  <p className="text-gray-500 mt-3 max-w-md mx-auto">
+    Try changing the city, property type or price range to discover more listings.
+  </p>
+
+  <Button
+    className="mt-8"
+    variant="primary"
+    onClick={() => dispatch(resetFilters())}
+  >
+    Clear Filters
+  </Button>
+</div>
         )}
       </div>
     </div>

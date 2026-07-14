@@ -18,11 +18,26 @@ export const CITIES = [
 ]
 
 export const SORT_OPTIONS = [
-  { value: 'created_at:desc', label: 'Newest First' },
-  { value: 'created_at:asc', label: 'Oldest First' },
-  { value: 'price:asc', label: 'Price: Low to High' },
-  { value: 'price:desc', label: 'Price: High to Low' },
-  { value: 'views:desc', label: 'Most Popular' },
+  {
+    value: "created_at:desc",
+    label: "🆕 Newest",
+  },
+  {
+    value: "created_at:asc",
+    label: "📅 Oldest",
+  },
+  {
+    value: "price:asc",
+    label: "💰 Lowest Price",
+  },
+  {
+    value: "price:desc",
+    label: "💎 Highest Price",
+  },
+  {
+    value: "views:desc",
+    label: "🔥 Most Popular",
+  },
 ]
 
 export const MOCK_PROPERTIES = [
