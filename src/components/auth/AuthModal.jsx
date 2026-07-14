@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { Mail, Lock, User, Eye, EyeOff, Home, GraduationCap, Utensils } from 'lucide-react'
+import { Mail, Lock, User, Eye, EyeOff, Home, GraduationCap, Utensils, ShieldAlert, Clock } from 'lucide-react'
 import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -18,7 +18,7 @@ const ROLE_OPTIONS = [
 export const AuthModal = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const { authModalOpen, authModalTab } = useSelector(s => s.auth)
+  const { authModalOpen, authModalTab, loginLockout } = useSelector(s => s.auth)
   const { signIn, signUp, signInWithGoogle } = useAuth()
 
   const [tab, setTab] = useState(authModalTab)
@@ -28,8 +28,31 @@ export const AuthModal = () => {
   const [selectedRole, setSelectedRole] = useState('user')
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [errors, setErrors] = useState({})
+  const [countdown, setCountdown] = useState(0)
+  const countdownRef = useRef(null)
 
   React.useEffect(() => { setTab(authModalTab) }, [authModalTab])
+
+  // Sync countdown from Redux lockout state
+  useEffect(() => {
+    if (loginLockout.locked && loginLockout.secondsRemaining > 0) {
+      setCountdown(loginLockout.secondsRemaining)
+      clearInterval(countdownRef.current)
+      countdownRef.current = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) { clearInterval(countdownRef.current); return 0 }
+          return prev - 1
+        })
+      }, 1000)
+    } else {
+      clearInterval(countdownRef.current)
+      setCountdown(0)
+    }
+    return () => clearInterval(countdownRef.current)
+  }, [loginLockout.locked, loginLockout.secondsRemaining])
+
+  const isLocked = loginLockout.locked && countdown > 0
+  const warnAttempts = !isLocked && loginLockout.attemptsRemaining <= 2 && loginLockout.attemptsRemaining > 0
 
   const validate = () => {
     const e = {}
@@ -42,6 +65,7 @@ export const AuthModal = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (isLocked) return
     if (!validate()) return
     setLoading(true)
     try {
@@ -107,6 +131,33 @@ export const AuthModal = () => {
           </button>
         ))}
       </div>
+
+      {/* Lockout Banner */}
+      {tab === 'login' && isLocked && (
+        <div className="flex items-start gap-3 p-3 mb-4 rounded-xl bg-red-50 border border-red-200">
+          <ShieldAlert size={18} className="text-red-500 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-bold text-red-700">Account temporarily locked</p>
+            <p className="text-xs text-red-600 mt-0.5">
+              Too many failed attempts. Try again in{' '}
+              <span className="font-mono font-bold inline-flex items-center gap-1">
+                <Clock size={11} />
+                {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}
+              </span>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Remaining Attempts Warning */}
+      {tab === 'login' && warnAttempts && (
+        <div className="flex items-center gap-2 p-2.5 mb-4 rounded-lg bg-amber-50 border border-amber-200">
+          <ShieldAlert size={15} className="text-amber-500 shrink-0" />
+          <p className="text-xs font-semibold text-amber-700">
+            Warning: {loginLockout.attemptsRemaining} attempt{loginLockout.attemptsRemaining !== 1 ? 's' : ''} remaining before lockout
+          </p>
+        </div>
+      )}
 
       {/* Google OAuth */}
       <Button
@@ -203,8 +254,15 @@ export const AuthModal = () => {
           </div>
         )}
 
-        <Button type="submit" variant="primary" size="lg" className="w-full shadow-lg shadow-[#CA3433]/20" loading={loading}>
-          {tab === 'login' ? 'Sign In' : 'Create Account'}
+        <Button type="submit" variant="primary" size="lg"
+          className="w-full shadow-lg shadow-[#CA3433]/20"
+          loading={loading}
+          disabled={isLocked}
+        >
+          {isLocked
+            ? `Locked · ${Math.floor(countdown / 60)}:${String(countdown % 60).padStart(2, '0')}`
+            : tab === 'login' ? 'Sign In' : 'Create Account'
+          }
         </Button>
       </form>
 
