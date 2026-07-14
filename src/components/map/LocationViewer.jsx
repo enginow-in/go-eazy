@@ -8,9 +8,10 @@ import { MapPin, ExternalLink } from 'lucide-react'
 export const LocationViewer = ({ latitude, longitude, title = 'Location', address }) => {
   const mapContainer = useRef(null)
   const map = useRef(null)
+  const hasCoordinates = latitude != null && longitude != null
 
   useEffect(() => {
-    if (!latitude || !longitude || map.current) return
+    if (!hasCoordinates || map.current) return
     const mapboxgl = window.mapboxgl
     if (!mapboxgl) { console.error('mapbox-gl not loaded from CDN'); return }
 
@@ -93,9 +94,9 @@ export const LocationViewer = ({ latitude, longitude, title = 'Location', addres
       map.current?.remove()
       map.current = null
     }
-  }, [latitude, longitude, title])
+  }, [hasCoordinates, latitude, longitude, title])
 
-  if (!latitude || !longitude) return null
+  if (!hasCoordinates) return null
 
   const googleMapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`
 
