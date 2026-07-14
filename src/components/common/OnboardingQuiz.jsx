@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { 
   ChevronRight, User, Briefcase, 
   Home, Building2, School, Hotel,
@@ -63,12 +63,17 @@ export const OnboardingQuiz = () => {
 
   // Open quiz only for Tenant (role='user') who haven't completed onboarding
   useEffect(() => {
-    const isNewTenantUser = user && profile && profile.role === 'user' && !profile.onboarding_data
-    if (isNewTenantUser) {
-      setStep(0)
-      setSelections({ persona: '', type: '', city: '', budget: null })
-      setIsOpen(true)
-    } else {
+    try {
+      const isNewTenantUser = user && profile && profile.role === 'user' && !profile.onboarding_data
+      if (isNewTenantUser) {
+        setStep(0)
+        setSelections({ persona: '', type: '', city: '', budget: null })
+        setIsOpen(true)
+      } else {
+        setIsOpen(false)
+      }
+    } catch (error) {
+      console.error('❌ OnboardingQuiz initialization error:', error)
       setIsOpen(false)
     }
   }, [user, profile])
@@ -100,7 +105,7 @@ export const OnboardingQuiz = () => {
       window.dispatchEvent(new Event('goeazy_recommendations_updated'))
       toast.success('Preferences saved! Here are your matches. 🎯')
     } catch (err) {
-      console.error(err)
+      console.error('❌ OnboardingQuiz save error:', err)
       toast.error('Failed to save preferences. Please try again.')
     } finally {
       setSaving(false)

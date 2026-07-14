@@ -1,6 +1,8 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
+import { AlertCircle, RefreshCw } from 'lucide-react'
+import { supabase } from '../../lib/supabase'
 
 const Spinner = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -8,14 +10,81 @@ const Spinner = () => (
   </div>
 )
 
+const LoadingError = ({ onRetry }) => (
+  <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
+      <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+        <AlertCircle className="w-8 h-8 text-red-600" />
+      </div>
+      
+      <h2 className="text-xl font-bold text-gray-900 mb-2">Loading Error</h2>
+      <p className="text-gray-600 mb-6">
+        There was a problem loading your profile. Please try again.
+      </p>
+      
+      <button
+        onClick={onRetry}
+        className="w-full bg-[#CA3433] text-white px-4 py-3 rounded-lg font-semibold hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+      >
+        <RefreshCw size={16} />
+        Try Again
+      </button>
+    </div>
+  </div>
+)
+
 export const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, profile, role, loading } = useSelector(s => s.auth)
+  const [showError, setShowError] = useState(false)
+  const [sessionState, setSessionState] = useState('checking') // checking | no-session | has-session
+
+  // Timeout for profile loading - if user is logged in but profile doesn't load in 20 seconds, show error
+  useEffect(() => {
+    if (user && !profile && !loading) {
+      const timeout = setTimeout(() => {
+        setShowError(true)
+      }, 20000)
+
+      return () => clearTimeout(timeout)
+    } else {
+      setShowError(false)
+    }
+  }, [user, profile, loading])
+
+  useEffect(() => {
+    let mounted = true
+
+    const verifySession = async () => {
+      if (user || loading) {
+        if (mounted) setSessionState('has-session')
+        return
+      }
+
+      const { data } = await supabase.auth.getSession()
+      if (!mounted) return
+
+      setSessionState(data?.session?.user ? 'has-session' : 'no-session')
+    }
+
+    verifySession()
+
+    return () => {
+      mounted = false
+    }
+  }, [user, loading])
 
   // Show spinner while auth is loading OR while user is logged in but profile hasn't loaded yet
-  if (loading || (user && !profile)) return <Spinner />
+  if (loading || sessionState === 'checking' || (sessionState === 'has-session' && !user) || (user && !profile && !showError)) {
+    return <Spinner />
+  }
+
+  // Show error if profile failed to load
+  if (user && !profile && showError) {
+    return <LoadingError onRetry={() => window.location.reload()} />
+  }
 
   // Not logged in at all
-  if (!user) return <Navigate to="/" replace />
+  if (!user && sessionState === 'no-session') return <Navigate to="/" replace />
 
   // Role restriction check
   if (allowedRoles && !allowedRoles.includes(role)) {

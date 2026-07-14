@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   bio text,
   phone text,
   address text,
+  onboarding_data jsonb DEFAULT NULL,
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
   PRIMARY KEY (id)
 );
