@@ -1,3 +1,4 @@
+import { RelatedProperties } from '../components/property/RelatedProperties'
 import React, { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { 
@@ -603,6 +604,7 @@ export const PropertyDetail = () => {
               <h2 className="text-2xl font-bold text-gray-900 tracking-tight font-display">{t('property.sections.reviews')}</h2>
               <p className="text-sm text-gray-500 font-medium mt-1">{t('property.sections.authenticFeedback')}</p>
             </div>
+            
             <div className="text-right">
               <p className="text-3xl font-black text-gray-900">{avgRating}</p>
               <div className="flex justify-end gap-0.5 mt-1">
@@ -683,6 +685,7 @@ export const PropertyDetail = () => {
               ))
             )}
           </div>
+        <RelatedProperties property={p} />
         </div>
       </div>
 

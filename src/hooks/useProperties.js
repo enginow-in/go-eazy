@@ -14,19 +14,20 @@ const PAGE_SIZE = 12
 
 const PUBLIC_PROPERTY_FIELDS = `
   id, landlord_id, type, title, description, price, city, area, pincode, 
-  amenities, images, availability, views, created_at
+  amenities, images, availability, views, created_at, gender
 `
 
 const PUBLIC_PROFILE_FIELDS = 'full_name, avatar_url, bio'
 
 export const useProperties = () => {
   const dispatch = useDispatch()
-  const { 
-    listings, featured, currentProperty, 
-    favorites, recentlyViewed, filters, 
+  const {
+    listings, featured, currentProperty,
+    favorites, recentlyViewed, filters,
     loading, hasMore, page, totalCount,
-    reviews, reviewsLoading 
+    reviews, reviewsLoading
   } = useSelector(s => s.property)
+
   const { user, profile } = useSelector(s => s.auth)
 
   const fetchProperties = useCallback(async (reset = false) => {
@@ -34,13 +35,16 @@ export const useProperties = () => {
     try {
       let query = supabase
         .from('properties')
-        .select(`${PUBLIC_PROPERTY_FIELDS}, profiles!properties_landlord_id_fkey(${PUBLIC_PROFILE_FIELDS})`, { count: 'exact' })
+        .select(
+          `${PUBLIC_PROPERTY_FIELDS}, profiles!properties_landlord_id_fkey(${PUBLIC_PROFILE_FIELDS})`,
+          { count: 'exact' }
+        )
         .eq('availability', true)
 
       if (filters.type) query = query.eq('type', filters.type)
       if (filters.priceMin > 0) query = query.gte('price', filters.priceMin)
       if (filters.priceMax < 100000) query = query.lte('price', filters.priceMax)
-      
+
       if (filters.amenities?.length > 0) {
         query = query.contains('amenities', filters.amenities)
       }
@@ -50,7 +54,8 @@ export const useProperties = () => {
       }
 
       if (filters.area) {
-        const fuzzyPattern = '%' + filters.area.toLowerCase().split('').filter(c => c.trim()).join('%') + '%'
+        const fuzzyPattern =
+          '%' + filters.area.toLowerCase().split('').filter(c => c.trim()).join('%') + '%'
         query = query.ilike('area', fuzzyPattern)
       }
 
@@ -82,12 +87,19 @@ export const useProperties = () => {
     try {
       const { data, error } = await supabase
         .from('properties')
-        .select(`${PUBLIC_PROPERTY_FIELDS}, profiles!properties_landlord_id_fkey(${PUBLIC_PROFILE_FIELDS})`)
+        .select(
+          `${PUBLIC_PROPERTY_FIELDS}, profiles!properties_landlord_id_fkey(${PUBLIC_PROFILE_FIELDS})`
+        )
         .eq('availability', true)
         .order('views', { ascending: false })
         .limit(8)
+
       if (error) throw error
-      dispatch(setFeatured(data?.length ? data : MOCK_PROPERTIES.sort((a, b) => b.views - a.views).slice(0, 8)))
+      dispatch(
+        setFeatured(
+          data?.length ? data : MOCK_PROPERTIES.sort((a, b) => b.views - a.views).slice(0, 8)
+        )
+      )
     } catch {
       dispatch(setFeatured(MOCK_PROPERTIES.sort((a, b) => b.views - a.views).slice(0, 8)))
     }
@@ -102,6 +114,7 @@ export const useProperties = () => {
         .eq('availability', true)
         .order('views', { ascending: false })
         .limit(10)
+
       if (error) throw error
       return data?.length ? data : MOCK_PROPERTIES.filter(p => p.type === type)
     } catch {
@@ -114,15 +127,20 @@ export const useProperties = () => {
     try {
       const { data, error } = await supabase
         .from('properties')
-        .select(`${PUBLIC_PROPERTY_FIELDS}, profiles!properties_landlord_id_fkey(${PUBLIC_PROFILE_FIELDS})`)
+        .select(
+          `${PUBLIC_PROPERTY_FIELDS}, profiles!properties_landlord_id_fkey(${PUBLIC_PROFILE_FIELDS})`
+        )
         .eq('id', id)
         .maybeSingle()
+
       if (error) throw error
       dispatch(setCurrentProperty(data))
-      
+
       if (user && data) {
         dispatch(addRecentlyViewed(id))
-        await supabase.from('recently_viewed').upsert({ user_id: user.id, property_id: id, viewed_at: new Date().toISOString() })
+        await supabase
+          .from('recently_viewed')
+          .upsert({ user_id: user.id, property_id: id, viewed_at: new Date().toISOString() })
       }
     } catch (err) {
       console.error('Error fetching property:', err)
@@ -134,24 +152,22 @@ export const useProperties = () => {
   const fetchGatedData = useCallback(async (id) => {
     if (!user) return null
     try {
-      // 1. Try the RPC first
       const rpcResult = await supabase.rpc('get_unlocked_property_details', { prop_id: id })
       const rpcData = rpcResult.data?.[0] || {}
 
-      // 2. ALWAYS also directly fetch contact_phone + contact_email from properties table
-      //    (the RPC may not include these fields, and landlords can always read their own data)
       const { data: directData } = await supabase
         .from('properties')
-        .select('contact_phone, contact_email, exact_location')
+        .select('contact_phone, contact_email, exact_location, latitude, longitude')
         .eq('id', id)
         .maybeSingle()
 
-      // 3. Merge — RPC fields take priority, direct fields fill any gaps
       return {
         ...rpcData,
         contact_phone: rpcData?.contact_phone || directData?.contact_phone || null,
         contact_email: rpcData?.contact_email || directData?.contact_email || null,
         exact_location: rpcData?.exact_location || directData?.exact_location || null,
+        latitude: rpcData?.latitude || directData?.latitude || null,
+        longitude: rpcData?.longitude || directData?.longitude || null,
       }
     } catch (err) {
       console.error('Error fetching gated data:', err)
@@ -220,13 +236,20 @@ export const useProperties = () => {
       const { data: { publicUrl } } = supabase.storage.from('property-images').getPublicUrl(path)
       imageUrls.push(publicUrl)
     }
-    const { data, error } = await supabase.from('properties').insert({ ...propertyData, landlord_id: user.id, images: imageUrls, views: 0 }).select().maybeSingle()
+
+    const { data, error } = await supabase
+      .from('properties')
+      .insert({ ...propertyData, landlord_id: user.id, images: imageUrls, views: 0 })
+      .select()
+      .maybeSingle()
+
     if (error) throw error
     return data
   }
 
   const updateProperty = async (id, updates, newImages) => {
     let imageUrls = updates.images || []
+
     if (newImages?.length) {
       for (const img of newImages) {
         const ext = img.name.split('.').pop()
@@ -237,13 +260,26 @@ export const useProperties = () => {
         imageUrls.push(publicUrl)
       }
     }
-    const { data, error } = await supabase.from('properties').update({ ...updates, images: imageUrls }).eq('id', id).eq('landlord_id', user.id).select().maybeSingle()
+
+    const { data, error } = await supabase
+      .from('properties')
+      .update({ ...updates, images: imageUrls })
+      .eq('id', id)
+      .eq('landlord_id', user.id)
+      .select()
+      .maybeSingle()
+
     if (error) throw error
     return data
   }
 
   const deleteProperty = async (id) => {
-    const { count, error } = await supabase.from('properties').delete({ count: 'exact' }).eq('id', id).eq('landlord_id', user.id)
+    const { count, error } = await supabase
+      .from('properties')
+      .delete({ count: 'exact' })
+      .eq('id', id)
+      .eq('landlord_id', user.id)
+
     if (error) throw error
     return count > 0
   }
@@ -251,23 +287,34 @@ export const useProperties = () => {
   const fetchFavorites = useCallback(async () => {
     if (!user) return
     try {
-      const { data, error } = await supabase.from('favorites').select('property_id').eq('user_id', user.id)
+      const { data, error } = await supabase
+        .from('favorites')
+        .select('property_id')
+        .eq('user_id', user.id)
+
       if (error) throw error
       dispatch(setFavorites(data?.map(f => f.property_id) || []))
-    } catch { /* silent */ }
+    } catch {
+      // silent
+    }
   }, [user, dispatch])
 
   const toggleFavorite = async (propertyId) => {
     if (!user) return
     const isFav = favorites.includes(propertyId)
     dispatch(toggleFav(propertyId))
+
     try {
       if (isFav) {
-        await supabase.from('favorites').delete().eq('user_id', user.id).eq('property_id', propertyId)
+        await supabase
+          .from('favorites')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('property_id', propertyId)
       } else {
         await supabase.from('favorites').insert({ user_id: user.id, property_id: propertyId })
       }
-    } catch (err) {
+    } catch {
       dispatch(toggleFav(propertyId))
     }
   }
@@ -276,54 +323,88 @@ export const useProperties = () => {
     if (!user) return
     try {
       const seventyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString()
-      const { data } = await supabase.from('recently_viewed').select('property_id').eq('user_id', user.id).gte('viewed_at', seventyTwoHoursAgo).order('viewed_at', { ascending: false }).limit(20)
+      const { data } = await supabase
+        .from('recently_viewed')
+        .select('property_id')
+        .eq('user_id', user.id)
+        .gte('viewed_at', seventyTwoHoursAgo)
+        .order('viewed_at', { ascending: false })
+        .limit(20)
+
       dispatch(setRecentlyViewed(data?.map(r => r.property_id) || []))
-    } catch {}
+    } catch {
+      // silent
+    }
   }, [user, dispatch])
 
   const getLandlordProperties = async () => {
-    const { data, error } = await supabase.from('properties').select('*').eq('landlord_id', user.id).order('created_at', { ascending: false })
+    const { data, error } = await supabase
+      .from('properties')
+      .select('*')
+      .eq('landlord_id', user.id)
+      .order('created_at', { ascending: false })
+
     if (error) throw error
     return data || []
   }
 
   const getRecommendedProperties = useCallback(() => {
-    // If no listings or no quiz data, return empty
     if (!listings || listings.length === 0 || !profile?.onboarding_data) return []
 
     const prefs = profile.onboarding_data
-
-    // If user explicitly skipped or haven't finished quiz
     if (prefs?.skipped || !prefs?.persona) return []
 
     let filtered = [...listings]
 
-    // 1. Strict filtering (City + Type)
     if (prefs?.type) {
       filtered = filtered.filter(p => p.type === prefs.type)
     }
-    
+
     if (prefs?.city) {
-      filtered = filtered.filter(p => 
-        p.city?.toLowerCase() === prefs.city.toLowerCase() || 
+      filtered = filtered.filter(p =>
+        p.city?.toLowerCase() === prefs.city.toLowerCase() ||
         p.address?.toLowerCase().includes(prefs.city.toLowerCase())
       )
     }
 
-    // 2. Budget filtering
     if (prefs?.budget?.range) {
       const [min, max] = prefs.budget.range
       filtered = filtered.filter(p => p.price >= min && p.price <= max)
     }
 
-    // 3. Fallback logic: if strictly filtered is empty, try type only
     if (filtered.length === 0 && prefs?.type) {
       filtered = listings.filter(p => p.type === prefs.type).slice(0, 10)
     }
 
-    // Sort randomly and limit to 8 results for the section
     return filtered.sort(() => 0.5 - Math.random()).slice(0, 8)
   }, [listings, profile])
+
+  // ===========================
+  // Related Properties Engine
+  // ===========================
+  const fetchRelatedProperties = useCallback(async (property, limit = 50) => {
+    if (!property?.city) return []
+
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .select(`
+          id, title, city, area, type, price, images,
+          gender, amenities, availability, created_at
+        `)
+        .eq('availability', true)
+        .eq('city', property.city)
+        .neq('id', property.id)
+        .order('created_at', { ascending: false })
+        .limit(limit)
+
+      if (error) throw error
+      return data || []
+    } catch (err) {
+      console.error('fetchRelatedProperties error:', err)
+      return []
+    }
+  }, [])
 
   return {
     listings, featured, currentProperty, favorites, recentlyViewed, filters,
@@ -336,6 +417,7 @@ export const useProperties = () => {
     getRecommendedProperties,
     fetchGatedData,
     reviews, reviewsLoading,
-    fetchReviews, submitReview, deleteReview
+    fetchReviews, submitReview, deleteReview,
+    fetchRelatedProperties,
   }
 }
