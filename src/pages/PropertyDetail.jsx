@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { 
   MapPin, Heart, Share2, Phone, Mail, ArrowLeft, 
   CheckCircle2, ChevronDown, ChevronUp, Lock, EyeOff, X, 
-  Star, Trash2, Sparkles, Calendar 
+  Star, Trash2, Sparkles, Calendar, MessageSquare 
 } from 'lucide-react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay, Pagination, Navigation } from 'swiper/modules'
@@ -13,6 +13,7 @@ import 'swiper/css/navigation'
 import { useSelector, useDispatch } from 'react-redux'
 import { openAuthModal } from '../store/authSlice'
 import { useProperties } from '../hooks/useProperties'
+import { useMessages } from '../hooks/useMessages'
 import { TypeBadge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { formatPrice, AMENITY_ICONS } from '../utils/helpers'
@@ -53,6 +54,8 @@ export const PropertyDetail = () => {
     favorites, toggleFavorite, loading,
     reviews, fetchReviews, submitReview, deleteReview
   } = useProperties()
+
+  const { getOrCreateConversation } = useMessages()
 
   const [showScrollToTop, setShowScrollToTop] = useState(false)
   const [gatedData, setGatedData] = useState(null)
@@ -105,6 +108,15 @@ export const PropertyDetail = () => {
       setHasUnlocked(true)
       const gated = await fetchGatedData(id)
       setGatedData(gated)
+    }
+  }
+
+  const handleInitiateChat = async () => {
+    try {
+      const conv = await getOrCreateConversation(id, currentProperty.landlord_id)
+      navigate(`/messages?id=${conv.id}`)
+    } catch (e) {
+      toast.error('Failed to initiate chat')
     }
   }
 
@@ -547,6 +559,14 @@ export const PropertyDetail = () => {
                         <a href={`mailto:${gatedData?.contact_email || ''}`} className="flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-full bg-white border border-gray-200 text-gray-900 font-bold hover:bg-gray-50 transition-colors shadow-sm text-[15px]">
                           <Mail size={18} /> {t('property.sections.sendEmail')}
                         </a>
+                        {p.landlord_id !== user.id && (
+                          <button
+                            onClick={handleInitiateChat}
+                            className="flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-full bg-gray-950 text-white font-bold hover:bg-black transition-all duration-200 active:scale-95 shadow-sm text-[15px] border-none outline-none cursor-pointer"
+                          >
+                            <MessageSquare size={18} /> Chat with Owner
+                          </button>
+                        )}
                       </div>
                     ) : (
                       <div className="border border-red-50 rounded-xl p-6 text-center bg-red-50/10 relative overflow-hidden h-48 flex flex-col items-center justify-center shadow-sm">
