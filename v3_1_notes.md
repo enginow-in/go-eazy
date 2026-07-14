@@ -1,13 +1,21 @@
-### Release v3.1 Highlights
+# Release Notes - v3.1
 
-🌍 **Localization Complete**
-• Fully integrated Hindi (`hi`) translation support across the platform (Property Details, Services, Filters).
-• Dynamic city names and category translations toggle seamlessly.
+**Go-Eazy v3.1** focuses on elevating the user experience through comprehensive localization, premium UI enhancements, and rock-solid deployment pipelines.
 
-✨ **UI Excellence**
-• Unified premium shadow and hover aesthetics (`shadow-md` & `hover:-translate-y-0.5`) across all listing cards.
-• Consolidated Review sections format across Services and Properties.
+## 🌍 Localization Excellence
 
-🚀 **CI/CD Resiliency**
-• Cleared over 50 strict ESLint build errors.
-• React Compiler & unused variable issues resolved to guarantee smooth Vercel deployments.
+- **Full Hindi (`hi`) Support**: Integrated comprehensive translation support across the platform, covering Property Details, Services, and Filters.
+- **Dynamic Translation Toggle**: City names and category translations now toggle seamlessly, providing a native experience for local users.
+
+## ✨ Premium UI & Aesthetics
+
+- **Unified Card Aesthetics**: Applied premium shadow (`shadow-md`) and hover micro-interactions (`hover:-translate-y-0.5`) across all listing cards for a polished, modern look.
+- **Consolidated Reviews**: Unified the formatting of the Review sections across both Services and Properties for visual consistency.
+
+## 🚀 CI/CD & Resiliency
+
+- **Strict Linting Enforcement**: Cleared over 50 strict ESLint build errors to enforce high code quality standards.
+- **Deployment Stability**: Resolved React Compiler and unused variable issues, guaranteeing smooth and predictable Vercel deployments.
+
+---
+*Continuing our commitment to quality and user satisfaction.*
