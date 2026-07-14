@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { MOCK_PROPERTIES } from '../utils/constants'
@@ -7,7 +7,7 @@ import {
   setFavorites, toggleFavorite as toggleFav,
   setRecentlyViewed, addRecentlyViewed,
   setLoading, setHasMore, setPage, setFilters, setTotalCount, resetFilters,
-  setReviews, addReview, removeReview, setReviewsLoading
+  setReviews, addReview, removeReview, setReviewsLoading, updatePropertyInStore
 } from '../store/propertySlice'
 
 const PAGE_SIZE = 12
@@ -28,6 +28,19 @@ export const useProperties = () => {
     reviews, reviewsLoading 
   } = useSelector(s => s.property)
   const { user, profile } = useSelector(s => s.auth)
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('public:properties')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'properties' }, (payload) => {
+        dispatch(updatePropertyInStore(payload.new))
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [dispatch])
 
   const fetchProperties = useCallback(async (reset = false) => {
     dispatch(setLoading(true))

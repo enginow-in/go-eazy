@@ -88,6 +88,20 @@ const propertySlice = createSlice({
     setReviewsLoading: (state, action) => {
       state.reviewsLoading = action.payload
     },
+    updatePropertyInStore: (state, action) => {
+      const updatedProp = action.payload
+      const listIndex = state.listings.findIndex(p => p.id === updatedProp.id)
+      if (listIndex >= 0) {
+        state.listings[listIndex] = { ...state.listings[listIndex], ...updatedProp }
+      }
+      const featIndex = state.featured.findIndex(p => p.id === updatedProp.id)
+      if (featIndex >= 0) {
+        state.featured[featIndex] = { ...state.featured[featIndex], ...updatedProp }
+      }
+      if (state.currentProperty?.id === updatedProp.id) {
+        state.currentProperty = { ...state.currentProperty, ...updatedProp }
+      }
+    },
   },
 })
 
@@ -95,6 +109,6 @@ export const {
   setListings, appendListings, setFeatured, setCurrentProperty,
   setFavorites, toggleFavorite, setRecentlyViewed, addRecentlyViewed,
   setFilters, resetFilters, setLoading, setHasMore, setPage, setTotalCount,
-  setReviews, addReview, removeReview, setReviewsLoading
+  setReviews, addReview, removeReview, setReviewsLoading, updatePropertyInStore
 } = propertySlice.actions
 export default propertySlice.reducer
