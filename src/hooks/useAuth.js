@@ -111,18 +111,38 @@ export const useAuth = () => {
       dispatch(setLoading(false))
     }
   }
+  const blockedDomains = [
+  "mailinator.com",
+  "10minutemail.com",
+  "guerrillamail.com",
+  "tempmail.com",
+  "temp-mail.org",
+  "yopmail.com",
+  "sharklasers.com",
+  "dispostable.com",
+];
 
   const signUp = async ({ email, password, name, role }) => {
-    const { data, error } = await supabase.auth.signUp({
-      email, password,
-      options: { 
-        data: { 
-          full_name: name,
-          role: role 
-        } 
+  const domain = email.split("@")[1]?.toLowerCase();
+
+  if (blockedDomains.includes(domain)) {
+    throw new Error(
+      "Disposable email addresses are not allowed. Please use a valid email address."
+    );
+  }
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        full_name: name,
+        role: role,
       },
-    })
-    if (error) throw error
+    },
+  });
+
+  if (error) throw error;
 
     if (data.user) {
       await supabase.from('profiles').upsert({

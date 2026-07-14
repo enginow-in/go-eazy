@@ -13,9 +13,13 @@ export const formatPrice = (price) => {
 export const formatPriceShort = (price) => {
   if (!price) return '—'
   if (price >= 100000) return `₹${(price / 100000).toFixed(1)}L`
-  if (price >= 1000) return `₹${(price / 1000).toFixed(0)}K`
+  if (price >= 1000) {
+    const value = Math.floor((price / 1000) * 10) / 10;
+    return `₹${value % 1 === 0 ? value.toFixed(0) : value.toFixed(1)}K`;
+  }
   return `₹${price}`
 }
+
 
 export const truncate = (str, n = 80) =>
   str && str.length > n ? str.slice(0, n) + '…' : str
