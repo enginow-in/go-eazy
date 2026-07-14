@@ -13,6 +13,7 @@ import { OnboardingQuiz } from './components/common/OnboardingQuiz'
 import { useSelector } from 'react-redux'
 import { useAuth } from './hooks/useAuth'
 import ScrollToTop from './components/common/ScrollToTop'
+import { ErrorBoundary } from './components/common/ErrorBoundary'
 
 // Heavy pages: lazy-loaded into separate chunks to prevent
 // "Cannot access X before initialization" TDZ errors from
@@ -59,6 +60,7 @@ function App() {
       <OnboardingQuiz />
       <RoleSelectionModal />
       <Layout>
+        <ErrorBoundary>
         <Suspense fallback={<PageSpinner />}>
           <Routes>
           <Route path="/" element={<Navigate to="/search" replace />} />
@@ -134,6 +136,7 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
         </Suspense>
+        </ErrorBoundary>
       </Layout>
     </BrowserRouter>
   )
