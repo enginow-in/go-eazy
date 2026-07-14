@@ -18,7 +18,7 @@ const sizes = {
   icon:'p-2 rounded-xl',
 }
 
-export const Button = ({
+const ButtonComponent = ({
   children,
   variant = 'primary',
   size = 'md',
@@ -54,3 +54,5 @@ export const Button = ({
     </button>
   )
 }
+
+export const Button = React.memo(ButtonComponent)
