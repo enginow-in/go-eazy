@@ -1,13 +1,10 @@
 import React from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Mail, Phone } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 export const Footer = () => {
   const { t } = useTranslation()
-  const navigate = useNavigate()
-
-
 
   return (
     <footer className="bg-gray-950 text-gray-300 mt-12">
@@ -15,7 +12,11 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
           {/* Brand */}
           <div>
-            <div className="flex items-center gap-3 mb-6 group cursor-pointer" onClick={() => navigate('/')}>
+            <Link
+              to="/"
+              aria-label="GoEazy home"
+              className="flex items-center gap-3 mb-6 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-950 rounded-xl"
+            >
               <div className="w-10 h-10 rounded-xl bg-white border-2 border-[#CA3433] shadow-md flex items-center justify-center font-bold font-display rotate-3 group-hover:rotate-0 transition-all duration-300 overflow-hidden">
                 <div className="-rotate-3 flex items-center justify-center translate-y-0.5">
                   <span className="text-[#CA3433] text-[22px] font-black leading-none">G</span>
@@ -25,7 +26,7 @@ export const Footer = () => {
               <span className="font-display font-black text-2xl text-white tracking-tight leading-none pt-1">
                 Go<span className="text-[#CA3433]">Eazy</span>
               </span>
-            </div>
+            </Link>
             <p className="text-sm text-gray-400 leading-relaxed mb-4">
               {t('footer.description')}
             </p>
