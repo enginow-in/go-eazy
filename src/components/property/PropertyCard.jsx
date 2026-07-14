@@ -26,12 +26,11 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   }
 
   // Memoize values with deterministic calculation
-  const { rating, numBeds } = useMemo(() => {
+  const { rating } = useMemo(() => {
     return {
       rating: property.rating || '0.0',
-      numBeds: property.bedrooms || 0,
     }
-  }, [property.rating, property.bedrooms])
+  }, [property.rating])
 
   const formatPrice = (p) => {
     if (!p) return '0'
@@ -42,14 +41,14 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   // List Layout (Matches Image 2)
   if (layout === 'list') {
     return (
-      <div 
+      <div
         className="group bg-white rounded-2xl border border-gray-100 flex gap-4 cursor-pointer shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
         onClick={() => navigate(`/property/${property.id}`)}
       >
         <div className="relative w-32 h-32 sm:w-40 sm:h-40 flex-shrink-0 overflow-hidden bg-gray-50 rounded-r-2xl shadow-sm">
-          <img 
-            src={mainImage} 
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+          <img
+            src={mainImage}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
             onLoad={() => setImgLoaded(true)}
             loading="lazy"
           />
@@ -90,7 +89,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
                 condensed ? "text-base" : "text-base sm:text-lg"
               )}>₹{formatPrice(property.price)}</span>
             </div>
-            
+
             <div className={cn(
               "flex items-center gap-1 bg-gray-50 rounded-lg border border-gray-100 shadow-sm",
               condensed ? "px-1.5 py-0.5" : "px-2 py-1"
@@ -107,7 +106,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   // Dashboard / Compact Layout
   if (compact) {
     return (
-      <div 
+      <div
         className="group bg-white rounded-2xl border border-gray-100 w-60 flex-shrink-0 overflow-hidden cursor-pointer shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
         onClick={() => navigate(`/property/${property.id}`)}
       >
@@ -182,15 +181,15 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
             <Star size={condensed ? 8 : 9} className="text-orange-400" fill="currentColor" />
           </div>
         </div>
-        
+
         <h3 className={cn(
           "font-extrabold text-gray-900 leading-tight line-clamp-1 mb-0.5",
           condensed ? "text-[11px]" : "text-sm"
         )}>
           {property.title}
         </h3>
-        
-        
+
+
         <div className="mt-auto pt-1.5 border-t border-gray-50 flex items-center justify-between">
           <p className="flex flex-col">
             <span className="text-[8px] font-bold text-gray-400 uppercase leading-none">{t('property.labels.from')}</span>

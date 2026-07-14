@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
-import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { Mail, Lock, User, Eye, EyeOff, Home, GraduationCap, Utensils, CheckCircle2, Sparkles, ArrowRight } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { useAuth } from '../hooks/useAuth'
 import toast from 'react-hot-toast'
+// eslint-disable-next-line no-unused-vars -- motion is used via JSX member expression (motion.div/motion.main)
 import { motion, AnimatePresence } from 'framer-motion'
 
 const ROLE_OPTIONS = [
@@ -15,7 +15,6 @@ const ROLE_OPTIONS = [
 ]
 
 export const AuthHome = () => {
-  const dispatch = useDispatch()
   const navigate = useNavigate()
   const { signIn, signUp, signInWithGoogle } = useAuth()
 
@@ -71,14 +70,14 @@ export const AuthHome = () => {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-white relative overflow-hidden">
-      
+
       {/* Decorative blobs */}
       <div className="absolute -top-24 -left-24 w-96 h-96 bg-red-50 rounded-full blur-3xl opacity-50 z-0 animate-pulse" />
       <div className="absolute -bottom-24 -right-24 w-[500px] h-[500px] bg-red-50 rounded-full blur-3xl opacity-30 z-0" />
 
       {/* Hero Content Section */}
       <div className="md:w-1/2 flex flex-col justify-center p-8 sm:p-12 lg:p-20 relative z-10">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -99,7 +98,7 @@ export const AuthHome = () => {
           </p>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
@@ -122,7 +121,7 @@ export const AuthHome = () => {
 
       {/* Auth Form Section */}
       <div className="md:w-1/2 flex items-center justify-center p-6 sm:p-12 lg:p-20 bg-gray-50/30 relative z-10">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
@@ -238,9 +237,9 @@ export const AuthHome = () => {
             <div className="flex-1 h-px bg-gray-100" />
           </div>
 
-          <Button 
-            variant="secondary" 
-            size="lg" 
+          <Button
+            variant="secondary"
+            size="lg"
             className="w-full py-4 rounded-2xl border-gray-100 hover:bg-gray-50 flex items-center justify-center gap-3 font-bold"
             loading={googleLoading}
             onClick={handleGoogle}

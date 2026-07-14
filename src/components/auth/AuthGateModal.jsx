@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
+// eslint-disable-next-line no-unused-vars -- motion is used via JSX member expression (motion.div/motion.main)
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Sparkles } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
