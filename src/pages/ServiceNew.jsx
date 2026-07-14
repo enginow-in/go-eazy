@@ -117,6 +117,33 @@ export const ServiceNew = () => {
     if (step === 2 && !location.city.trim())   { toast.error('City is required'); return false }
     if (step === 2 && !location.area.trim())   { toast.error('Area is required'); return false }
     if (step === 6 && !contact.contact_phone.trim()) { toast.error('Phone number is required'); return false }
+    if (step === 3) {
+      const hasValidService = serviceItems.some(
+        item =>
+          item.service_name.trim() &&
+          item.price &&
+          Number(item.price) > 0
+      )
+    
+      if (!hasValidService) {
+        toast.error("Please add at least one service with pricing.")
+        return false
+      }
+    }
+
+    if (step === 4) {
+      const hasValidPlan = plans.some(
+        plan =>
+          plan.plan_name.trim() &&
+          plan.price &&
+          Number(plan.price) > 0
+      )
+    
+      if (!hasValidPlan) {
+        toast.error("Please add at least one subscription plan.")
+        return false
+      }
+    }
     return true
   }
 
