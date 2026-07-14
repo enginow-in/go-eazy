@@ -9,6 +9,7 @@ import { PROPERTY_TYPES, CITIES } from '../../utils/constants'
 import { Button } from '../ui/Button'
 import { useAuth } from '../../hooks/useAuth'
 import toast from 'react-hot-toast'
+import { useNavigate } from 'react-router-dom'
 
 const QUIZ_STEPS = [
   {
@@ -50,7 +51,8 @@ const QUIZ_STEPS = [
 ]
 
 export const OnboardingQuiz = () => {
-  const { user, profile, updateProfile } = useAuth()
+  const navigate = useNavigate()
+  const { user, profile, loading: authLoading, updateProfile } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [step, setStep] = useState(0)
   const [saving, setSaving] = useState(false)
@@ -101,7 +103,12 @@ export const OnboardingQuiz = () => {
       toast.success('Preferences saved! Here are your matches. 🎯')
     } catch (err) {
       console.error(err)
-      toast.error('Failed to save preferences. Please try again.')
+      if (!user) {
+        toast.error('Your session expired — please sign in again.')
+        navigate('/')
+      } else {
+        toast.error('Failed to save preferences. Please try again.')
+      }
     } finally {
       setSaving(false)
     }
@@ -257,7 +264,7 @@ export const OnboardingQuiz = () => {
               {step + 1} / {QUIZ_STEPS.length} — {Math.round(((step + 1) / QUIZ_STEPS.length) * 100)}% done
             </p>
             <Button 
-              disabled={!selections[currentStep.id] || saving}
+              disabled={!selections[currentStep.id] || saving || authLoading || !user}
               onClick={handleNext}
               variant="primary" 
               className="rounded-full px-7 py-2.5 bg-[#CA3433] hover:bg-[#ac2d2c] shadow-lg shadow-red-500/20 group"
