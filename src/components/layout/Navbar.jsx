@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { Search, ChevronDown, User, LogOut, Home, Building, Tent, MapPin, Grid, PlusCircle, LayoutDashboard, Menu, X } from 'lucide-react'
+import { Search, ChevronDown, User, LogOut, Home, Building, Tent, MapPin, Grid, PlusCircle, LayoutDashboard, Menu, X, Sun, Moon, Monitor } from 'lucide-react'
 import { openAuthModal } from '../../store/authSlice'
 import { toggleMobileMenu, closeMobileMenu } from '../../store/uiSlice'
 import { useAuth } from '../../hooks/useAuth'
@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { Skeleton } from '../ui/Skeleton'
 import { CITIES } from '../../utils/constants'
 import { BannerSlider } from './BannerSlider'
+import { useTheme } from '../../context/ThemeContext'
 
 export const Navbar = () => {
   const dispatch = useDispatch()
@@ -20,6 +21,7 @@ export const Navbar = () => {
   const { user, profile, role, signOut, loading } = useAuth()
   const { filters, updateFilters, resetFilters } = useProperties()
   const { mobileMenuOpen } = useSelector(s => s.ui)
+  const { theme, setTheme } = useTheme()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [cityMenuOpen, setCityMenuOpen] = useState(false)
   const [langMenuOpen, setLangMenuOpen] = useState(false)
@@ -77,7 +79,7 @@ export const Navbar = () => {
   ]
 
   return (
-    <nav className="relative z-40 bg-white">
+    <nav className="relative z-40 bg-white dark:bg-brand-dark border-b dark:border-slate-800">
       {/* Top Navbar */}
       <div className="w-full px-2 sm:px-4">
         <div className="flex items-center justify-between h-20 relative">
@@ -85,13 +87,13 @@ export const Navbar = () => {
           {/* Logo Section (Centered on mobile) */}
           <div className="absolute left-1/2 md:static -translate-x-1/2 md:translate-x-0 whitespace-nowrap z-20">
             <Link to="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-xl bg-white border-2 border-[#CA3433] shadow-md flex items-center justify-center font-bold font-display rotate-3 group-hover:rotate-0 transition-all duration-300 overflow-hidden">
+              <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border-2 border-[#CA3433] shadow-md flex items-center justify-center font-bold font-display rotate-3 group-hover:rotate-0 transition-all duration-300 overflow-hidden">
                 <div className="-rotate-3 flex items-center justify-center translate-y-0.5">
                   <span className="text-[#CA3433] text-[22px] font-black leading-none">G</span>
                   <span className="text-[#CA3433] text-[15px] font-black leading-none -ml-0.5 mb-2">E</span>
                 </div>
               </div>
-              <span className="font-display font-black text-[22px] sm:text-2xl text-gray-900 tracking-tight leading-none pt-1">
+              <span className="font-display font-black text-[22px] sm:text-2xl text-gray-900 dark:text-white tracking-tight leading-none pt-1">
                 Go<span className="text-[#CA3433]">Eazy</span>
               </span>
             </Link>
@@ -101,7 +103,7 @@ export const Navbar = () => {
           <div className="relative z-30">
             <button 
               onClick={() => setLangMenuOpen(!langMenuOpen)}
-              className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-700 hover:text-[#CA3433] transition-colors uppercase px-1 py-2"
+              className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-300 hover:text-[#CA3433] transition-colors uppercase px-1 py-2"
             >
               {currentLang.short} <ChevronDown size={14} className={`transition-transform duration-200 ${langMenuOpen ? 'rotate-180 text-[#CA3433]' : ''}`} />
             </button>
@@ -145,19 +147,71 @@ export const Navbar = () => {
           {/* Right Links & Auth */}
           <div className="hidden md:flex items-center gap-6">
             <div className="flex items-center space-x-6 text-sm font-medium text-gray-500">
-              <Link to="/search" className="px-3 py-1 bg-brand-lime text-gray-900 rounded-md font-semibold hover:bg-lime-400 transition-colors">{t('nav.home')}</Link>
-              <Link to="/nearby" className="hover:text-gray-900 transition-colors py-2">{t('nav.nearby')}</Link>
-              <button onClick={() => user ? navigate('/landlord') : dispatch(openAuthModal('login'))} className="hover:text-gray-900 transition-colors">{t('nav.list')}</button>
-              <Link to="/about" className="hover:text-gray-900 transition-colors py-2">{t('nav.about')}</Link>
+              <Link 
+                to="/search" 
+                className={cn(
+                  "px-3 py-1 rounded-md font-semibold transition-colors",
+                  location.pathname === '/search' || location.pathname === '/'
+                    ? "bg-brand-lime text-gray-900 hover:bg-lime-400"
+                    : "text-gray-500 hover:text-gray-900 dark:hover:text-white py-2"
+                )}
+              >
+                {t('nav.home')}
+              </Link>
+              <Link 
+                to="/nearby" 
+                className={cn(
+                  "px-3 py-1 rounded-md font-semibold transition-colors",
+                  location.pathname.startsWith('/nearby') || location.pathname.startsWith('/services/')
+                    ? "bg-brand-lime text-gray-900 hover:bg-lime-400"
+                    : "text-gray-500 hover:text-gray-900 dark:hover:text-white py-2"
+                )}
+              >
+                {t('nav.nearby')}
+              </Link>
+              <button 
+                onClick={() => user ? navigate(role === 'landlord' ? '/landlord' : role === 'service_provider' ? '/service-provider' : '/dashboard') : dispatch(openAuthModal('login'))} 
+                className={cn(
+                  "px-3 py-1 rounded-md font-semibold transition-colors",
+                  ['/landlord', '/service-provider', '/dashboard'].some(path => location.pathname.startsWith(path))
+                    ? "bg-brand-lime text-gray-900 hover:bg-lime-400"
+                    : "text-gray-500 hover:text-gray-900 dark:hover:text-white py-2"
+                )}
+              >
+                {t('nav.list')}
+              </button>
+              <Link 
+                to="/about" 
+                className={cn(
+                  "px-3 py-1 rounded-md font-semibold transition-colors",
+                  location.pathname.startsWith('/about')
+                    ? "bg-brand-lime text-gray-900 hover:bg-lime-400"
+                    : "text-gray-500 hover:text-gray-900 dark:hover:text-white py-2"
+                )}
+              >
+                {t('nav.about')}
+              </Link>
             </div>
             
-            <div className="w-px h-6 bg-gray-200"></div>
+            <div className="w-px h-6 bg-gray-200 dark:bg-slate-800"></div>
 
-            <button className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-              <div className="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center text-xs overflow-hidden border border-brand-100">
+            <button className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+              <div className="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center text-xs overflow-hidden border border-brand-100 dark:border-slate-800">
                 <img src="/INR.webp" alt="INR" className="w-full h-full object-cover" />
               </div>
               INR <ChevronDown size={14} />
+            </button>
+
+            <div className="w-px h-6 bg-gray-200 dark:bg-slate-800"></div>
+
+            <button
+              onClick={() => setTheme(theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light')}
+              className="p-2 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all flex items-center justify-center"
+              title={`Theme: ${theme}`}
+            >
+              {theme === 'light' && <Sun size={18} />}
+              {theme === 'dark' && <Moon size={18} />}
+              {theme === 'system' && <Monitor size={18} />}
             </button>
 
             {loading ? (
@@ -219,7 +273,7 @@ export const Navbar = () => {
           
            {/* Mobile hamburger */}
            <button
-            className="md:hidden p-2 rounded-xl text-gray-900"
+            className="md:hidden p-2 rounded-xl text-gray-900 dark:text-white"
             onClick={() => dispatch(toggleMobileMenu())}
           >
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -232,9 +286,9 @@ export const Navbar = () => {
         <>
           <BannerSlider />
 
-          <div className="w-full border-t border-b border-gray-100 bg-white flex relative mt-2">
+          <div className="w-full border-t border-b border-gray-100 dark:border-slate-800 bg-white dark:bg-brand-dark flex relative mt-2">
             {/* Scroll Indicator Gradient */}
-            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none md:hidden" />
+            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white dark:from-brand-dark to-transparent z-10 pointer-events-none md:hidden" />
             
             <div className="flex items-center h-16 px-0 gap-6 overflow-x-auto scrollbar-hide flex-1 scroll-smooth">
               <button 
@@ -257,7 +311,7 @@ export const Navbar = () => {
                     }}
                     className={cn(
                       "flex items-center gap-2 h-16 border-b-[3px] transition-all px-2 group/tab",
-                      filters.type === tab.value ? "border-[#CA3433] text-[#CA3433] bg-[#fff5f5]" : "border-transparent text-gray-500 hover:text-gray-900"
+                      filters.type === tab.value ? "border-[#CA3433] text-[#CA3433] bg-[#fff5f5] dark:bg-brand-500/10" : "border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
                     )}
                   >
                     <span className="group-hover/tab:scale-110 transition-transform duration-200">
@@ -269,14 +323,14 @@ export const Navbar = () => {
               </div>
             </div>
 
-            <div className="hidden lg:flex items-center h-16 border-l border-gray-100 pl-6 pr-8 bg-white min-w-max relative cursor-pointer shrink-0" onClick={() => setCityMenuOpen(!cityMenuOpen)}>
+            <div className="hidden lg:flex items-center h-16 border-l border-gray-100 dark:border-slate-800 pl-6 pr-8 bg-white dark:bg-brand-dark min-w-max relative cursor-pointer shrink-0" onClick={() => setCityMenuOpen(!cityMenuOpen)}>
                 <div className="flex items-center gap-3">
-                  <div className="relative w-10 h-10 rounded-full border border-[#CA3433] overflow-hidden bg-gray-50 flex items-center justify-center shrink-0">
+                  <div className="relative w-10 h-10 rounded-full border border-[#CA3433] overflow-hidden bg-gray-50 dark:bg-slate-900 flex items-center justify-center shrink-0">
                     <img src="/1.webp" alt="City" className="w-full h-full object-cover" />
                   </div>
                   <div className="flex flex-col text-sm">
-                    <span className="font-semibold text-gray-900 leading-tight">{selectedCity}</span>
-                    <span className="text-gray-500 text-xs">Uttarakhand</span>
+                    <span className="font-semibold text-gray-900 dark:text-white leading-tight">{selectedCity}</span>
+                    <span className="text-gray-500 dark:text-gray-400 text-xs">Uttarakhand</span>
                   </div>
                   <ChevronDown size={16} className={`text-gray-400 ml-4 transition-transform duration-200 ${cityMenuOpen ? 'rotate-180' : ''}`} />
                 </div>
@@ -285,14 +339,14 @@ export const Navbar = () => {
                 {cityMenuOpen && (
                   <>
                     <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setCityMenuOpen(false); }} />
-                    <div className="absolute right-4 top-full mt-3 w-48 bg-white rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 z-50 overflow-hidden py-2" onClick={(e) => e.stopPropagation()}>
+                    <div className="absolute right-4 top-full mt-3 w-48 bg-white dark:bg-slate-900 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 dark:border-slate-800 z-50 overflow-hidden py-2" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => {
                           setSelectedCity('All Cities')
                           updateFilters({ city: '' })
                           setCityMenuOpen(false)
                         }}
-                        className={`w-full text-left px-5 py-2.5 text-sm font-bold transition-colors ${selectedCity === 'All Cities' ? 'bg-[#fff5f5] text-[#CA3433]' : 'text-gray-700 hover:bg-gray-50'}`}
+                        className={`w-full text-left px-5 py-2.5 text-sm font-bold transition-colors ${selectedCity === 'All Cities' ? 'bg-[#fff5f5] dark:bg-brand-500/10 text-[#CA3433]' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800'}`}
                       >
                         All Cities
                       </button>
@@ -304,7 +358,7 @@ export const Navbar = () => {
                             updateFilters({ city })
                             setCityMenuOpen(false)
                           }}
-                          className={`w-full text-left px-5 py-2.5 text-sm font-semibold transition-colors ${selectedCity === city ? 'bg-[#fff5f5] text-[#CA3433]' : 'text-gray-700 hover:bg-gray-50'}`}
+                          className={`w-full text-left px-5 py-2.5 text-sm font-semibold transition-colors ${selectedCity === city ? 'bg-[#fff5f5] dark:bg-brand-500/10 text-[#CA3433]' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800'}`}
                         >
                           {city}
                         </button>
@@ -316,24 +370,24 @@ export const Navbar = () => {
           </div>
           
           {/* Mobile Search Bar (Out of menu, below banner/categories) */}
-          <div className="md:hidden px-4 py-2 bg-white relative border-b border-gray-100 transition-all flex items-center gap-2 mt-1">
+          <div className="md:hidden px-4 py-2 bg-white dark:bg-brand-dark relative border-b border-gray-100 dark:border-slate-800 transition-all flex items-center gap-2 mt-1">
             
             {/* Mobile City Selection */}
             <div className="relative shrink-0">
               <button 
                 onClick={() => setCityMenuOpen(!cityMenuOpen)}
-                className="flex items-center gap-1.5 p-1 bg-gray-50 rounded-full border border-[#CA3433]"
+                className="flex items-center gap-1.5 p-1 bg-gray-50 dark:bg-slate-900 rounded-full border border-[#CA3433]"
               >
-                <div className="w-8 h-8 rounded-full overflow-hidden border border-white shadow-sm">
+                <div className="w-8 h-8 rounded-full overflow-hidden border border-white dark:border-slate-800 shadow-sm">
                   <img src="/1.webp" alt="City" className="w-full h-full object-cover" />
                 </div>
                 <ChevronDown size={14} className={`text-gray-400 mr-1 transition-transform duration-200 ${cityMenuOpen ? 'rotate-180' : ''}`} />
               </button>
-
+ 
               {cityMenuOpen && (
                 <>
                   <div className="fixed inset-0 z-[60]" onClick={() => setCityMenuOpen(false)} />
-                  <div className="absolute left-0 top-full mt-2 w-40 bg-white rounded-xl shadow-2xl border border-gray-100 z-[70] overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="absolute left-0 top-full mt-2 w-40 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-gray-100 dark:border-slate-800 z-[70] overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-200">
                     <div className="px-3 py-2 border-b border-gray-50 mb-1">
                       <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t('search.filters')}</span>
                     </div>
@@ -343,7 +397,7 @@ export const Navbar = () => {
                         updateFilters({ city: '' })
                         setCityMenuOpen(false)
                       }}
-                      className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${selectedCity === 'All Cities' ? 'bg-brand-50 text-brand-600' : 'text-gray-700 hover:bg-gray-50'}`}
+                      className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${selectedCity === 'All Cities' ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800'}`}
                     >
                       All Cities
                     </button>
@@ -355,7 +409,7 @@ export const Navbar = () => {
                           updateFilters({ city })
                           setCityMenuOpen(false)
                         }}
-                        className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${selectedCity === city ? 'bg-brand-50 text-brand-600' : 'text-gray-700 hover:bg-gray-50'}`}
+                        className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${selectedCity === city ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800'}`}
                       >
                         {city}
                       </button>
@@ -376,7 +430,7 @@ export const Navbar = () => {
                 value={searchQuery}
                 placeholder={t('hero.searchPlaceholder')}
                 onChange={handleLiveSearch}
-                className="w-full bg-gray-50 border border-[#CA3433] rounded-full py-2.5 pl-12 pr-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#CA3433]/20 shadow-sm transition-all"
+                className="w-full bg-gray-50 dark:bg-slate-900 border border-[#CA3433] rounded-full py-2.5 pl-12 pr-4 text-sm font-medium dark:text-white focus:outline-none focus:ring-2 focus:ring-[#CA3433]/20 shadow-sm transition-all"
               />
             </div>
           </div>
@@ -393,7 +447,27 @@ export const Navbar = () => {
             <button onClick={() => { dispatch(closeMobileMenu()); user ? navigate(role === 'landlord' ? '/landlord' : role === 'service_provider' ? '/service-provider' : '/landlord') : dispatch(openAuthModal('login')) }} className="block w-full text-left font-semibold text-gray-700 py-2">{t('nav.list')}</button>
             <Link to="/about" onClick={() => dispatch(closeMobileMenu())} className="block w-full text-left font-semibold text-gray-700 py-2">{t('nav.about')}</Link>
             
-            <div className="w-full h-px bg-gray-100 my-4" />
+            {/* Mobile Theme Toggle */}
+            <div className="flex items-center justify-between py-2 border-t border-gray-100 dark:border-slate-800 pt-4">
+              <span className="font-semibold text-gray-700 dark:text-gray-300">Theme</span>
+              <div className="flex items-center gap-1 bg-gray-100 dark:bg-slate-800 p-1 rounded-xl">
+                {['light', 'dark', 'system'].map(t => (
+                  <button
+                    key={t}
+                    onClick={() => setTheme(t)}
+                    className={`px-3 py-1 text-xs font-semibold rounded-lg capitalize transition-all ${
+                      theme === t 
+                        ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-sm' 
+                        : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="w-full h-px bg-gray-100 dark:bg-slate-800 my-4" />
             
             {user ? (
                <>
