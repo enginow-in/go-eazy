@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, X, Image as ImageIcon, Zap, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react'
 import { Input, Textarea, Select } from '../ui/Input'
@@ -95,6 +95,18 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   const [step, setStep] = useState(1)
   const [images, setImages] = useState([])
   const [previewUrls, setPreviewUrls] = useState(initialData?.images || [])
+  const blobUrlsRef = useRef([]) // Store blob URLs to track and clean up cleanly
+
+  // Clean up all generated blob URLs on unmount to prevent leaks
+  useEffect(() => {
+    return () => {
+      blobUrlsRef.current.forEach(url => {
+        if (url.startsWith('blob:')) {
+          URL.revokeObjectURL(url)
+        }
+      })
+    }
+  }, [])
 
   const [form, setForm] = useState({
     title:             initialData?.title || '',
@@ -127,14 +139,28 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
     for (const file of files) {
       if (file.size > 7 * 1024 * 1024) { toast.error(`Image ${file.name} exceeds 7MB limit`); return }
     }
+
+    const newGeneratedUrls = files.map(f => URL.createObjectURL(f))
+    blobUrlsRef.current = [...blobUrlsRef.current, ...newGeneratedUrls]
+
     setImages(prev => [...prev, ...files])
-    setPreviewUrls(prev => [...prev, ...files.map(f => URL.createObjectURL(f))])
+    setPreviewUrls(prev => [...prev, ...newGeneratedUrls])
   }
 
   const removeImage = (index) => {
+    const targetUrl = previewUrls[index]
+    
+    // Revoke object URL explicitly to free browser allocation memory
+    if (targetUrl && targetUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(targetUrl)
+      blobUrlsRef.current = blobUrlsRef.current.filter(url => url !== targetUrl)
+    }
+
     setPreviewUrls(prev => prev.filter((_, i) => i !== index))
-    if (index >= (initialData?.images?.length || 0)) {
-      setImages(prev => prev.filter((_, i) => i !== index - (initialData?.images?.length || 0)))
+    
+    const initialCount = initialData?.images?.length || 0
+    if (index >= initialCount) {
+      setImages(prev => prev.filter((_, i) => i !== index - initialCount))
     }
   }
 
