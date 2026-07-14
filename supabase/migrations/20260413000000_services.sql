@@ -11,7 +11,7 @@ ALTER TABLE public.profiles ADD CONSTRAINT profiles_role_check
 -- SERVICE PROVIDERS TABLE
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.service_providers (
-  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
   provider_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   name text NOT NULL,
   category text NOT NULL CHECK (category IN ('tiffin', 'laundry', 'cleaning')),
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS public.service_providers (
 -- SERVICE LISTINGS TABLE (individual services with price)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.service_listings (
-  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
   service_provider_id uuid NOT NULL REFERENCES public.service_providers(id) ON DELETE CASCADE,
   service_name text NOT NULL,
   price numeric,
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS public.service_listings (
 -- SERVICE PLANS TABLE (subscription plans)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.service_plans (
-  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
   service_provider_id uuid NOT NULL REFERENCES public.service_providers(id) ON DELETE CASCADE,
   plan_name text NOT NULL,
   price numeric NOT NULL,
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS public.service_plans (
 -- SERVICE REVIEWS TABLE (persisted, no loss on refresh)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.service_reviews (
-  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
   service_provider_id uuid NOT NULL REFERENCES public.service_providers(id) ON DELETE CASCADE,
   reviewer_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   rating integer NOT NULL CHECK (rating BETWEEN 1 AND 5),
