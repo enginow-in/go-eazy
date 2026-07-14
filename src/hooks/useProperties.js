@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback,useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { MOCK_PROPERTIES } from '../utils/constants'
@@ -21,6 +21,7 @@ const PUBLIC_PROFILE_FIELDS = 'full_name, avatar_url, bio'
 
 export const useProperties = () => {
   const dispatch = useDispatch()
+  const latestRequest = useRef(0)
   const { 
     listings, featured, currentProperty, 
     favorites, recentlyViewed, filters, 
@@ -30,6 +31,7 @@ export const useProperties = () => {
   const { user, profile } = useSelector(s => s.auth)
 
   const fetchProperties = useCallback(async (reset = false) => {
+  const requestId = ++latestRequest.current
     dispatch(setLoading(true))
     try {
       let query = supabase
@@ -58,6 +60,9 @@ export const useProperties = () => {
       const { data, error, count: dbCount } = await query
         .order(filters.sortBy || 'created_at', { ascending: filters.sortOrder === 'asc' })
         .range(from, from + PAGE_SIZE - 1)
+      if (requestId !== latestRequest.current) {
+  return
+}
 
       if (error) throw error
 
@@ -74,7 +79,9 @@ export const useProperties = () => {
       console.error('fetchProperties error:', err)
       dispatch(setListings([]))
     } finally {
-      dispatch(setLoading(false))
+      if (requestId === latestRequest.current) {
+  dispatch(setLoading(false))
+}
     }
   }, [filters, page, dispatch])
 

@@ -13,24 +13,28 @@ import { AMENITY_ICONS, cn } from '../utils/helpers'
 import { Skeleton } from '../components/ui/Skeleton'
 import { useAuth } from '../hooks/useAuth'
 import { RecommendedSection } from '../components/property/RecommendedSection'
+import { useDebounce } from "../hooks/useDebounce";
 
 export const Search = () => {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const [searchParams] = useSearchParams()
   const { listings, filters, loading, hasMore, fetchProperties, updateFilters, totalCount } = useProperties()
-  
+
   const [viewMode, setViewMode] = useState('grid')
   const [showFilters, setShowFilters] = useState(false)
   const [localFilters, setLocalFilters] = useState({
-    city: filters.city || '', 
-    area: filters.area || '', 
-    priceMin: filters.priceMin || 0, 
-    priceMax: filters.priceMax || 100000, 
-    amenities: [...(filters.amenities || [])], 
-    sortBy: filters.sortBy || 'created_at', 
+    city: filters.city || '',
+    area: filters.area || '',
+    priceMin: filters.priceMin || 0,
+    priceMax: filters.priceMax || 100000,
+    amenities: [...(filters.amenities || [])],
+    sortBy: filters.sortBy || 'created_at',
     sortOrder: filters.sortOrder || 'desc'
   })
+  const debouncedCity = useDebounce(localFilters.city, 400);
+const debouncedArea = useDebounce(localFilters.area, 400);
+
 
   // Read ?type= from URL and apply as filter
   useEffect(() => {
@@ -47,15 +51,15 @@ export const Search = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setLocalFilters({
-      city: filters.city || '', 
-      area: filters.area || '', 
-      priceMin: filters.priceMin || 0, 
-      priceMax: filters.priceMax || 100000, 
-      amenities: [...(filters.amenities || [])], 
-      sortBy: filters.sortBy || 'created_at', 
+      city: filters.city || '',
+      area: filters.area || '',
+      priceMin: filters.priceMin || 0,
+      priceMax: filters.priceMax || 100000,
+      amenities: [...(filters.amenities || [])],
+      sortBy: filters.sortBy || 'created_at',
       sortOrder: filters.sortOrder || 'desc'
     })
-  }, [filters])
+  }, [debouncedCity, debouncedArea, updateFilters])
 
   const applyFilters = () => {
     updateFilters(localFilters)
@@ -78,28 +82,28 @@ export const Search = () => {
            <div className="flex flex-col gap-1.5 focus-within:text-brand-600 transition-colors">
              <label htmlFor="filter-city" className="sr-only">City</label>
              <div className="flex bg-gray-50 rounded-xl overflow-hidden border border-gray-200 focus-within:border-brand-50-focus transition-colors pr-2">
-               <input 
-                 type="text" 
+               <input
+                 type="text"
                  id="filter-city"
                  name="city"
-                 placeholder="City (e.g. Dehradun)" 
-                 className="w-full bg-transparent border-none text-sm py-2.5 px-3 focus:ring-0 outline-none" 
-                 value={localFilters.city} 
-                 onChange={e => setLocalFilters(prev => ({...prev, city: e.target.value}))} 
+                 placeholder="City (e.g. Dehradun)"
+                 className="w-full bg-transparent border-none text-sm py-2.5 px-3 focus:ring-0 outline-none"
+                 value={localFilters.city}
+                 onChange={e => setLocalFilters(prev => ({...prev, city: e.target.value}))}
                />
              </div>
            </div>
            <div className="flex flex-col gap-1.5 focus-within:text-brand-600 transition-colors">
              <label htmlFor="filter-area" className="sr-only">Area</label>
              <div className="flex bg-gray-50 rounded-xl overflow-hidden border border-gray-200 focus-within:border-brand-50-focus transition-colors pr-2">
-               <input 
-                 type="text" 
+               <input
+                 type="text"
                  id="filter-area"
                  name="area"
-                 placeholder="Area" 
-                 className="w-full bg-transparent border-none text-sm py-2.5 px-3 focus:ring-0 outline-none" 
-                 value={localFilters.area} 
-                 onChange={e => setLocalFilters(prev => ({...prev, area: e.target.value}))} 
+                 placeholder="Area"
+                 className="w-full bg-transparent border-none text-sm py-2.5 px-3 focus:ring-0 outline-none"
+                 value={localFilters.area}
+                 onChange={e => setLocalFilters(prev => ({...prev, area: e.target.value}))}
                />
              </div>
            </div>
@@ -132,12 +136,12 @@ export const Search = () => {
              <span className="text-sm font-bold text-brand-600">₹{localFilters.priceMax >= 100000 ? '1L+' : localFilters.priceMax.toLocaleString()}</span>
            </div>
            <div className="pt-4 pb-2">
-             <input 
-               type="range" 
-               min="0" 
-               max="100000" 
+             <input
+               type="range"
+               min="0"
+               max="100000"
                step="1000"
-               value={localFilters.priceMax} 
+               value={localFilters.priceMax}
                onChange={e => setLocalFilters(prev => ({...prev, priceMax: Number(e.target.value)}))}
                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#CA3433]"
              />
@@ -178,20 +182,20 @@ export const Search = () => {
   return (
     <div className="pt-4 pb-12 min-h-screen bg-gray-50/50">
       <div className="w-full px-2 sm:px-4">
-        
+
         {/* Header Area */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div className="flex-1 w-full">
             <div className="flex items-center justify-between gap-4 w-full">
               <div>
                 <h1 className="text-[14px] sm:text-2xl md:text-3xl font-light text-gray-800 flex items-center gap-2 italic font-display tracking-tight pr-2">
-                  <span className="text-brand-500 font-normal opacity-50">—</span> 
+                  <span className="text-brand-500 font-normal opacity-50">—</span>
                   <span>{t('search.quoteStart')} <strong className="font-extrabold text-gray-900">{t('search.quoteEnd')}</strong>"</span>
                 </h1>
                 <p className="text-[10px] sm:text-base text-gray-500 mt-1 sm:mt-2 pl-4 sm:pl-8 font-medium">
-                  {t('search.resultsFound', { 
-                    count: count, 
-                    type: filters.type ? t(`property.types.${filters.type}`) : t('search.properties') 
+                  {t('search.resultsFound', {
+                    count: count,
+                    type: filters.type ? t(`property.types.${filters.type}`) : t('search.properties')
                   })}
                 </p>
               </div>
@@ -199,14 +203,14 @@ export const Search = () => {
               {/* Mobile Actions (View Toggles + Filter) */}
               <div className="md:hidden flex items-center gap-3 relative z-30">
                 <div className="flex items-center gap-2 pr-2 border-r border-gray-200 mr-1">
-                  <button 
-                    onClick={() => setViewMode('grid')} 
+                  <button
+                    onClick={() => setViewMode('grid')}
                     className={`p-2 transition-all rounded-lg ${viewMode === 'grid' ? 'bg-brand-50 text-brand-600 ring-1 ring-brand-100' : 'text-gray-400'}`}
                   >
                     <Grid size={18} />
                   </button>
-                  <button 
-                    onClick={() => setViewMode('list')} 
+                  <button
+                    onClick={() => setViewMode('list')}
                     className={`p-2 transition-all rounded-lg ${viewMode === 'list' ? 'bg-brand-50 text-brand-600 ring-1 ring-brand-100' : 'text-gray-400'}`}
                   >
                     <ListIcon size={18} className="rotate-90" />
@@ -214,14 +218,14 @@ export const Search = () => {
                 </div>
 
                 <div className="relative">
-                  <button 
-                    onClick={() => setShowFilters(!showFilters)} 
+                  <button
+                    onClick={() => setShowFilters(!showFilters)}
                     className={`flex items-center justify-center p-2.5 bg-white border rounded-xl transition-all shadow-sm ${showFilters ? 'border-brand-500 text-brand-600 ring-2 ring-brand-50' : 'border-gray-200 text-gray-700 hover:border-gray-300'}`}
                     aria-label="Toggle Filters"
                   >
                     <Filter size={20} />
                   </button>
-                  
+
                   {showFilters && (
                     <>
                       <div className="fixed inset-0 bg-black/5 backdrop-blur-[1px] z-10" onClick={() => setShowFilters(false)}></div>
@@ -245,7 +249,7 @@ export const Search = () => {
                   <ListIcon size={22} className="rotate-90" />
                </button>
              </div>
-             
+
              {/* Desktop Filters Button & Dropdown */}
              <div className="relative z-20">
                <button onClick={() => setShowFilters(!showFilters)} className={`flex items-center gap-2 px-6 py-2.5 bg-white border rounded-xl text-sm font-semibold transition-all ml-4 ${showFilters ? 'border-brand-500 text-brand-600 shadow-sm' : 'border-gray-200 text-gray-700 hover:shadow-sm'}`}>
@@ -253,7 +257,7 @@ export const Search = () => {
                   <span>{t('search.filters')}</span>
                   <ChevronDown size={14} className={`ml-2 transition-transform duration-300 ${showFilters ? 'rotate-180 text-brand-500' : 'text-gray-400'}`} />
                </button>
-               
+
                {showFilters && (
                  <>
                    <div className="fixed inset-0 z-10" onClick={() => setShowFilters(false)}></div>
