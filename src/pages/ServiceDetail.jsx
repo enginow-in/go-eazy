@@ -18,6 +18,7 @@ import { Button } from '../components/ui/Button'
 import { Skeleton } from '../components/ui/Skeleton'
 import { openAuthModal } from '../store/authSlice'
 import toast from 'react-hot-toast'
+import { supabase } from '../lib/supabase'
 import { LocationViewer } from '../components/map/LocationViewer'
 
 const getCategoryConfig = (t) => ({
@@ -105,6 +106,20 @@ export const ServiceDetail = () => {
         setContactUnlocked(true)
         const gated = await fetchServiceGatedData(id)
         setGatedData(gated)
+        return
+      }
+
+      const { data } = await supabase
+        .from('unlocked_services')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('service_id', id)
+        .maybeSingle()
+
+      if (data) {
+        setContactUnlocked(true)
+        const gated = await fetchServiceGatedData(id)
+        setGatedData(gated)
       }
     }
     checkStatus()
@@ -117,14 +132,26 @@ export const ServiceDetail = () => {
     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
     : '0.0'
 
-  const handleUnlockContact = () => {
+  const handleUnlockContact = async () => {
     if (!user) {
       dispatch(openAuthModal('login'))
       return
     }
-    setContactUnlocked(true)
-    fetchServiceGatedData(id).then(setGatedData)
-    toast.success(t('services.reviews.contactUnlocked'))
+    try {
+      const { error } = await supabase
+        .from('unlocked_services')
+        .insert({ user_id: user.id, service_id: id })
+      
+      if (error && error.code !== '23505') throw error
+
+      setContactUnlocked(true)
+      const gated = await fetchServiceGatedData(id)
+      setGatedData(gated)
+      toast.success(t('services.reviews.contactUnlocked'))
+    } catch (err) {
+      console.error(err)
+      toast.error('Failed to unlock contact details')
+    }
   }
 
   const handleShare = () => {
@@ -454,21 +481,40 @@ export const ServiceDetail = () => {
           {user && (profile?.role === 'user' || !profile?.role) && (
             <div className="mb-8 p-6 bg-[#F9F8F6] rounded-2xl border border-gray-100">
               <p className="font-bold text-gray-900 mb-4">{myReview ? t('services.reviews.updateFeedback') : t('services.reviews.shareExperience')}</p>
-              <div className="mb-4">
-                <StarRating value={reviewRating || myReview?.rating || 0} onChange={setReviewRating} />
-              </div>
-              <textarea
-                className="w-full bg-white border border-gray-100 rounded-xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#CA3433]/10 resize-none"
-                rows={3}
-                placeholder={t('services.reviews.sharePrompt')}
-                value={reviewText}
-                onChange={e => setReviewText(e.target.value)}
-              />
-              <div className="flex justify-end mt-3">
-                <Button size="sm" className="bg-[#CA3433] hover:bg-[#ac2d2c] rounded-full gap-2 px-6" loading={submittingReview} onClick={handleSubmitReview}>
-                  <Send size={14} /> {myReview ? t('services.reviews.updateFeedback') : t('services.reviews.shareExperience')}
-                </Button>
-              </div>
+              {!contactUnlocked ? (
+                <div className="text-center py-4">
+                  <p className="text-gray-500 text-sm mb-3">You must unlock this service provider's contact details to leave a review.</p>
+                  <button 
+                    onClick={() => {
+                      const el = document.getElementById('contact-section')
+                      if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                      }
+                    }}
+                    className="text-sm font-semibold text-brand-600 hover:text-brand-700 hover:underline"
+                  >
+                    Go to Unlock Service
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-4">
+                    <StarRating value={reviewRating || myReview?.rating || 0} onChange={setReviewRating} />
+                  </div>
+                  <textarea
+                    className="w-full bg-white border border-gray-100 rounded-xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#CA3433]/10 resize-none"
+                    rows={3}
+                    placeholder={t('services.reviews.sharePrompt')}
+                    value={reviewText}
+                    onChange={e => setReviewText(e.target.value)}
+                  />
+                  <div className="flex justify-end mt-3">
+                    <Button size="sm" className="bg-[#CA3433] hover:bg-[#ac2d2c] rounded-full gap-2 px-6" loading={submittingReview} onClick={handleSubmitReview}>
+                      <Send size={14} /> {myReview ? t('services.reviews.updateFeedback') : t('services.reviews.shareExperience')}
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
