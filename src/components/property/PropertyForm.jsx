@@ -315,14 +315,14 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
             <h3 className="text-xl font-black text-gray-900 mb-1">Premium Contact Details</h3>
             <p className="text-sm text-gray-400">These details are only visible to tenants who unlock your listing. Keep them accurate.</p>
           </div>
-          <Input id="property-address" label="Exact Property Address"
+          <Input id="property-address" label="Exact Property Address *"
             placeholder="e.g. Flat 402, Building B, XYZ Apartments, Near Metro"
-            value={form.exact_location} onChange={e => set('exact_location', e.target.value)} />
+            value={form.exact_location} onChange={e => set('exact_location', e.target.value)} required />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input id="property-phone" label="Contact Phone" placeholder="+91 9876543210"
-              value={form.contact_phone} onChange={e => set('contact_phone', e.target.value)} />
-            <Input id="property-email" label="Contact Email" type="email" placeholder="owner@email.com"
-              value={form.contact_email} onChange={e => set('contact_email', e.target.value)} />
+            <Input id="property-phone" label="Contact Phone *" placeholder="+91 9876543210"
+              value={form.contact_phone} onChange={e => set('contact_phone', e.target.value)} required />
+            <Input id="property-email" label="Contact Email *" type="email" placeholder="owner@email.com"
+              value={form.contact_email} onChange={e => set('contact_email', e.target.value)} required />
           </div>
           <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-100">
             <span className="text-amber-500 text-lg">🔒</span>
