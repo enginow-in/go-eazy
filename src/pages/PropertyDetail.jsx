@@ -31,6 +31,7 @@ const StarRating = ({ value, onChange, readonly = false }) => (
         disabled={readonly}
         onClick={() => onChange && onChange(n)}
         className={`transition-transform ${!readonly ? 'hover:scale-125 cursor-pointer' : 'cursor-default'}`}
+        aria-label={`Rate ${n} out of 5 stars`}
       >
         <Star
           size={readonly ? 14 : 22}

@@ -102,6 +102,10 @@ export const Navbar = () => {
             <button 
               onClick={() => setLangMenuOpen(!langMenuOpen)}
               className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-700 hover:text-[#CA3433] transition-colors uppercase px-1 py-2"
+              aria-label="Select language"
+              aria-expanded={langMenuOpen}
+              aria-controls="lang-menu"
+              aria-haspopup="true"
             >
               {currentLang.short} <ChevronDown size={14} className={`transition-transform duration-200 ${langMenuOpen ? 'rotate-180 text-[#CA3433]' : ''}`} />
             </button>
@@ -109,9 +113,26 @@ export const Navbar = () => {
             {langMenuOpen && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setLangMenuOpen(false)} />
-                <div className="absolute left-0 top-full mt-2 w-32 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden py-1">
+                <div 
+                  id="lang-menu"
+                  role="menu"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') { setLangMenuOpen(false); return; }
+                    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                      e.preventDefault();
+                      const items = Array.from(e.currentTarget.querySelectorAll('[role="menuitem"]'));
+                      const idx = items.indexOf(document.activeElement);
+                      let next = e.key === 'ArrowDown' ? idx + 1 : idx - 1;
+                      if (next >= items.length) next = 0;
+                      if (next < 0) next = items.length - 1;
+                      items[next]?.focus();
+                    }
+                  }}
+                  className="absolute left-0 top-full mt-2 w-32 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden py-1"
+                >
                   {languages.map(l => (
                     <button
+                      role="menuitem"
                       key={l.code}
                       onClick={() => changeLanguage(l.code)}
                       className={`w-full text-left px-4 py-3 text-sm font-bold transition-colors ${currentLang.code === l.code ? 'bg-[#fff5f5] text-[#CA3433]' : 'text-gray-700 hover:bg-gray-50'}`}
@@ -167,6 +188,10 @@ export const Navbar = () => {
                 <button
                   onClick={() => setUserMenuOpen(v => !v)}
                   className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#0B0F19] text-white text-sm font-semibold hover:bg-[#CA3433] transition-all duration-300 transform hover:scale-105"
+                  aria-label="User menu"
+                  aria-expanded={userMenuOpen}
+                  aria-controls="user-menu"
+                  aria-haspopup="true"
                 >
                   {profile?.avatar_url ? (
                     <img src={profile.avatar_url} alt="Avatar" className="w-5 h-5 rounded-full object-cover" />
@@ -179,9 +204,26 @@ export const Navbar = () => {
                 {userMenuOpen && (
                   <>
                     <div className="fixed inset-0 z-10" onClick={() => setUserMenuOpen(false)} />
-                    <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-xl border border-gray-100 z-20 overflow-hidden">
+                    <div 
+                      id="user-menu"
+                      role="menu"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') { setUserMenuOpen(false); return; }
+                        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                          e.preventDefault();
+                          const items = Array.from(e.currentTarget.querySelectorAll('[role="menuitem"]'));
+                          const idx = items.indexOf(document.activeElement);
+                          let next = e.key === 'ArrowDown' ? idx + 1 : idx - 1;
+                          if (next >= items.length) next = 0;
+                          if (next < 0) next = items.length - 1;
+                          items[next]?.focus();
+                        }
+                      }}
+                      className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-xl border border-gray-100 z-20 overflow-hidden"
+                    >
                       <div className="py-1">
                         <button
+                          role="menuitem"
                           onClick={() => { 
                             const dest = role === 'admin' ? '/systemadmin' : role === 'landlord' ? '/landlord' : role === 'service_provider' ? '/service-provider' : '/dashboard'
                             navigate(dest); setUserMenuOpen(false) 
@@ -191,12 +233,14 @@ export const Navbar = () => {
                           {role === 'admin' ? 'Admin Panel' : t('nav.dashboard')}
                         </button>
                         <button
+                          role="menuitem"
                           onClick={() => { navigate('/settings'); setUserMenuOpen(false) }}
                           className="w-full flex flex-col items-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-100"
                         >
                           {t('nav.settings')}
                         </button>
                         <button
+                          role="menuitem"
                           onClick={handleSignOut}
                           className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
                         >
@@ -269,7 +313,17 @@ export const Navbar = () => {
               </div>
             </div>
 
-            <div className="hidden lg:flex items-center h-16 border-l border-gray-100 pl-6 pr-8 bg-white min-w-max relative cursor-pointer shrink-0" onClick={() => setCityMenuOpen(!cityMenuOpen)}>
+            <div 
+              role="button"
+              tabIndex={0}
+              aria-label="City menu"
+              aria-expanded={cityMenuOpen}
+              aria-controls="desktop-city-menu"
+              aria-haspopup="true"
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCityMenuOpen(!cityMenuOpen); } }}
+              className="hidden lg:flex items-center h-16 border-l border-gray-100 pl-6 pr-8 bg-white min-w-max relative cursor-pointer shrink-0" 
+              onClick={() => setCityMenuOpen(!cityMenuOpen)}
+            >
                 <div className="flex items-center gap-3">
                   <div className="relative w-10 h-10 rounded-full border border-[#CA3433] overflow-hidden bg-gray-50 flex items-center justify-center shrink-0">
                     <img src="/1.webp" alt="City" className="w-full h-full object-cover" />
@@ -285,8 +339,25 @@ export const Navbar = () => {
                 {cityMenuOpen && (
                   <>
                     <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setCityMenuOpen(false); }} />
-                    <div className="absolute right-4 top-full mt-3 w-48 bg-white rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 z-50 overflow-hidden py-2" onClick={(e) => e.stopPropagation()}>
+                    <div 
+                      id="desktop-city-menu"
+                      role="menu"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') { setCityMenuOpen(false); return; }
+                        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                          e.preventDefault();
+                          const items = Array.from(e.currentTarget.querySelectorAll('[role="menuitem"]'));
+                          const idx = items.indexOf(document.activeElement);
+                          let next = e.key === 'ArrowDown' ? idx + 1 : idx - 1;
+                          if (next >= items.length) next = 0;
+                          if (next < 0) next = items.length - 1;
+                          items[next]?.focus();
+                        }
+                      }}
+                      className="absolute right-4 top-full mt-3 w-48 bg-white rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 z-50 overflow-hidden py-2" onClick={(e) => e.stopPropagation()}
+                    >
                       <button
+                        role="menuitem"
                         onClick={() => {
                           setSelectedCity('All Cities')
                           updateFilters({ city: '' })
@@ -298,6 +369,7 @@ export const Navbar = () => {
                       </button>
                       {CITIES.map(city => (
                         <button
+                          role="menuitem"
                           key={city}
                           onClick={() => {
                             setSelectedCity(city)
@@ -323,6 +395,10 @@ export const Navbar = () => {
               <button 
                 onClick={() => setCityMenuOpen(!cityMenuOpen)}
                 className="flex items-center gap-1.5 p-1 bg-gray-50 rounded-full border border-[#CA3433]"
+                aria-label="City menu"
+                aria-expanded={cityMenuOpen}
+                aria-controls="mobile-city-menu"
+                aria-haspopup="true"
               >
                 <div className="w-8 h-8 rounded-full overflow-hidden border border-white shadow-sm">
                   <img src="/1.webp" alt="City" className="w-full h-full object-cover" />
@@ -333,11 +409,28 @@ export const Navbar = () => {
               {cityMenuOpen && (
                 <>
                   <div className="fixed inset-0 z-[60]" onClick={() => setCityMenuOpen(false)} />
-                  <div className="absolute left-0 top-full mt-2 w-40 bg-white rounded-xl shadow-2xl border border-gray-100 z-[70] overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-200">
+                  <div 
+                    id="mobile-city-menu"
+                    role="menu"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') { setCityMenuOpen(false); return; }
+                      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        const items = Array.from(e.currentTarget.querySelectorAll('[role="menuitem"]'));
+                        const idx = items.indexOf(document.activeElement);
+                        let next = e.key === 'ArrowDown' ? idx + 1 : idx - 1;
+                        if (next >= items.length) next = 0;
+                        if (next < 0) next = items.length - 1;
+                        items[next]?.focus();
+                      }
+                    }}
+                    className="absolute left-0 top-full mt-2 w-40 bg-white rounded-xl shadow-2xl border border-gray-100 z-[70] overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-200"
+                  >
                     <div className="px-3 py-2 border-b border-gray-50 mb-1">
                       <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t('search.filters')}</span>
                     </div>
                     <button
+                      role="menuitem"
                       onClick={() => {
                         setSelectedCity('All Cities')
                         updateFilters({ city: '' })
@@ -349,6 +442,7 @@ export const Navbar = () => {
                     </button>
                     {CITIES.map(city => (
                       <button
+                        role="menuitem"
                         key={city}
                         onClick={() => {
                           setSelectedCity(city)
