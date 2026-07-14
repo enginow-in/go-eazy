@@ -20,6 +20,7 @@ const propertySlice = createSlice({
       sortOrder: 'desc',
     },
     loading: false,
+    isFetching: false,
     hasMore: true,
     page: 0,
     totalCount: 0,
@@ -32,6 +33,9 @@ const propertySlice = createSlice({
     },
     appendListings: (state, action) => {
       state.listings = [...state.listings, ...action.payload]
+    },
+    setFetching: (state, action) => {
+      state.isFetching = action.payload
     },
     setFeatured: (state, action) => {
       state.featured = action.payload
@@ -92,9 +96,24 @@ const propertySlice = createSlice({
 })
 
 export const {
-  setListings, appendListings, setFeatured, setCurrentProperty,
-  setFavorites, toggleFavorite, setRecentlyViewed, addRecentlyViewed,
-  setFilters, resetFilters, setLoading, setHasMore, setPage, setTotalCount,
-  setReviews, addReview, removeReview, setReviewsLoading
+  setListings,
+  appendListings,
+  setFeatured,
+  setCurrentProperty,
+  setFavorites,
+  toggleFavorite,
+  setRecentlyViewed,
+  addRecentlyViewed,
+  setFilters,
+  resetFilters,
+  setLoading,
+  setFetching,
+  setHasMore,
+  setPage,
+  setTotalCount,
+  setReviews,
+  addReview,
+  removeReview,
+  setReviewsLoading
 } = propertySlice.actions
 export default propertySlice.reducer
