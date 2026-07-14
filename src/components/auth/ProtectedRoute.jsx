@@ -1,12 +1,6 @@
-import React from 'react'
 import { Navigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
-
-const Spinner = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <div className="w-10 h-10 border-4 border-[#CA3433] border-t-transparent rounded-full animate-spin" />
-  </div>
-)
+import { Spinner } from '../ui/Spinner'
 
 export const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, profile, role, loading } = useSelector(s => s.auth)
