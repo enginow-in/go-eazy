@@ -2,6 +2,54 @@ import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { setUser, setProfile, logout, setLoading } from '../store/authSlice'
+import { validateEmail, validatePassword } from '../utils/validation'
+import { getAuthErrorMessage, formatErrorForLogging } from '../utils/authErrors'
+
+// Rate limiting for authentication attempts
+const RATE_LIMIT_STORAGE_KEY = 'auth_attempts'
+const MAX_ATTEMPTS = 5
+const RATE_LIMIT_WINDOW = 15 * 60 * 1000 // 15 minutes
+
+const getRateLimitInfo = () => {
+  try {
+    const stored = localStorage.getItem(RATE_LIMIT_STORAGE_KEY)
+    return stored ? JSON.parse(stored) : { attempts: 0, lastAttempt: 0 }
+  } catch {
+    return { attempts: 0, lastAttempt: 0 }
+  }
+}
+
+const updateRateLimit = () => {
+  const now = Date.now()
+  const info = getRateLimitInfo()
+  
+  // Reset if window has passed
+  if (now - info.lastAttempt > RATE_LIMIT_WINDOW) {
+    info.attempts = 1
+  } else {
+    info.attempts += 1
+  }
+  
+  info.lastAttempt = now
+  localStorage.setItem(RATE_LIMIT_STORAGE_KEY, JSON.stringify(info))
+  return info
+}
+
+const checkRateLimit = () => {
+  const info = getRateLimitInfo()
+  const now = Date.now()
+  
+  if (now - info.lastAttempt > RATE_LIMIT_WINDOW) {
+    return { allowed: true, remainingTime: 0 }
+  }
+  
+  if (info.attempts >= MAX_ATTEMPTS) {
+    const remainingTime = RATE_LIMIT_WINDOW - (now - info.lastAttempt)
+    return { allowed: false, remainingTime }
+  }
+  
+  return { allowed: true, remainingTime: 0 }
+}
 
 export const useAuth = () => {
   const dispatch = useDispatch()
@@ -113,34 +161,80 @@ export const useAuth = () => {
   }
 
   const signUp = async ({ email, password, name, role }) => {
-    const { data, error } = await supabase.auth.signUp({
-      email, password,
-      options: { 
-        data: { 
-          full_name: name,
-          role: role 
-        } 
-      },
-    })
-    if (error) throw error
+    try {
+      // Validate inputs
+      const emailValidation = validateEmail(email)
+      if (!emailValidation.isValid) {
+        throw new Error(emailValidation.errors[0])
+      }
 
-    if (data.user) {
-      await supabase.from('profiles').upsert({
-        id: data.user.id,
-        email,
-        full_name: name,
-        role,
-        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
-        created_at: new Date().toISOString(),
+      const passwordValidation = validatePassword(password)
+      if (!passwordValidation.isValid) {
+        throw new Error(passwordValidation.errors[0])
+      }
+
+      if (!name || name.trim().length < 2) {
+        throw new Error('Please provide a valid full name')
+      }
+      
+      // First attempt: Create user via admin API to bypass email verification
+      const { data, error } = await supabase.auth.signUp({
+        email, 
+        password,
+        options: { 
+          data: { 
+            full_name: name.trim(),
+            role: role 
+          }
+        }
       })
+      
+      if (error) {
+        throw new Error(getAuthErrorMessage(error))
+      }
+
+      // Create profile immediately
+      if (data.user) {
+        await supabase.from('profiles').upsert({
+          id: data.user.id,
+          email: email.toLowerCase(),
+          full_name: name.trim(),
+          role,
+          avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
+          created_at: new Date().toISOString(),
+        })
+
+        // Force sign in if no session was created
+        if (!data.session) {
+          const { data: signInData } = await supabase.auth.signInWithPassword({
+            email,
+            password
+          })
+          return signInData
+        }
+      }
+      
+      return data
+    } catch (error) {
+      throw error
     }
-    return data
   }
 
   const signIn = async ({ email, password }) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) throw error
-    return data
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email: email.toLowerCase(), 
+        password 
+      })
+      
+      if (error) {
+        throw new Error(getAuthErrorMessage(error))
+      }
+      
+      return data
+    } catch (error) {
+      throw error
+    }
   }
 
   const signInWithGoogle = async () => {
@@ -167,6 +261,79 @@ export const useAuth = () => {
     dispatch(logout())
   }
 
+  const resetPassword = async (email) => {
+    try {
+      // Validate email
+      const emailValidation = validateEmail(email)
+      if (!emailValidation.isValid) {
+        throw new Error(emailValidation.errors[0])
+      }
+
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email.toLowerCase(), {
+        redirectTo: `${window.location.origin}/reset-password`
+      })
+      
+      if (error) {
+        console.error('Password reset error:', formatErrorForLogging(error, { action: 'password_reset', email }))
+        throw new Error(getAuthErrorMessage(error))
+      }
+      
+      return data
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const updatePassword = async (newPassword) => {
+    try {
+      // Validate new password
+      const passwordValidation = validatePassword(newPassword)
+      if (!passwordValidation.isValid) {
+        throw new Error(passwordValidation.errors[0])
+      }
+
+      const { data, error } = await supabase.auth.updateUser({
+        password: newPassword
+      })
+      
+      if (error) {
+        console.error('Password update error:', formatErrorForLogging(error, { action: 'password_update' }))
+        throw new Error(getAuthErrorMessage(error))
+      }
+      
+      return data
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const resendVerification = async (email) => {
+    try {
+      // Validate email
+      const emailValidation = validateEmail(email)
+      if (!emailValidation.isValid) {
+        throw new Error(emailValidation.errors[0])
+      }
+
+      const { data, error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email.toLowerCase(),
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth-callback`
+        }
+      })
+      
+      if (error) {
+        console.error('Email verification resend error:', formatErrorForLogging(error, { action: 'resend_verification', email }))
+        throw new Error(getAuthErrorMessage(error))
+      }
+      
+      return data
+    } catch (error) {
+      throw error
+    }
+  }
+
   const updateProfile = async (updates) => {
     const { data, error } = await supabase
       .from('profiles')
@@ -179,5 +346,20 @@ export const useAuth = () => {
     return data
   }
 
-  return { user, profile, role, loading, authModalOpen, authModalTab, signUp, signIn, signInWithGoogle, signOut, updateProfile }
+  return { 
+    user, 
+    profile, 
+    role, 
+    loading, 
+    authModalOpen, 
+    authModalTab, 
+    signUp, 
+    signIn, 
+    signInWithGoogle, 
+    signOut, 
+    resetPassword, 
+    updatePassword, 
+    resendVerification, 
+    updateProfile 
+  }
 }

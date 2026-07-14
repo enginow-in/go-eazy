@@ -6,6 +6,8 @@ import { Home } from './pages/Home'
 import { Search } from './pages/Search'
 import { NotFound } from './pages/NotFound'
 import { NearbyServices } from './pages/NearbyServices'
+import { AuthCallback } from './pages/AuthCallback'
+import { ResetPassword } from './pages/ResetPassword'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { AppInitializer } from './components/common/AppInitializer'
 import { RoleSelectionModal } from './components/auth/RoleSelectionModal'
@@ -61,9 +63,13 @@ function App() {
       <Layout>
         <Suspense fallback={<PageSpinner />}>
           <Routes>
-          <Route path="/" element={<Navigate to="/search" replace />} />
+          <Route path="/" element={<Home />} />
           <Route path="/search" element={<Search />} />
           <Route path="/property/:id" element={<PropertyDetail />} />
+          
+          {/* Auth Routes */}
+          <Route path="/auth-callback" element={<AuthCallback />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           
           {/* Legal Routes */}
           <Route path="/privacy" element={<PrivacyPolicy />} />
