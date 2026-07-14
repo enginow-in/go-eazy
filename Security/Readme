@@ -1,0 +1,148 @@
+# GoEazy Backend
+
+Postgres-backed auth + listings API for GoEazy, serving `public/index.html`
+and `public/login.html`.
+
+## What's here
+
+**Real backend (previous pass):**
+- **Real database.** `data/db.json` is gone — everything lives in Postgres
+  (`db/schema.sql`). Works against a local Postgres install or a Supabase
+  project's connection string, since Supabase *is* Postgres underneath.
+- **Real payments.** `/api/properties/:id/checkout` creates an actual
+  Razorpay order; `/api/properties/:id/pay` verifies the HMAC-SHA256
+  signature Razorpay sends back (`utils/razorpay.js`) before marking a
+  listing `live`. Nothing trusts the client's word for it.
+- **Validation.** Every route body is checked against a Zod schema
+  (`middleware/validate.js`) before it touches a handler.
+- **Rate limiting.** Login, signup, and payment routes are capped
+  (`middleware/rateLimit.js`) to slow down brute-forcing and mass
+  account creation.
+
+**Auth completeness (this pass):**
+- **Password reset.** `POST /api/auth/forgot-password` (always responds
+  identically whether or not the email exists — no user enumeration),
+  `POST /api/auth/reset-password`. `public/forgot-password.html` and
+  `public/reset-password.html` are the pages the "Forgot password?" link
+  and the emailed link actually go to now. Resetting revokes every
+  existing session for that account.
+- **Email verification.** Signup fires off a verification email
+  (`routes/auth.js` → `utils/mailer.js`); `GET /api/auth/verify-email`
+  handles the click, `POST /api/auth/resend-verification` covers "I didn't
+  get it." Listing creation (`POST /api/properties`) now requires a
+  verified email — the one place this actually gets enforced, not just
+  tracked.
+- **Short-lived access tokens + rotating refresh tokens.** Access tokens
+  are 15-minute JWTs; refresh tokens are opaque random strings, only
+  their SHA-256 hash is stored (`refresh_tokens` table), and each
+  `/api/auth/refresh` call revokes the token it was given and issues a
+  new one. Replaying an already-rotated-away refresh token is treated as
+  theft and revokes every session for that user, not just the one call —
+  tested in the smoke test below. `public/auth-client.js` has an
+  `authFetch()` helper that retries once through `/refresh` on a
+  `TOKEN_EXPIRED` response, so pages don't need to think about token
+  lifetime.
+- **Google OAuth.** `GET /api/auth/google` → Google's consent screen (CSRF
+  protected via a state cookie) → `GET /api/auth/google/callback`
+  exchanges the code, fetches the profile, and creates or logs in the
+  matching user. New Google sign-ins get `role = NULL` until they hit
+  `POST /api/auth/select-role`, matching the product's "Universal Role
+  Selection" behaviour for both signup paths. **This can't be tested
+  without a real Google Cloud OAuth client** — I verified the redirect
+  Claude's server builds is correct (right params, right state cookie),
+  but the actual code-exchange round trip needs `GOOGLE_CLIENT_ID` /
+  `GOOGLE_CLIENT_SECRET` from a real project.
+
+**Missing features filled in (previous pass):**
+- **Image upload.** `POST /api/uploads` (`routes/uploads.js`, `middleware/upload.js`)
+  accepts 1-3 photos, JPEG/PNG/WebP only, 7MB each, saved to local disk in dev.
+  Swap the storage backend for S3 or Supabase Storage before deploying — see
+  the comment at the top of `middleware/upload.js`.
+- **Search/filter.** `GET /api/properties?city=&minRent=&maxRent=&q=`
+- **Property detail.** `GET /api/properties/:id` — public fields + review summary.
+- **Reviews.** `GET/POST /api/properties/:id/reviews` — one review per
+  (property, user), automatic average calculation (`routes/reviews.js`).
+- **Recently viewed.** `POST /api/recently-viewed/:propertyId` records a
+  view; `GET /api/recently-viewed` returns the last 72 hours of it. Pruned
+  both inline (on every view) and on an hourly schedule (`lib/prune.js`),
+  matching the "Server-Side Storage Governance" behaviour from the product notes.
+
+## Setup
+
+```bash
+npm install
+cp .env.example .env        # fill in DATABASE_URL, JWT_SECRET, Razorpay + Google keys
+psql "$DATABASE_URL" -f db/schema.sql
+npm start
+```
+
+Then visit `http://localhost:3000` and `http://localhost:3000/login`.
+
+Without `SMTP_*` set, verification and password-reset emails just print
+to the console instead of sending — fine for local dev, not for anything
+real. Without `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`/`GOOGLE_REDIRECT_URI`,
+the "Continue with Google" button will 500 with a clear message rather
+than failing silently.
+
+If you're on Supabase specifically and also want to expose `properties`
+directly through Supabase's client SDK / PostgREST, additionally run:
+
+```bash
+psql "$SUPABASE_DATABASE_URL" -f db/schema.supabase-rls.sql
+```
+
+This backend already enforces ownership in application code, so that file
+is defense-in-depth, not a requirement.
+
+## API
+
+### Auth
+| Method | Path | Body | Notes |
+|---|---|---|---|
+| POST | `/api/auth/signup` | `{ name, email, password, role }` | sends a verification email; `role` ∈ `tenant/landlord/service` |
+| POST | `/api/auth/login` | `{ email, password, role? }` | 401 on bad creds, 403 on role mismatch, 400 if the account is Google-only |
+| POST | `/api/auth/logout` | — | revokes the current refresh token, clears both cookies |
+| POST | `/api/auth/refresh` | — | rotates the refresh token, issues a new access token |
+| GET | `/api/auth/me` | — | requires a valid access token |
+| POST | `/api/auth/select-role` | `{ role }` | for accounts with no role yet (Google sign-ins) |
+| POST | `/api/auth/forgot-password` | `{ email }` | always responds the same regardless of whether the email exists |
+| POST | `/api/auth/reset-password` | `{ token, newPassword }` | revokes all sessions for that user on success |
+| GET | `/api/auth/verify-email` | `?token=` | single-use, 24h expiry |
+| POST | `/api/auth/resend-verification` | — | requires auth |
+| GET | `/api/auth/google` | — | redirects to Google's consent screen |
+| GET | `/api/auth/google/callback` | — | Google redirects here; not user-facing |
+
+### Properties
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/properties?city=&minRent=&maxRent=&q=` | public, `live` listings only |
+| GET | `/api/properties/:id` | public detail + review summary |
+| GET | `/api/properties/:id/contact` | requires auth; returns lat/lng + phone |
+| POST | `/api/properties` | landlord-only, creates a `draft` listing |
+| POST | `/api/properties/:id/checkout` | creates a Razorpay order for ₹199 |
+| POST | `/api/properties/:id/pay` | verifies signature, flips listing to `live` |
+
+### Reviews
+| Method | Path | Body | Notes |
+|---|---|---|---|
+| GET | `/api/properties/:id/reviews` | — | public, includes average + count |
+| POST | `/api/properties/:id/reviews` | `{ rating, comment? }` | one per user per property, upserts on repeat |
+
+### Recently viewed
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/api/recently-viewed/:propertyId` | requires auth; call when a listing's detail page opens |
+| GET | `/api/recently-viewed` | requires auth; last 72 hours, most recent first |
+
+### Uploads
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/api/uploads` | landlord-only, multipart field `photos`, 1-3 files, 7MB each |
+
+## Still not done
+
+Admin routes (approve/reject service providers, platform metrics
+dashboard). Everything else from the running feature list — real DB,
+real payments, validation, rate limiting, image upload, search/filter,
+property detail, reviews, recently-viewed pruning, password reset, email
+verification, refresh tokens, Google OAuth — is covered above.
