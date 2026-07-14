@@ -102,11 +102,16 @@ User experience is the core of GoEazy. We've implemented several "Premium-Only" 
 ---
 
 ## 📈 Roadmap & Versions
-- **v3.2.0 (Latest)**: 🔐 **Major Release: Authentication Hardening & Onboarding v2**:
+- **v3.3.0 (Latest)**: 🔐 **Major Release: Recommendations, Dashboard Refinements, and Booking UX**:
+  - **Personalized Recommendations**: Quiz-based property suggestions tuned to city, type, and budget.
+  - **Landlord Dashboard Refinements**: Cleaner list layout with better back navigation and denser management controls.
+  - **Site Visit Booking**: Responsive booking UI with improved mobile and iOS behavior.
+  - **Stability Fixes**: Synchronized UI updates and small runtime fixes across the app.
+- **v3.2.0**: 🔐 **Major Release: Authentication Hardening & Onboarding v2**:
   - **Forced Auth Modal**: Implemented a global authentication gate for search results to ensure only registered users can access platform data.
   - **Universal Role Selection**: All new users (Google & Email) are now prompted for a role upon first login.
   - **Tiered Onboarding**: Redesigned the onboarding quiz to trigger exclusively for Tenants, while Landlords and Service Providers are routed directly to their specialized dashboards.
-  - **Site Visit Booking**: New interactive visit request system integrated into the gated contact flow.
+  - **Site Visit Booking**: New interactive site visit request flow integrated into the gated contact path.
   - **Unified Reviews System**: Property-specific ratings and reviews with automatic average calculation and reviewer verification.
   - **UX Refinement**: Cleaned Dashboard interface with optimized notification positioning and box-less icon aesthetic.
 - **v3.1.0**: 🛡️ **Major Release: Security Hardening & UI Overhaul**:
@@ -175,3 +180,16 @@ Happy Contributing ❤️
 --
 
 © 2026 GoEazy Platform. **Simplifying. Seamlessly.**
+
+---
+
+## Contributor Checklist
+
+Before opening a PR, please confirm:
+
+- `npm.cmd install` succeeds locally.
+- `npm.cmd run lint` and `npm.cmd run build` pass.
+- The change is focused on one issue or improvement.
+- Any new behavior is documented in the README or code comments where needed.
+- Screenshots or a short demo note are included for visible UI changes.
+- The branch name and PR title clearly describe the contribution.
