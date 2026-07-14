@@ -1,4 +1,4 @@
-import React, { useState, useMemo, memo } from 'react'
+import React, { useEffect, useState, useMemo, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { Bookmark, Star, Home, Eye } from 'lucide-react'
@@ -6,6 +6,13 @@ import { openAuthModal } from '../../store/authSlice'
 import { useProperties } from '../../hooks/useProperties'
 import { cn } from '../../utils/helpers'
 import { useTranslation } from 'react-i18next'
+
+// Format price moved outside the component to prevent re-creation on every render
+const formatPrice = (p) => {
+  if (!p) return '0'
+  const num = Number(p)
+  return num.toLocaleString('en-IN')
+}
 
 const PropertyCardComponent = ({ property, layout = 'grid', compact = false, condensed = false, badge = null }) => {
   const navigate = useNavigate()
@@ -18,6 +25,11 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   const isFav = favorites.includes(property.id)
   const images = property.images || []
   const mainImage = images[0]
+
+  // Reset loading state when the property image changes
+  useEffect(() => {
+    setImgLoaded(false)
+  }, [mainImage])
 
   const handleFav = (e) => {
     e.stopPropagation()
@@ -33,13 +45,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
     }
   }, [property.rating, property.bedrooms])
 
-  const formatPrice = (p) => {
-    if (!p) return '0'
-    const num = Number(p)
-    return num.toLocaleString('en-IN')
-  }
-
-  // List Layout (Matches Image 2)
+  // List Layout
   if (layout === 'list') {
     return (
       <div 
@@ -49,7 +55,10 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         <div className="relative w-32 h-32 sm:w-40 sm:h-40 flex-shrink-0 overflow-hidden bg-gray-50 rounded-r-2xl shadow-sm">
           <img 
             src={mainImage} 
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+            className={cn(
+              "w-full h-full object-cover group-hover:scale-110 transition-all duration-500",
+              imgLoaded ? "opacity-100" : "opacity-0"
+            )}
             onLoad={() => setImgLoaded(true)}
             loading="lazy"
           />
@@ -111,9 +120,18 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         className="group bg-white rounded-2xl border border-gray-100 w-60 flex-shrink-0 overflow-hidden cursor-pointer shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
         onClick={() => navigate(`/property/${property.id}`)}
       >
-        <div className="relative aspect-[4/3] overflow-hidden rounded-b-xl">
-          <img src={mainImage} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-          <div className="absolute top-2 right-2 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-lg text-[8px] font-black text-brand-600 uppercase tracking-wider">
+        <div className="relative aspect-[4/3] overflow-hidden rounded-b-xl bg-gray-50">
+          <img 
+            src={mainImage} 
+            className={cn(
+              "w-full h-full object-cover group-hover:scale-105 transition-all duration-500",
+              imgLoaded ? "opacity-100" : "opacity-0"
+            )}
+            onLoad={() => setImgLoaded(true)}
+            loading="lazy"
+          />
+          {!imgLoaded && <div className="skeleton absolute inset-0" />}
+          <div className="absolute top-2 right-2 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-lg text-[8px] font-black text-brand-600 uppercase tracking-wider z-10">
              {t(`property.types.${property.type}`) || property.type}
           </div>
           {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
@@ -149,7 +167,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           src={mainImage}
           alt={property.title}
           className={cn(
-            'w-full h-full object-cover group-hover:scale-110 transition-transform duration-700',
+            'w-full h-full object-cover group-hover:scale-110 transition-all duration-700',
             imgLoaded ? 'opacity-100' : 'opacity-0'
           )}
           onLoad={() => setImgLoaded(true)}
@@ -161,7 +179,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           onClick={handleFav}
           className={cn(
             'absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center z-10',
-            'transition-all duration-200 shadow-sm transition-opacity',
+            'transition-all duration-200 shadow-sm',
             isFav ? 'bg-brand-500 text-white' : 'bg-white/90 backdrop-blur-sm text-gray-600'
           )}
         >
@@ -190,7 +208,6 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           {property.title}
         </h3>
         
-        
         <div className="mt-auto pt-1.5 border-t border-gray-50 flex items-center justify-between">
           <p className="flex flex-col">
             <span className="text-[8px] font-bold text-gray-400 uppercase leading-none">{t('property.labels.from')}</span>
@@ -207,7 +224,5 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
     </div>
   )
 }
-
-
 
 export const PropertyCard = memo(PropertyCardComponent)
