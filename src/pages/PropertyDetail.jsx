@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { 
-  MapPin, Heart, Share2, Phone, Mail, ArrowLeft, 
+  MapPin, Heart, Share2, Phone, Mail, ArrowLeft, ArrowRight,
   CheckCircle2, ChevronDown, ChevronUp, Lock, EyeOff, X, 
   Star, Trash2, Sparkles, Calendar 
 } from 'lucide-react'
@@ -280,7 +280,7 @@ export const PropertyDetail = () => {
                  setVisitDate('')
               }
             }
-          } catch (vErr) {
+          } catch {
             toast.error('Payment verification failed')
           } finally {
             setUnlocking(false)
@@ -308,7 +308,6 @@ export const PropertyDetail = () => {
   }
 
   const images = p.images || []
-  const otherImages = images.slice(1, 5)
 
   const renderSlider = (prefix) => (
     <div className="relative w-full aspect-square md:aspect-[4/3] bg-gray-100 rounded-xl sm:rounded-2xl overflow-hidden shadow-md group border border-gray-200/50">
@@ -728,7 +727,7 @@ export const PropertyDetail = () => {
                 <ArrowLeft size={24} />
               </button>
               <button ref={setGalleryNextEl} className="absolute right-6 top-1/2 -translate-y-1/2 z-50 p-4 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white">
-                <Share2 size={24} className="rotate-90" />
+                <ArrowRight size={24} />
               </button>
             </Swiper>
           </div>

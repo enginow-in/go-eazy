@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+const SERVICE_LISTING_AMOUNT = Number(Deno.env.get('SERVICE_LISTING_AMOUNT_PAISE') || '19900')
 
 // ── TIMING-SAFE HMAC VERIFICATION ─────────────────────────────────────────────
 async function verifyWebhookSignature(body: string, secret: string, signature: string): Promise<boolean> {
@@ -80,63 +81,108 @@ serve(async (req) => {
     const paymentEntity = payload?.payload?.payment?.entity
     const orderEntity   = payload?.payload?.order?.entity
 
-    const notes     = paymentEntity?.notes || orderEntity?.notes || {}
-    const userId    = notes?.user_id
+    const notes      = paymentEntity?.notes || orderEntity?.notes || {}
+    const userId     = notes?.user_id
+    const purpose    = notes?.purpose || 'property_unlock' // default fallback for older property unlock payments
     const propertyId = notes?.property_id
+    const serviceId  = notes?.service_id
 
-    // 5. Validate UUIDs from notes — reject garbage/forged data
+    // 5. Validate user ID from notes — reject invalid data
     if (!userId || !UUID_REGEX.test(userId)) {
       console.error('Webhook: invalid or missing user_id in notes:', userId)
       return new Response('OK', { status: 200 }) // Still return 200 so Razorpay stops retrying
     }
 
-    if (!propertyId || !UUID_REGEX.test(propertyId)) {
-      console.error('Webhook: invalid or missing property_id in notes:', propertyId)
-      return new Response('OK', { status: 200 })
-    }
-
-    // 6. Verify payment amount and currency (prevent tampered webhooks)
-    if (event === 'payment.captured') {
-      const amount   = paymentEntity?.amount
-      const currency = paymentEntity?.currency
-      const status   = paymentEntity?.status
-
-      if (amount !== 900) {
-        console.error(`Webhook: unexpected amount ${amount}, expected 900`)
-        return new Response('OK', { status: 200 })
-      }
-
-      if (currency !== 'INR') {
-        console.error(`Webhook: unexpected currency ${currency}`)
-        return new Response('OK', { status: 200 })
-      }
-
-      if (status !== 'captured') {
-        console.error(`Webhook: payment not captured, status: ${status}`)
-        return new Response('OK', { status: 200 })
-      }
-    }
-
-    // 7. All checks passed — record the unlock in database
+    // 6. Connect to Supabase admin client
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
       { auth: { persistSession: false } }
     )
 
-    const { error } = await supabaseAdmin
-      .from('unlocked_properties')
-      .upsert(
-        { user_id: userId, property_id: propertyId, created_at: new Date().toISOString() },
-        { onConflict: 'user_id, property_id' }
-      )
+    // 7. Route based on payment purpose
+    if (purpose === 'service_listing') {
+      if (!serviceId || !UUID_REGEX.test(serviceId)) {
+        console.error('Webhook: invalid or missing service_id in notes for service_listing purpose:', serviceId)
+        return new Response('OK', { status: 200 })
+      }
 
-    if (error) {
-      console.error('Webhook: DB upsert failed:', error)
-      return new Response('Database Error', { status: 500 })
+      if (event === 'payment.captured') {
+        const amount   = paymentEntity?.amount
+        const currency = paymentEntity?.currency
+        const status   = paymentEntity?.status
+        const paymentId = paymentEntity?.id
+
+        if (amount !== SERVICE_LISTING_AMOUNT) {
+          console.error(`Webhook: unexpected amount ${amount} for service_listing, expected ${SERVICE_LISTING_AMOUNT}`)
+          return new Response('OK', { status: 200 })
+        }
+        if (currency !== 'INR') {
+          console.error(`Webhook: unexpected currency ${currency}`)
+          return new Response('OK', { status: 200 })
+        }
+        if (status !== 'captured') {
+          console.error(`Webhook: payment not captured, status: ${status}`)
+          return new Response('OK', { status: 200 })
+        }
+
+        const { error } = await supabaseAdmin
+          .from('service_providers')
+          .update({
+            payment_status: 'paid',
+            razorpay_payment_id: paymentId
+          })
+          .eq('id', serviceId)
+          .is('razorpay_payment_id', null)
+
+        if (error) {
+          console.error('Webhook: DB update for service provider failed:', error)
+          return new Response('Database Error', { status: 500 })
+        }
+
+        console.log(`Webhook: Successfully marked service provider ${serviceId} as paid`)
+      }
+    } else {
+      // Default: property_unlock
+      if (!propertyId || !UUID_REGEX.test(propertyId)) {
+        console.error('Webhook: invalid or missing property_id in notes for property_unlock:', propertyId)
+        return new Response('OK', { status: 200 })
+      }
+
+      if (event === 'payment.captured') {
+        const amount   = paymentEntity?.amount
+        const currency = paymentEntity?.currency
+        const status   = paymentEntity?.status
+
+        if (amount !== 900) {
+          console.error(`Webhook: unexpected amount ${amount} for property_unlock, expected 900`)
+          return new Response('OK', { status: 200 })
+        }
+        if (currency !== 'INR') {
+          console.error(`Webhook: unexpected currency ${currency}`)
+          return new Response('OK', { status: 200 })
+        }
+        if (status !== 'captured') {
+          console.error(`Webhook: payment not captured, status: ${status}`)
+          return new Response('OK', { status: 200 })
+        }
+      }
+
+      const { error } = await supabaseAdmin
+        .from('unlocked_properties')
+        .upsert(
+          { user_id: userId, property_id: propertyId, created_at: new Date().toISOString() },
+          { onConflict: 'user_id, property_id' }
+        )
+
+      if (error) {
+        console.error('Webhook: DB upsert failed for property unlock:', error)
+        return new Response('Database Error', { status: 500 })
+      }
+
+      console.log(`Webhook: Successfully unlocked property ${propertyId} for user ${userId}`)
     }
 
-    console.log(`Webhook: Successfully unlocked property ${propertyId} for user ${userId}`)
     return new Response('OK', { status: 200 })
 
   } catch (error: any) {
