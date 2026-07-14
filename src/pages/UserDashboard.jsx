@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Heart, Clock, User as UserIcon, ChevronLeft, Bell, Calendar, MapPin } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useProperties } from '../hooks/useProperties'
@@ -12,6 +12,7 @@ export const UserDashboard = () => {
   const { user, profile } = useAuth()
   const { favorites, recentlyViewed } = useProperties()
   const [favProps, setFavProps] = useState([])
+  const navigate = useNavigate()
   const [recentProps, setRecentProps] = useState([])
   const [loading, setLoading] = useState(true)
 
