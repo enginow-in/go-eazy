@@ -24,12 +24,11 @@ export const SystemAdmin = () => {
 
 
   useEffect(() => {
-    // Only load stats if authorized
-    if (user && role === 'admin') {
-      loadStats()
-      loadProviders()
-    }
-  }, [user])
+    if (!user?.id || role !== 'admin') return
+
+    loadStats()
+    loadProviders()
+  }, [user?.id, role])
 
   const loadStats = async () => {
     try {
