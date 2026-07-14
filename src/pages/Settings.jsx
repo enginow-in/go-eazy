@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import { User, Lock, Save, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { PasswordStrengthIndicator, getPasswordRequirements } from '../components/auth/PasswordStrengthIndicator'
 
 export const Settings = () => {
   const { user, profile } = useAuth()
@@ -61,8 +62,10 @@ export const Settings = () => {
       return
     }
 
-    if (newPassword.length < 8) {
-      setSecurityMessage({ type: 'error', text: 'Password must be at least 8 characters' })
+    const requirements = getPasswordRequirements(newPassword)
+    const unmet = requirements.filter(r => !r.met)
+    if (unmet.length > 0) {
+      setSecurityMessage({ type: 'error', text: 'Password does not meet strength requirements' })
       setSecurityLoading(false)
       return
     }
@@ -241,6 +244,7 @@ export const Settings = () => {
                     className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
                     placeholder="At least 8 characters"
                   />
+                  <PasswordStrengthIndicator password={newPassword} />
                 </div>
 
                 <div>
