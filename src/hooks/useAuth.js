@@ -1,163 +1,216 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { setUser, setProfile, logout, setLoading } from '../store/authSlice'
+import { validateEmail, validatePassword } from '../utils/validation'
+import { getAuthErrorMessage } from '../utils/authErrors'
 
 export const useAuth = () => {
   const dispatch = useDispatch()
   const { user, profile, role, loading, authModalOpen, authModalTab } = useSelector(s => s.auth)
+  const initCompleteRef = useRef(false)
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
+    let mounted = true
+    initCompleteRef.current = false
 
-      if (error) console.error('Auth: Session error', error)
-      
-      dispatch(setUser(session?.user ?? null))
-      if (session?.user) fetchProfile(session.user.id)
-      else dispatch(setLoading(false))
-    })
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-
-      
-      dispatch(setUser(session?.user ?? null))
-      if (session?.user) {
-        fetchProfile(session.user.id)
-      } else if (event === 'SIGNED_OUT') {
-        dispatch(logout())
-      } else {
+    // Timeout to prevent infinite loading (15 seconds)
+    const loadingTimeout = setTimeout(() => {
+      if (mounted && !initCompleteRef.current) {
+        console.error('⏰ Auth initialization timeout - forcing app to load')
         dispatch(setLoading(false))
+      }
+    }, 15000)
+
+    // Initialize auth
+    const initAuth = async () => {
+      console.log('🔐 Starting auth initialization...')
+      
+      try {
+        // Get current session
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (!mounted) return
+        
+        if (error) {
+          console.error('❌ Session error:', error)
+          initCompleteRef.current = true
+          dispatch(setLoading(false))
+          return
+        }
+
+        if (session?.user) {
+          console.log('✅ Found user session:', session.user.id)
+          dispatch(setUser(session.user))
+          await loadProfile(session.user.id)
+        } else {
+          console.log('❌ No user session found')
+          initCompleteRef.current = true
+          dispatch(setLoading(false))
+        }
+      } catch (err) {
+        console.error('❌ Auth init error:', err)
+        if (mounted) {
+          initCompleteRef.current = true
+          dispatch(setLoading(false))
+        }
+      }
+    }
+
+    // Auth state changes - only listen for changes, not initial state
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted || !initCompleteRef.current) return
+      
+      console.log('🔐 Auth state change:', event, !!session?.user)
+
+      if (event === 'SIGNED_OUT' || !session?.user) {
+        dispatch(logout())
+      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        dispatch(setUser(session.user))
+        await loadProfile(session.user.id)
       }
     })
 
-    return () => subscription.unsubscribe()
-  }, [])
+    initAuth()
 
-  const fetchProfile = async (userId) => {
+    return () => {
+      mounted = false
+      initCompleteRef.current = true
+      clearTimeout(loadingTimeout)
+      subscription?.unsubscribe()
+    }
+  }, [dispatch])
+
+  const loadProfile = async (userId) => {
     try {
-      // First try to fetch
-      let { data, error } = await supabase
+      console.log('👤 Loading profile for:', userId)
+      
+      // Add timeout for profile loading (10 seconds)
+      const profilePromise = supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .maybeSingle()
-      
-      // If no profile exists (e.g., first-time OAuth), create one automatically
-      if (!data && !error) {
+        .single()
 
-        const { data: { user }, error: userError } = await supabase.auth.getUser()
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile loading timeout')), 10000)
+      )
 
-        // ── GHOST SESSION GUARD ──
-        // If the user no longer exists in Supabase (deleted from dashboard),
-        // their JWT is orphaned. Force sign them out immediately.
-        if (userError || !user) {
-          console.warn('Auth: Ghost session detected — user deleted. Forcing sign-out.')
-          await supabase.auth.signOut()
-          dispatch(logout())
-          return
-        }
+      // Try to get existing profile with timeout
+      let { data: profile, error } = await Promise.race([profilePromise, timeoutPromise])
 
-        const fullName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'
-        const userRole = user?.user_metadata?.role || null
-        
-        const { data: newProfile, error: upsertError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: userId,
-            email: user?.email,
-            full_name: fullName,
-            role: userRole,
-            avatar_url: user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${fullName}`,
-            created_at: new Date().toISOString()
-          })
-          .select()
-          .maybeSingle()
-
-        if (upsertError) {
-          // ── FK CONSTRAINT GUARD ──
-          // code 23503 = foreign key violation (user deleted from auth.users)
-          // status 403/401 = JWT is now invalid
-          const isGhostUser = upsertError.code === '23503' || upsertError.status === 403 || upsertError.status === 401
-          if (isGhostUser) {
-            console.warn('Auth: Deleted account confirmed via FK/auth error. Forcing sign-out.')
-            await supabase.auth.signOut()
-            dispatch(logout())
-            return
-          }
-          console.error('Auth: Profile creation failed', upsertError)
-          throw upsertError
-        }
-        data = newProfile
-      } else if (error) {
-        // ── FETCH ERROR GUARD ──
-        // 403/401 on profile fetch = stale/invalid token (user deleted)
-        const isAuthError = error.status === 403 || error.status === 401
-        if (isAuthError) {
-          console.warn('Auth: Invalid token on profile fetch. Forcing sign-out.')
-          await supabase.auth.signOut()
-          dispatch(logout())
-          return
-        }
-        console.error('Auth: Profile fetch error', error)
-        throw error
+      if (error && error.code !== 'PGRST116' && error.message !== 'Profile loading timeout') {
+        console.error('❌ Profile fetch error:', error)
       }
 
+      // Create profile if doesn't exist
+      if (!profile) {
+        console.log('📝 Creating new profile...')
+        
+        const { data: { user } } = await supabase.auth.getUser()
+        
+        const newProfile = {
+          id: userId,
+          email: user?.email || '',
+          full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User',
+          role: user?.user_metadata?.role || 'user',
+          avatar_url: user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
+          created_at: new Date().toISOString()
+        }
 
-      dispatch(setProfile(data))
+        const { data: createdProfile, error: createError } = await supabase
+          .from('profiles')
+          .upsert(newProfile)
+          .select()
+          .single()
+
+        if (createError) {
+          console.error('❌ Profile creation error:', createError)
+          // Use the profile we tried to create as fallback
+          profile = newProfile
+        } else {
+          profile = createdProfile
+        }
+      }
+
+      console.log('✅ Profile loaded:', profile?.full_name)
+      dispatch(setProfile(profile))
     } catch (err) {
-      console.error('Auth: fetchProfile catch block', err)
+      console.error('❌ Profile load error:', err)
+      // Set minimal profile to prevent app from breaking
+      dispatch(setProfile({
+        id: userId,
+        full_name: 'User',
+        role: 'user'
+      }))
+    } finally {
       dispatch(setLoading(false))
+      initCompleteRef.current = true
     }
   }
 
   const signUp = async ({ email, password, name, role }) => {
-    const { data, error } = await supabase.auth.signUp({
-      email, password,
-      options: { 
-        data: { 
-          full_name: name,
-          role: role 
-        } 
-      },
-    })
-    if (error) throw error
-
-    if (data.user) {
-      await supabase.from('profiles').upsert({
-        id: data.user.id,
-        email,
-        full_name: name,
-        role,
-        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
-        created_at: new Date().toISOString(),
-      })
+    console.log('🔐 Starting signup...')
+    
+    // Validate
+    const emailValidation = validateEmail(email)
+    if (!emailValidation.isValid) {
+      throw new Error(emailValidation.errors[0])
     }
+
+    const passwordValidation = validatePassword(password)
+    if (!passwordValidation.isValid) {
+      throw new Error(passwordValidation.errors[0])
+    }
+
+    if (!name?.trim()) {
+      throw new Error('Full name is required')
+    }
+
+    // Sign up
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: name.trim(),
+          role: role || 'user'
+        }
+      }
+    })
+
+    if (error) {
+      console.error('❌ Signup error:', error)
+      throw new Error(getAuthErrorMessage(error))
+    }
+
+    console.log('✅ Signup successful')
     return data
   }
 
   const signIn = async ({ email, password }) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) throw error
+    console.log('🔐 Starting signin...')
+    
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.toLowerCase(),
+      password
+    })
+
+    if (error) {
+      console.error('❌ Signin error:', error)
+      throw new Error(getAuthErrorMessage(error))
+    }
+
+    console.log('✅ Signin successful')
     return data
   }
 
   const signInWithGoogle = async () => {
-    // Priority: Saved return path > Env variable > current origin
-    const savedPath = localStorage.getItem('sb_return_to')
-    const redirectUrl = savedPath 
-      ? `${window.location.origin}${savedPath}`
-      : (import.meta.env.VITE_REDIRECT_URL || `${window.location.origin}/search`)
-    
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { 
-        redirectTo: redirectUrl,
-        queryParams: {
-          prompt: 'select_account'
-        }
-      },
+      options: {
+        redirectTo: `${window.location.origin}/search`
+      }
     })
     if (error) throw error
   }
@@ -167,17 +220,70 @@ export const useAuth = () => {
     dispatch(logout())
   }
 
+  const resetPassword = async (email) => {
+    const emailValidation = validateEmail(email)
+    if (!emailValidation.isValid) {
+      throw new Error(emailValidation.errors[0])
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`
+    })
+    
+    if (error) throw new Error(getAuthErrorMessage(error))
+  }
+
+  const updatePassword = async (newPassword) => {
+    const passwordValidation = validatePassword(newPassword)
+    if (!passwordValidation.isValid) {
+      throw new Error(passwordValidation.errors[0])
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) throw new Error(getAuthErrorMessage(error))
+  }
+
+  const resendVerification = async (email) => {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth-callback`
+      }
+    })
+    if (error) throw new Error(getAuthErrorMessage(error))
+  }
+
   const updateProfile = async (updates) => {
+    if (!user?.id) {
+      throw new Error('You must be signed in to update your profile')
+    }
+
     const { data, error } = await supabase
       .from('profiles')
-      .update(updates)
-      .eq('id', user.id)
+      .upsert({ id: user.id, ...updates }, { onConflict: 'id' })
       .select()
-      .maybeSingle()
+      .single()
+    
     if (error) throw error
     dispatch(setProfile(data))
     return data
   }
 
-  return { user, profile, role, loading, authModalOpen, authModalTab, signUp, signIn, signInWithGoogle, signOut, updateProfile }
+  return {
+    user,
+    profile,
+    role,
+    loading,
+    authModalOpen,
+    authModalTab,
+    signUp,
+    signIn,
+    signInWithGoogle,
+    signOut,
+    resetPassword,
+    updatePassword,
+    resendVerification,
+    updateProfile
+  }
 }

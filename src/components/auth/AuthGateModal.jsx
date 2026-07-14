@@ -1,10 +1,12 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useSelector } from 'react-redux'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Sparkles } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
+import { PasswordStrengthIndicator } from '../ui/PasswordStrengthIndicator'
+import { validateSignupForm, validateLoginForm } from '../../utils/validation'
 import toast from 'react-hot-toast'
 
 const ROLE_OPTIONS = [
@@ -28,12 +30,20 @@ export const AuthGateModal = () => {
   if (user || loading) return null
 
   const validate = () => {
-    const e = {}
-    if (tab === 'signup' && !form.name.trim()) e.name = 'Name required'
-    if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) e.email = 'Valid email required'
-    if (form.password.length < 8) e.password = 'Min 8 characters'
-    setErrors(e)
-    return !Object.keys(e).length
+    if (tab === 'login') {
+      const validation = validateLoginForm({ email: form.email, password: form.password })
+      setErrors(validation.errors)
+      return validation.isValid
+    } else {
+      const validation = validateSignupForm({ 
+        name: form.name, 
+        email: form.email, 
+        password: form.password, 
+        role: selectedRole 
+      })
+      setErrors(validation.errors)
+      return validation.isValid
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -46,7 +56,7 @@ export const AuthGateModal = () => {
         toast.success('Welcome back!')
       } else {
         await signUp({ email: form.email, password: form.password, name: form.name, role: selectedRole })
-        toast.success('Account created!')
+        toast.success('Welcome to GoEazy!')
       }
     } catch (err) {
       toast.error(err.message || 'Something went wrong')
@@ -158,6 +168,13 @@ export const AuthGateModal = () => {
                   error={errors.password}
                   className="text-sm py-2"
                 />
+                
+                {/* Password Strength Indicator for Signup */}
+                {tab === 'signup' && form.password && (
+                  <div className="px-1">
+                    <PasswordStrengthIndicator password={form.password} />
+                  </div>
+                )}
 
                 {/* Role Selector — compact pill row for signup */}
                 {tab === 'signup' && (
