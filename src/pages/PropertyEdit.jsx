@@ -7,14 +7,29 @@ import { useProperties } from '../hooks/useProperties'
 export const PropertyEdit = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { fetchPropertyById, currentProperty } = useProperties()
+  const { fetchPropertyById, currentProperty, fetchGatedData } = useProperties()
   const [loading, setLoading] = useState(true)
+  const [gatedData, setGatedData] = useState(null)
+  const [notFound, setNotFound] = useState(false)
 
   useEffect(() => {
-    fetchPropertyById(id).then(() => setLoading(false))
-  }, [id])
+    const loadData = async () => {
+      setLoading(true)
+      try {
+        await fetchPropertyById(id)
+        const gated = await fetchGatedData(id)
+        setGatedData(gated || {})
+      } catch (err) {
+        console.error('Failed to load property data:', err)
+        setNotFound(true)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [id, fetchPropertyById, fetchGatedData])
 
-  if (loading) {
+  if (loading || (currentProperty && currentProperty.id !== id) || gatedData === null) {
     return (
       <div className="pt-32 pb-20 bg-gray-50 min-h-screen flex items-center justify-center">
         <div className="skeleton w-32 h-32 rounded-full" />
@@ -22,7 +37,7 @@ export const PropertyEdit = () => {
     )
   }
 
-  if (!currentProperty) {
+  if (notFound || !currentProperty) {
     return (
       <div className="pt-32 pb-20 bg-gray-50 min-h-screen text-center">
         <h1 className="text-2xl font-bold mb-4">Property not found</h1>
@@ -30,6 +45,8 @@ export const PropertyEdit = () => {
       </div>
     )
   }
+
+  const localProperty = { ...currentProperty, ...gatedData }
 
   return (
     <div className="pt-4 pb-20 bg-gray-50 min-h-screen">
@@ -39,10 +56,11 @@ export const PropertyEdit = () => {
         </button>
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 font-display">Edit Property</h1>
-          <p className="text-gray-500 mt-2">Update information for "{currentProperty.title}"</p>
+          <p className="text-gray-500 mt-2">Update information for "{localProperty.title}"</p>
         </div>
-        <PropertyForm initialData={currentProperty} isEdit={true} />
+        <PropertyForm initialData={localProperty} isEdit={true} />
       </div>
     </div>
   )
 }
+
