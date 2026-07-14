@@ -8,6 +8,14 @@ import { MapPin, ExternalLink } from 'lucide-react'
 export const LocationViewer = ({ latitude, longitude, title = 'Location', address }) => {
   const mapContainer = useRef(null)
   const map = useRef(null)
+  const isMounted = useRef(true)
+
+  useEffect(() => {
+    isMounted.current = true
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
 
   useEffect(() => {
     if (!latitude || !longitude || map.current) return
@@ -28,7 +36,8 @@ export const LocationViewer = ({ latitude, longitude, title = 'Location', addres
     map.current.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-left')
 
     map.current.on('load', () => {
-      if (!map.current) return
+      // Prevent running if component unmounted before map loaded
+      if (!map.current || !isMounted.current) return
 
       const size = 120
       const pulsingDot = {
@@ -42,16 +51,23 @@ export const LocationViewer = ({ latitude, longitude, title = 'Location', addres
           this.context = canvas.getContext('2d', { willReadFrequently: true })
         },
         render() {
+          // Strict check: Map handle check to prevent background canvas memory leak
+          if (!map.current || !isMounted.current) return false
+
           const duration = 1500
           const t = (performance.now() % duration) / duration
           const radius = (size / 2) * 0.3
           const outerRadius = (size / 2) * 0.7 * t + radius
           const ctx = this.context
+          
+          if (!ctx) return false
+
           ctx.clearRect(0, 0, this.width, this.height)
           ctx.beginPath()
           ctx.arc(this.width / 2, this.height / 2, outerRadius, 0, Math.PI * 2)
           ctx.fillStyle = `rgba(202, 52, 51, ${1 - t})`
           ctx.fill()
+          
           ctx.beginPath()
           ctx.arc(this.width / 2, this.height / 2, radius, 0, Math.PI * 2)
           ctx.fillStyle = 'rgba(202, 52, 51, 1)'
@@ -59,39 +75,54 @@ export const LocationViewer = ({ latitude, longitude, title = 'Location', addres
           ctx.lineWidth = 3
           ctx.fill()
           ctx.stroke()
-          this.data = ctx.getImageData(0, 0, this.width, this.height).data
-          map.current?.triggerRepaint()
+          
+          try {
+            const imageData = ctx.getImageData(0, 0, this.width, this.height)
+            this.data = imageData.data
+          } catch (e) {
+            // Silence silent browser DOM exceptions during rapid unmounts
+            return false
+          }
+
+          if (map.current) {
+            map.current.triggerRepaint()
+          }
           return true
         },
       }
 
-      if (!map.current.hasImage('pulsing-dot')) {
+      // Safe registration guard to avoid duplication errors on hot-reload
+      if (map.current && !map.current.hasImage('pulsing-dot')) {
         map.current.addImage('pulsing-dot', pulsingDot, { pixelRatio: 2 })
       }
 
-      map.current.addSource('location-point', {
-        type: 'geojson',
-        data: {
-          type: 'FeatureCollection',
-          features: [{
-            type: 'Feature',
-            geometry: { type: 'Point', coordinates: [longitude, latitude] },
-            properties: { title },
-          }],
-        },
-      })
+      if (map.current) {
+        map.current.addSource('location-point', {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: [{
+              type: 'Feature',
+              geometry: { type: 'Point', coordinates: [longitude, latitude] },
+              properties: { title },
+            }],
+          },
+        })
 
-      map.current.addLayer({
-        id: 'pulsing-dot-layer',
-        type: 'symbol',
-        source: 'location-point',
-        layout: { 'icon-image': 'pulsing-dot', 'icon-allow-overlap': true },
-      })
+        map.current.addLayer({
+          id: 'pulsing-dot-layer',
+          type: 'symbol',
+          source: 'location-point',
+          layout: { 'icon-image': 'pulsing-dot', 'icon-allow-overlap': true },
+        })
+      }
     })
 
     return () => {
-      map.current?.remove()
-      map.current = null
+      if (map.current) {
+        map.current.remove()
+        map.current = null
+      }
     }
   }, [latitude, longitude, title])
 
