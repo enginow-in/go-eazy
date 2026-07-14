@@ -6,6 +6,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import toast from 'react-hot-toast'
+import { Link } from "react-router-dom";
 
 const ROLE_OPTIONS = [
   { value: 'user',             label: 'Tenant',           emoji: '🎓' },
@@ -226,8 +227,21 @@ export const AuthGateModal = () => {
             Continue with Google
           </button>
 
-          <p className="text-center text-[10px] text-gray-400 mt-3 leading-relaxed">
-            By continuing, you agree to our <span className="text-[#CA3433] font-semibold">Terms</span> & <span className="text-[#CA3433] font-semibold">Privacy Policy</span>
+         <p className="text-center text-[10px] text-gray-400 mt-3 leading-relaxed">
+            By continuing, you agree to our{" "}
+            <Link
+              to="/terms"
+              className="text-[#CA3433] font-semibold hover:underline"
+            >
+              Terms
+            </Link>{" "}
+            &{" "}
+            <Link
+              to="/privacy"
+              className="text-[#CA3433] font-semibold hover:underline"
+            >
+              Privacy Policy
+            </Link>
           </p>
         </div>
       </motion.div>
