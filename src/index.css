@@ -15,9 +15,9 @@ html {
 }
 
 body {
-  font-family: var(--font-sans);
-  background-color: var(--color-surface);
-  color: var(--color-text-primary);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: #ffffff;
+  color: #1f2937;
   line-height: 1.6;
 }
 /* Image & Content Protection */

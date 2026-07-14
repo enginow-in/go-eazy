@@ -11,7 +11,6 @@ import { resetFilters } from '../store/propertySlice'
 import { PROPERTY_TYPES, AMENITIES, SORT_OPTIONS } from '../utils/constants'
 import { AMENITY_ICONS, cn } from '../utils/helpers'
 import { Skeleton } from '../components/ui/Skeleton'
-import { useAuth } from '../hooks/useAuth'
 import { RecommendedSection } from '../components/property/RecommendedSection'
 
 export const Search = () => {
@@ -44,7 +43,6 @@ export const Search = () => {
   }, [searchParams, updateFilters, filters.type])
 
   // Sync local filters with global filters when global filters change
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setLocalFilters({
       city: filters.city || '', 
