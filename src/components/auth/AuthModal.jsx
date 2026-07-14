@@ -29,13 +29,18 @@ export const AuthModal = () => {
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [errors, setErrors] = useState({})
 
-  React.useEffect(() => { setTab(authModalTab) }, [authModalTab])
+  React.useEffect(() => { 
+    setTab(authModalTab) 
+  }, [authModalTab])
 
   const validate = () => {
     const e = {}
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    
     if (tab === 'signup' && !form.name.trim()) e.name = 'Name is required'
-    if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) e.email = 'Valid email required'
+    if (!form.email.trim().match(emailRegex)) e.email = 'Valid email required'
     if (form.password.length < 8) e.password = 'Min 8 characters'
+    
     setErrors(e)
     return !Object.keys(e).length
   }
@@ -44,9 +49,12 @@ export const AuthModal = () => {
     e.preventDefault()
     if (!validate()) return
     setLoading(true)
+
+    const cleanEmail = form.email.trim()
+
     try {
       if (tab === 'login') {
-        await signIn({ email: form.email, password: form.password })
+        await signIn({ email: cleanEmail, password: form.password })
         toast.success('Welcome back!')
         dispatch(closeAuthModal())
         
@@ -56,10 +64,18 @@ export const AuthModal = () => {
           localStorage.removeItem('sb_return_to')
         }
       } else {
-        await signUp({ email: form.email, password: form.password, name: form.name, role: selectedRole })
+        await signUp({ 
+          email: cleanEmail, 
+          password: form.password, 
+          name: form.name.trim(), 
+          role: selectedRole 
+        })
         toast.success('Account created! Check your email to confirm.')
+        
         const returnTo = localStorage.getItem('sb_return_to')
         dispatch(closeAuthModal())
+        
+        // Exact Route Governance for Hackathon v3.2 Specification
         if (selectedRole === 'landlord') {
           navigate('/landlord')
         } else if (selectedRole === 'service_provider') {
@@ -72,17 +88,17 @@ export const AuthModal = () => {
         }
       }
     } catch (err) {
-      toast.error(err.message || 'Something went wrong')
+      toast.error(err.message || 'Authentication failed. Please check your credentials.')
     } finally {
       setLoading(false)
     }
   }
 
   const handleGoogle = async () => {
-    // Save current path to return back after OAuth redirect
+    // Save current path to return back after OAuth redirect safely
     localStorage.setItem('sb_return_to', window.location.pathname + window.location.search)
-    
     setGoogleLoading(true)
+    
     try {
       await signInWithGoogle()
     } catch (err) {
@@ -93,12 +109,13 @@ export const AuthModal = () => {
 
   return (
     <Modal open={authModalOpen} onClose={() => dispatch(closeAuthModal())} size="sm">
-      {/* Tabs */}
+      {/* Tabs Layout */}
       <div className="flex gap-1 p-1 bg-gray-100 rounded-xl mb-4">
         {['login', 'signup'].map(t => (
           <button
             key={t}
-            onClick={() => { setTab(t); setErrors({}) }}
+            type="button"
+            onClick={() => { setTab(t); setErrors({}); setShowPass(false) }}
             className={`flex-1 py-2 rounded-lg text-sm font-semibold capitalize transition-all ${
               tab === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
             }`}
@@ -108,7 +125,7 @@ export const AuthModal = () => {
         ))}
       </div>
 
-      {/* Google OAuth */}
+      {/* Google OAuth Action Node */}
       <Button
         variant="secondary"
         size="lg"
@@ -169,7 +186,11 @@ export const AuthModal = () => {
           placeholder={tab === 'signup' ? 'Min 8 characters' : '••••••••'}
           leftIcon={<Lock size={16} />}
           rightIcon={
-            <button type="button" onClick={() => setShowPass(v => !v)} className="cursor-pointer">
+            <button 
+              type="button" 
+              onClick={() => setShowPass(v => !v)} 
+              className="cursor-pointer focus:outline-none text-gray-400 hover:text-gray-600 transition-colors"
+            >
               {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           }
@@ -179,7 +200,7 @@ export const AuthModal = () => {
           autoComplete={tab === 'signup' ? 'new-password' : 'current-password'}
         />
 
-        {/* Role Selector (Sign Up only) */}
+        {/* Role Grid — Native App Style Block */}
         {tab === 'signup' && (
           <div>
             <p className="text-sm font-semibold text-gray-700 mb-2">I am a...</p>
@@ -189,7 +210,7 @@ export const AuthModal = () => {
                   key={opt.value}
                   type="button"
                   onClick={() => setSelectedRole(opt.value)}
-                  className={`px-4 py-2.5 rounded-xl border-2 text-left transition-all flex items-center gap-3 ${
+                  className={`px-4 py-2.5 rounded-xl border-2 text-left transition-all flex items-center gap-3 focus:outline-none ${
                     selectedRole === opt.value
                       ? 'border-[#CA3433] bg-red-50'
                       : 'border-gray-200 hover:border-gray-300'
@@ -203,11 +224,16 @@ export const AuthModal = () => {
           </div>
         )}
 
-        <Button type="submit" variant="primary" size="lg" className="w-full shadow-lg shadow-[#CA3433]/20" loading={loading}>
+        <Button 
+          type="submit" 
+          variant="primary" 
+          size="lg" 
+          className="w-full shadow-lg shadow-[#CA3433]/20 bg-[#CA3433]" 
+          loading={loading}
+        >
           {tab === 'login' ? 'Sign In' : 'Create Account'}
         </Button>
       </form>
-
     </Modal>
   )
 }

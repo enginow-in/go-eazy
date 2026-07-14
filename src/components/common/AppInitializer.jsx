@@ -6,8 +6,7 @@ export const AppInitializer = () => {
   const { user } = useAuth()
   const { fetchFavorites, fetchRecentlyViewed } = useProperties()
 
-  // Initialize global data once on login — use user.id to avoid re-firing
-  // on every render when hook references change
+  
   useEffect(() => {
     if (user?.id) {
       fetchFavorites()
