@@ -10,7 +10,7 @@ export const LocationViewer = ({ latitude, longitude, title = 'Location', addres
   const map = useRef(null)
 
   useEffect(() => {
-    if (!latitude || !longitude || map.current) return
+    if (latitude == null || longitude == null || map.current) return
     const mapboxgl = window.mapboxgl
     if (!mapboxgl) { console.error('mapbox-gl not loaded from CDN'); return }
 
@@ -95,7 +95,7 @@ export const LocationViewer = ({ latitude, longitude, title = 'Location', addres
     }
   }, [latitude, longitude, title])
 
-  if (!latitude || !longitude) return null
+  if (latitude == null || longitude == null) return null
 
   const googleMapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`
 
