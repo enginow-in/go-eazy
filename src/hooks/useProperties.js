@@ -55,9 +55,38 @@ export const useProperties = () => {
       }
 
       const from = reset ? 0 : page * PAGE_SIZE
-      const { data, error, count: dbCount } = await query
-        .order(filters.sortBy || 'created_at', { ascending: filters.sortOrder === 'asc' })
-        .range(from, from + PAGE_SIZE - 1)
+      
+      let data = null
+      let error = null
+      let dbCount = null
+
+      if (filters.bounds) {
+        // Edge-computed PostGIS Bounding Box Query
+        const res = await supabase.rpc('fetch_properties_in_bounds', {
+          min_lat: filters.bounds.min_lat,
+          min_lng: filters.bounds.min_lng,
+          max_lat: filters.bounds.max_lat,
+          max_lng: filters.bounds.max_lng
+        })
+        if (res.error) throw res.error
+        // Map the flat RPC rows back to the nested Redux structure
+        data = (res.data || []).map(p => ({
+          ...p,
+          profiles: {
+            full_name: p.landlord_name,
+            avatar_url: p.landlord_avatar,
+            bio: p.landlord_bio
+          }
+        }))
+        dbCount = data.length
+      } else {
+        const res = await query
+          .order(filters.sortBy || 'created_at', { ascending: filters.sortOrder === 'asc' })
+          .range(from, from + PAGE_SIZE - 1)
+        data = res.data
+        error = res.error
+        dbCount = res.count
+      }
 
       if (error) throw error
 
