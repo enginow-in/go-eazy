@@ -108,13 +108,14 @@ export const PropertyDetail = () => {
     }
   }
 
+  const isLandlord = currentProperty && user && currentProperty.landlord_id === user.id
+
   // Also fetch gated data if current user is the landlord
   useEffect(() => {
-    const isLandlord = currentProperty && user && currentProperty.landlord_id === user.id
     if (isLandlord && !gatedData) {
       fetchGatedData(id).then(setGatedData)
     }
-  }, [currentProperty, user, id, fetchGatedData, gatedData])
+  }, [isLandlord, id, fetchGatedData, gatedData])
 
   const openGallery = (index) => {
     setInitialSlideIndex(index)
@@ -613,42 +614,63 @@ export const PropertyDetail = () => {
             </div>
           </div>
 
-          {user && !myReview && (
+          {user && !myReview && !isLandlord && (
             <div className="mb-10 p-6 rounded-2xl bg-[#F9F8F6] border border-gray-100">
               <h4 className="font-bold text-gray-900 mb-4">{t('property.sections.postReview')}</h4>
-              <div className="mb-4">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">{t('property.sections.yourRating')}</p>
-                <StarRating value={reviewRating} onChange={setReviewRating} />
-              </div>
-              <div className="mb-4">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">{t('property.sections.yourFeedback')}</p>
-                <textarea
-                  value={reviewText}
-                  onChange={(e) => setReviewText(e.target.value)}
-                  placeholder={t('property.sections.reviewPlaceholder')}
-                  className="w-full bg-white rounded-xl border border-gray-200 p-4 text-sm focus:ring-2 focus:ring-[#CA3433]/20 focus:border-[#CA3433] outline-none transition-all min-h-[100px]"
-                />
-              </div>
-              <Button
-                variant="primary"
-                className="w-full sm:w-auto rounded-full px-8 bg-[#CA3433]"
-                disabled={submittingReview || !reviewRating || !reviewText.trim()}
-                onClick={async () => {
-                  setSubmittingReview(true)
-                  try {
-                    await submitReview(p.id, reviewRating, reviewText)
-                    setReviewRating(0)
-                    setReviewText('')
-                    toast.success(t('property.sections.reviewSuccess'))
-                  } catch {
-                    toast.error(t('property.sections.reviewError'))
-                  } finally {
-                    setSubmittingReview(false)
-                  }
-                }}
-              >
-                {submittingReview ? t('property.sections.posting') : t('property.sections.postReview')}
-              </Button>
+              {!hasUnlocked ? (
+                <div className="text-center py-4">
+                  <p className="text-gray-500 text-sm mb-3">You must unlock this property's contact details to leave a review.</p>
+                  <button 
+                    onClick={() => {
+                      const el = document.getElementById('unlock-button')
+                      if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                        setPulseUnlock(true)
+                        setTimeout(() => setPulseUnlock(false), 2000)
+                      }
+                    }}
+                    className="text-sm font-semibold text-brand-600 hover:text-brand-700 hover:underline"
+                  >
+                    Go to Unlock Property
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-4">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">{t('property.sections.yourRating')}</p>
+                    <StarRating value={reviewRating} onChange={setReviewRating} />
+                  </div>
+                  <div className="mb-4">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">{t('property.sections.yourFeedback')}</p>
+                    <textarea
+                      value={reviewText}
+                      onChange={(e) => setReviewText(e.target.value)}
+                      placeholder={t('property.sections.reviewPlaceholder')}
+                      className="w-full bg-white rounded-xl border border-gray-200 p-4 text-sm focus:ring-2 focus:ring-[#CA3433]/20 focus:border-[#CA3433] outline-none transition-all min-h-[100px]"
+                    />
+                  </div>
+                  <Button
+                    variant="primary"
+                    className="w-full sm:w-auto rounded-full px-8 bg-[#CA3433]"
+                    disabled={submittingReview || !reviewRating || !reviewText.trim()}
+                    onClick={async () => {
+                      setSubmittingReview(true)
+                      try {
+                        await submitReview(p.id, reviewRating, reviewText)
+                        setReviewRating(0)
+                        setReviewText('')
+                        toast.success(t('property.sections.reviewSuccess'))
+                      } catch {
+                        toast.error(t('property.sections.reviewError'))
+                      } finally {
+                        setSubmittingReview(false)
+                      }
+                    }}
+                  >
+                    {submittingReview ? t('property.sections.posting') : t('property.sections.postReview')}
+                  </Button>
+                </>
+              )}
             </div>
           )}
 
