@@ -288,12 +288,24 @@ export const useServices = () => {
   }
 
   const updateServiceStatus = async (id, verificationStatus) => {
-    const { error } = await supabase
-      .from('service_providers')
-      .update({ verification_status: verificationStatus })
-      .eq('id', id)
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token
+    if (!token) throw new Error('Session expired — please log in again')
 
-    if (error) throw error
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/update-service-status`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({ service_id: id, status: verificationStatus })
+    })
+
+    if (!response.ok) {
+      const errJson = await response.json().catch(() => ({}))
+      throw new Error(errJson.error || 'Failed to update status')
+    }
   }
 
   // ── Payment Function ────────────────────────────────────────────────
