@@ -13,6 +13,97 @@ const PAGE_SIZE = 12
 // Profile fields joined from profiles table (bio excluded - may not exist in all envs)
 const PUBLIC_PROFILE_FIELDS = 'full_name, avatar_url'
 
+const validateServiceInput = (data, serviceItems, plans, documentFiles, posterImages) => {
+  if (data.name !== undefined) {
+    if (!data.name || typeof data.name !== 'string' || !data.name.trim()) {
+      throw new Error('Service name is required')
+    }
+    if (data.name.length > 100) {
+      throw new Error('Service name cannot exceed 100 characters')
+    }
+  }
+  if (data.city !== undefined && (!data.city || typeof data.city !== 'string' || !data.city.trim())) {
+    throw new Error('City is required')
+  }
+  if (data.area !== undefined && (!data.area || typeof data.area !== 'string' || !data.area.trim())) {
+    throw new Error('Area is required')
+  }
+  if (data.category !== undefined && (!data.category || typeof data.category !== 'string' || !data.category.trim())) {
+    throw new Error('Category is required')
+  }
+
+  // Email format validation if present
+  if (data.contact_email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(data.contact_email)) {
+      throw new Error('Invalid contact email format')
+    }
+  }
+
+  // Phone format validation if present (allowing basic 10-digit formats)
+  if (data.contact_phone) {
+    const phoneRegex = /^[0-9+\-\s()]{10,20}$/
+    if (!phoneRegex.test(data.contact_phone)) {
+      throw new Error('Invalid contact phone format')
+    }
+  }
+
+  if (serviceItems && serviceItems.length > 0) {
+    for (const item of serviceItems) {
+      if (!item.title || typeof item.title !== 'string' || !item.title.trim()) {
+        throw new Error('Service item title is required')
+      }
+      const price = Number(item.price)
+      if (isNaN(price) || price < 0) {
+        throw new Error('Service item price must be a non-negative number')
+      }
+      if (price > 10000000) {
+        throw new Error('Service item price cannot exceed ₹1,00,00,000')
+      }
+    }
+  }
+
+  if (plans && plans.length > 0) {
+    for (const plan of plans) {
+      if (!plan.name || typeof plan.name !== 'string' || !plan.name.trim()) {
+        throw new Error('Plan name is required')
+      }
+      const price = Number(plan.price)
+      if (isNaN(price) || price < 0) {
+        throw new Error('Plan price must be a non-negative number')
+      }
+      if (price > 10000000) {
+        throw new Error('Plan price cannot exceed ₹1,00,00,000')
+      }
+    }
+  }
+
+  if (posterImages && posterImages.length > 0) {
+    if (posterImages.length > 10) {
+      throw new Error('You can upload a maximum of 10 poster images')
+    }
+    for (const img of posterImages) {
+      if (img.size > 10 * 1024 * 1024) {
+        throw new Error(`Poster image ${img.name} exceeds the 10MB size limit`)
+      }
+      if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(img.type)) {
+        throw new Error(`File ${img.name} is not a supported image format (JPEG, PNG, WEBP, GIF only)`)
+      }
+    }
+  }
+
+  if (documentFiles && documentFiles.length > 0) {
+    if (documentFiles.length > 5) {
+      throw new Error('You can upload a maximum of 5 verification documents')
+    }
+    for (const doc of documentFiles) {
+      if (doc.size > 20 * 1024 * 1024) {
+        throw new Error(`Document ${doc.name} exceeds the 20MB size limit`)
+      }
+    }
+  }
+}
+
 export const useServices = () => {
   const dispatch = useDispatch()
   const {
@@ -158,6 +249,7 @@ export const useServices = () => {
   // ── Create Service Provider Listing ────────────────────────────────
   const createService = async (providerData, serviceItems, plans, documentFiles, posterImages) => {
     if (!user) throw new Error('Not authenticated')
+    validateServiceInput(providerData, serviceItems, plans, documentFiles, posterImages)
 
     // 1. Upload Poster Images
     const imageUrls = []
@@ -239,6 +331,7 @@ export const useServices = () => {
 
   // ── Update Service Listing ──────────────────────────────────────────
   const updateService = async (id, updates) => {
+    validateServiceInput(updates)
     const { data, error } = await supabase
       .from('service_providers')
       .update(updates)

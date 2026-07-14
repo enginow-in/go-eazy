@@ -19,6 +19,41 @@ const PUBLIC_PROPERTY_FIELDS = `
 
 const PUBLIC_PROFILE_FIELDS = 'full_name, avatar_url, bio'
 
+const validatePropertyInput = (data, images) => {
+  if (!data.title || typeof data.title !== 'string' || !data.title.trim()) {
+    throw new Error('Property title is required')
+  }
+  if (data.title.length > 100) {
+    throw new Error('Property title cannot exceed 100 characters')
+  }
+  if (!data.city || typeof data.city !== 'string' || !data.city.trim()) {
+    throw new Error('City is required')
+  }
+  if (!data.area || typeof data.area !== 'string' || !data.area.trim()) {
+    throw new Error('Area is required')
+  }
+  const price = Number(data.price)
+  if (isNaN(price) || price <= 0) {
+    throw new Error('Price must be a positive number')
+  }
+  if (price > 10000000) {
+    throw new Error('Price cannot exceed ₹1,00,00,000')
+  }
+  if (images && images.length > 0) {
+    if (images.length > 10) {
+      throw new Error('You can upload a maximum of 10 images')
+    }
+    for (const img of images) {
+      if (img.size > 10 * 1024 * 1024) {
+        throw new Error(`Image ${img.name} exceeds the 10MB size limit`)
+      }
+      if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(img.type)) {
+        throw new Error(`File ${img.name} is not a supported image format (JPEG, PNG, WEBP, GIF only)`)
+      }
+    }
+  }
+}
+
 export const useProperties = () => {
   const dispatch = useDispatch()
   const { 
@@ -211,6 +246,7 @@ export const useProperties = () => {
   }
 
   const createProperty = async (propertyData, images) => {
+    validatePropertyInput(propertyData, images)
     const imageUrls = []
     for (const img of images) {
       const ext = img.name.split('.').pop()
@@ -226,6 +262,7 @@ export const useProperties = () => {
   }
 
   const updateProperty = async (id, updates, newImages) => {
+    validatePropertyInput(updates, newImages)
     let imageUrls = updates.images || []
     if (newImages?.length) {
       for (const img of newImages) {
