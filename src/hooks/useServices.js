@@ -296,18 +296,6 @@ export const useServices = () => {
     if (error) throw error
   }
 
-  // ── Payment Function ────────────────────────────────────────────────
-  const payServiceListing = async (id) => {
-    // Only successful payments should call this
-    const { error } = await supabase
-      .from('service_providers')
-      .update({ payment_status: 'paid' })
-      .eq('id', id)
-      .eq('provider_id', user.id)
-
-    if (error) throw error
-  }
-
   // updateFilters is the primary alias used across all pages (NearbyServices, etc.)
   const updateFilters = useCallback((f) => dispatch(setServiceFilters(f)), [dispatch])
 
@@ -324,7 +312,6 @@ export const useServices = () => {
     getMyServices,
     getAdminPendingServices,
     updateServiceStatus,
-    payServiceListing,
     updateFilters,
     setServiceFilters: updateFilters,
     fetchServiceGatedData

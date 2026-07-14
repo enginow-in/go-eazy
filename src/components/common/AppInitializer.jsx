@@ -1,20 +1,18 @@
 import { useEffect } from 'react'
-import { useAuth } from '../../hooks/useAuth'
+import { useSelector } from 'react-redux'
 import { useProperties } from '../../hooks/useProperties'
 
 export const AppInitializer = () => {
-  const { user } = useAuth()
+  const user = useSelector(s => s.auth.user)
   const { fetchFavorites, fetchRecentlyViewed } = useProperties()
 
-  // Initialize global data once on login — use user.id to avoid re-firing
-  // on every render when hook references change
+  // Initialize global data once per signed-in user.
   useEffect(() => {
     if (user?.id) {
       fetchFavorites()
       fetchRecentlyViewed()
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id])
+  }, [user?.id, fetchFavorites, fetchRecentlyViewed])
 
   return null // This component doesn't render anything UI-wise
 }
