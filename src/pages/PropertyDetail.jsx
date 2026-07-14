@@ -162,9 +162,41 @@ export const PropertyDetail = () => {
     toggleFavorite(p.id)
   }
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href)
-    toast.success(t('property.sections.linkCopied'))
+  const handleShare = async () => {
+    // Feature-detect the async Clipboard API and fall back to a hidden-textarea
+    // execCommand('copy') on rejection OR absence (insecure contexts, older
+    // WebViews, missing user gesture). We must not fire a false success toast.
+    // The throwaway textarea must always be removed — even if execCommand throws
+    // or we return early — so its cleanup lives in a finally block.
+    const href = window.location.href
+    if (navigator?.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(href)
+        toast.success(t('property.sections.linkCopied'))
+        return
+      } catch {
+        // writeText rejected (permission / user-gesture / insecure webview) —
+        // fall through to the legacy textarea copy rather than giving up here.
+      }
+    }
+    let ta
+    try {
+      ta = document.createElement('textarea')
+      ta.value = href
+      ta.style.position = 'fixed'
+      ta.style.opacity = '0'
+      document.body.appendChild(ta)
+      ta.focus(); ta.select()
+      if (document.execCommand('copy')) {
+        toast.success(t('property.sections.linkCopied'))
+        return
+      }
+      throw new Error('execCommand copy failed')
+    } catch {
+      toast.error('Failed to copy link')
+    } finally {
+      if (ta && document.body.contains(ta)) document.body.removeChild(ta)
+    }
   }
 
   const submitSiteVisit = async () => {

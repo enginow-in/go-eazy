@@ -77,9 +77,17 @@ export const useServices = () => {
       if (error) throw error
       dispatch(setCurrentService(data))
 
-      // Increment views for verified (publicly visible) listings
+      // Increment views for verified (publicly visible) listings.
+      // Fire-and-forget with its own .catch: analytics is best-effort and must
+      // never null the already-loaded service (H2) — a views-RPC failure no
+      // longer trips the catch that wipes setCurrentService(null) below.
       if (data?.verification_status === 'verified') {
-        await supabase.rpc('increment_service_views', { p_service_id: id })
+        supabase
+          .rpc('increment_service_views', { p_service_id: id })
+          .then(({ error: viewsError }) => {
+            if (viewsError) console.warn('increment_service_views failed:', viewsError)
+          })
+          .catch((err) => console.warn('increment_service_views threw:', err))
       }
     } catch (err) {
       console.error('fetchServiceById error:', err)
