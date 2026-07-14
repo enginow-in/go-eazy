@@ -121,7 +121,7 @@ export const PropertyDetail = () => {
     setIsGalleryOpen(true)
   }
 
-  if (loading || !currentProperty) {
+  if (loading) {
     return (
       <div className="pt-8 pb-20 bg-[#F9F8F6] min-h-screen">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -142,6 +142,21 @@ export const PropertyDetail = () => {
               <Skeleton className="h-96 w-full rounded-lg sm:rounded-xl" />
             </div>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!currentProperty) {
+    return (
+      <div className="pt-20 pb-20 min-h-screen bg-[#F9F8F6] flex flex-col items-center justify-center">
+        <div className="text-center max-w-sm mx-auto px-4">
+          <div className="text-6xl mb-4">😕</div>
+          <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Property Not Found</h2>
+          <p className="text-gray-500 text-sm mb-6">This listing may have been removed or is not available yet.</p>
+          <button onClick={() => navigate(-1)} className="flex items-center gap-2 mx-auto text-sm font-semibold text-[#CA3433] hover:underline">
+            <ArrowLeft size={16} /> Go Back
+          </button>
         </div>
       </div>
     )
