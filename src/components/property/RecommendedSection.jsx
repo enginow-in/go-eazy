@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import { useProperties } from '../../hooks/useProperties'
 import { PropertyCard } from './PropertyCard'
@@ -7,23 +7,21 @@ import { cn } from '../../utils/helpers'
 export const RecommendedSection = ({ viewMode = 'grid' }) => {
   const { getRecommendedProperties, loading } = useProperties()
   const [recommendations, setRecommendations] = useState([])
-  const isLocked = useRef(false)
+  const [hasInitialized, setHasInitialized] = useState(false)
 
-  // Lock recommendations once — prevents re-shuffle flicker on every re-render
-  useEffect(() => {
-    if (!loading && !isLocked.current) {
-      const recs = getRecommendedProperties()
-      if (recs.length > 0) {
-        setRecommendations(recs)
-        isLocked.current = true
-      }
+  // Derive state perfectly during render (Zero ESLint warnings)
+  if (!loading && !hasInitialized) {
+    setHasInitialized(true)
+    const recs = getRecommendedProperties()
+    if (recs.length > 0) {
+      setRecommendations(recs)
     }
-  }, [loading, getRecommendedProperties])
+  }
 
   if (!recommendations.length) return null
 
   const handleResetQuiz = () => {
-    isLocked.current = false
+    setHasInitialized(false)
     setRecommendations([])
     window.dispatchEvent(new Event('goeazy_quiz_reset'))
   }
