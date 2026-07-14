@@ -12,69 +12,156 @@ jobs:
   label:
     runs-on: ubuntu-latest
     steps:
-      - name: Apply single label based on PR title
+      - name: Classify, label, check issue link, detect duplicates, assign author
         uses: actions/github-script@v7
         with:
           script: |
-            const title = context.payload.pull_request.title.toLowerCase();
-
-            // Priority order matters — first match wins, only ONE label gets applied.
-            // Security is checked first since it's highest priority regardless of wording.
-            let label = null;
-
-            if (/security|vulnerab|exploit|bypass|escalation|xss|csrf|cors|injection/.test(title)) {
-              label = "security";
-            } else if (/^fix|bugfix|bug:/.test(title)) {
-              label = "bug";
-            } else if (/^feat|feature/.test(title)) {
-              label = "feature";
-            } else if (/^docs|documentation/.test(title)) {
-              label = "documentation";
-            } else if (/^refactor/.test(title)) {
-              label = "refactor";
-            } else if (/ui|ux|style|responsive|css/.test(title)) {
-              label = "ui/ux";
+            function normalize(str) {
+              return str
+                .toLowerCase()
+                .replace(/^(fix|feat|feature|docs|chore|refactor|ci)[:\-]?\s*/i, "")
+                .replace(/[^a-z0-9\s]/g, "")
+                .trim();
             }
 
-            if (!label) {
-              console.log("No matching keyword found in title — skipping, no label applied.");
-              return;
-            }
+            const pr = context.payload.pull_request;
+            const title = pr.title.toLowerCase();
+            const prNumber = pr.number;
+            const author = pr.user.login;
 
-            // Get labels already on this PR
+            // ---- STEP 1: skip anything already labeled manually ----
             const { data: existingLabels } = await github.rest.issues.listLabelsOnIssue({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
+              issue_number: prNumber,
             });
-
             const existingNames = existingLabels.map(l => l.name);
 
-            // Don't add it again if it's already there (avoids duplicate-add errors/noise)
-            if (existingNames.includes(label)) {
-              console.log(`Label "${label}" already present — skipping.`);
+            if (existingNames.length > 0) {
+              console.log(`PR #${prNumber}: already has labels [${existingNames.join(", ")}] — skipping (manual work preserved)`);
               return;
             }
 
-            // Remove any OTHER auto-labels this workflow might have added previously
-            // (keeps exactly one type-label at a time if the title gets edited later)
-            const autoLabels = ["security", "bug", "feature", "documentation", "refactor", "ui/ux"];
-            for (const existing of existingNames) {
-              if (autoLabels.includes(existing) && existing !== label) {
-                await github.rest.issues.removeLabel({
+            // ---- STEP 2: classify as bug / refactor / else -> feature, with matching points ----
+            let typeLabel;
+            let pointsLabel;
+
+            if (/^fix|bugfix|\bbug\b/.test(title)) {
+              typeLabel = "bug";
+              pointsLabel = "points: bugfix";       // +40
+            } else if (/^refactor|\brefactor\b/.test(title)) {
+              typeLabel = "refactor";
+              pointsLabel = "points: refactor";     // +30
+            } else {
+              typeLabel = "feature";
+              pointsLabel = "points: merged-pr";    // +50 default
+            }
+
+            const labelsToAdd = [typeLabel];
+
+            // ---- STEP 3: check if an issue is linked via closing keywords ----
+            const hasLinkedIssue = /(closes|fixes|resolves)\s+#\d+/i.test(pr.body || "");
+            if (!hasLinkedIssue) {
+              labelsToAdd.push("no-linked-issue");
+            }
+
+            // ---- STEP 4: check for missing/empty description ----
+            const bodyText = (pr.body || "").trim();
+            const hasNoDescription = bodyText.length < 15;
+            if (hasNoDescription) {
+              labelsToAdd.push("needs-description");
+              labelsToAdd.push("points: none"); // overrides normal points
+            }
+
+            // ---- STEP 5: duplicate detection against other open PRs ----
+            const { data: openPRs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              per_page: 100,
+            });
+
+            const normalizedTitle = normalize(pr.title);
+            let isDuplicate = false;
+            let duplicateOfNumber = null;
+            for (const other of openPRs) {
+              if (other.number === prNumber) continue;
+              const otherNormalized = normalize(other.title);
+              if (
+                otherNormalized.length > 0 &&
+                (otherNormalized === normalizedTitle ||
+                  (otherNormalized.length > 10 && normalizedTitle.includes(otherNormalized)) ||
+                  (normalizedTitle.length > 10 && otherNormalized.includes(normalizedTitle)))
+              ) {
+                isDuplicate = true;
+                duplicateOfNumber = other.number;
+                break;
+              }
+            }
+            if (isDuplicate) {
+              labelsToAdd.push("duplicate");
+              labelsToAdd.push("points: none"); // overrides normal points
+            }
+
+            // ---- STEP 6: only add the normal points label if NOT duplicate and NOT missing description ----
+            if (!isDuplicate && !hasNoDescription) {
+              labelsToAdd.push(pointsLabel);
+            }
+
+            // ---- STEP 7: apply labels ----
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                labels: labelsToAdd,
+              });
+              console.log(`PR #${prNumber}: added [${labelsToAdd.join(", ")}]`);
+            } catch (e) {
+              console.log(`PR #${prNumber}: ERROR adding labels — ${e.message}`);
+            }
+
+            // ---- STEP 8: comments for duplicate / missing description ----
+            if (isDuplicate) {
+              try {
+                await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  issue_number: context.payload.pull_request.number,
-                  name: existing,
+                  issue_number: prNumber,
+                  body: `♻️ This looks like it might be a duplicate of #${duplicateOfNumber} (similar title). Flagging for a maintainer/PM to confirm before closing. If this is NOT a duplicate, please clarify how it differs!`,
                 });
+              } catch (e) {
+                console.log(`PR #${prNumber}: ERROR posting duplicate comment — ${e.message}`);
               }
             }
 
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              labels: [label],
-            });
+            if (hasNoDescription) {
+              try {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  body: `📝 This PR doesn't have a description yet. Could you add a short summary of what this changes and why? That helps with review and makes sure it's tracked correctly.`,
+                });
+              } catch (e) {
+                console.log(`PR #${prNumber}: ERROR posting description comment — ${e.message}`);
+              }
+            }
 
-            console.log(`Applied label: ${label}`);
+            // ---- STEP 9: assign the PR to its own author ----
+            const currentAssignees = pr.assignees.map(a => a.login);
+            if (!currentAssignees.includes(author)) {
+              try {
+                await github.rest.issues.addAssignees({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  assignees: [author],
+                });
+                console.log(`PR #${prNumber}: assigned to ${author}`);
+              } catch (e) {
+                console.log(`PR #${prNumber}: ERROR assigning — ${e.message}`);
+              }
+            }
+
+            console.log(`PR #${prNumber}: done.`);
