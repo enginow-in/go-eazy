@@ -21,29 +21,79 @@ export const UserDashboard = () => {
   const [loadingData, setLoadingData] = useState(true)
 
   useEffect(() => {
+    let ignore = false
+
+    const loadProperties = async () => {
+      if (!user) return
+      
+      // Only set loading if we don't have any data yet
+      if (favProps.length === 0 && recentProps.length === 0) {
+        setLoading(true)
+      }
+
+      try {
+        // Fetch details for favorited ids
+        if (favorites.length > 0) {
+          const { data } = await supabase.from('properties').select('*').in('id', favorites)
+          if (data && !ignore) {
+             // preserve order based on favorites array
+             const ordered = favorites.map(id => data.find(p => p.id === id)).filter(Boolean)
+             setFavProps(ordered)
+          }
+        } else if (!ignore) {
+          setFavProps([])
+        }
+
+        // Fetch details for recently viewed ids
+        if (recentlyViewed.length > 0) {
+          const { data } = await supabase.from('properties').select('*').in('id', recentlyViewed)
+          if (data && !ignore) {
+            // preserve order based on recentlyViewed array
+            const ordered = recentlyViewed.map(id => data.find(p => p.id === id)).filter(Boolean)
+            setRecentProps(ordered)
+          }
+        } else if (!ignore) {
+          setRecentProps([])
+        }
+      } catch (err) {
+        console.error('[UserDashboard] Load error:', err)
+        // Fallback
+        if (!ignore) {
+          setFavProps(MOCK_PROPERTIES.filter(p => favorites.includes(p.id)))
+          setRecentProps(recentlyViewed.map(id => MOCK_PROPERTIES.find(p => p.id === id)).filter(Boolean))
+        }
+      } finally {
+        if (!ignore) setLoading(false)
+      }
+    }
+
+    const loadUserData = async () => {
+      if (!user) return
+      try {
+        setLoadingData(true)
+        const [notifRes, visitRes] = await Promise.all([
+          supabase.from('notifications').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+          supabase.from('site_visits').select('*, property:properties(title, city)').eq('user_id', user.id).order('created_at', { ascending: false })
+        ])
+        
+        if (!ignore && !notifRes.error) setNotifications(notifRes.data || [])
+        if (!ignore && !visitRes.error) setMyVisits(visitRes.data || [])
+      } catch (err) {
+        console.error(err)
+      } finally {
+        if (!ignore) setLoadingData(false)
+      }
+    }
+
     if (user) {
       loadProperties()
       loadUserData()
     }
-  }, [user, favorites, recentlyViewed]) // React to changes in the Redux IDs
 
-  const loadUserData = async () => {
-    if (!user) return
-    try {
-      setLoadingData(true)
-      const [notifRes, visitRes] = await Promise.all([
-        supabase.from('notifications').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
-        supabase.from('site_visits').select('*, property:properties(title, city)').eq('user_id', user.id).order('created_at', { ascending: false })
-      ])
-      
-      if (!notifRes.error) setNotifications(notifRes.data || [])
-      if (!visitRes.error) setMyVisits(visitRes.data || [])
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoadingData(false)
+    return () => {
+      ignore = true
     }
-  }
+  }, [user, favorites, recentlyViewed]) // React to changes in the Redux IDs
 
   const markAsRead = async () => {
     try {
@@ -55,48 +105,6 @@ export const UserDashboard = () => {
   }
   
   const unreadCount = notifications.filter(n => !n.is_read).length
-
-  const loadProperties = async () => {
-    if (!user) return
-    
-    // Only set loading if we don't have any data yet
-    if (favProps.length === 0 && recentProps.length === 0) {
-      setLoading(true)
-    }
-
-    try {
-      // Fetch details for favorited ids
-      if (favorites.length > 0) {
-        const { data } = await supabase.from('properties').select('*').in('id', favorites)
-        if (data) {
-           // preserve order based on favorites array
-           const ordered = favorites.map(id => data.find(p => p.id === id)).filter(Boolean)
-           setFavProps(ordered)
-        }
-      } else {
-        setFavProps([])
-      }
-
-      // Fetch details for recently viewed ids
-      if (recentlyViewed.length > 0) {
-        const { data } = await supabase.from('properties').select('*').in('id', recentlyViewed)
-        if (data) {
-          // preserve order based on recentlyViewed array
-          const ordered = recentlyViewed.map(id => data.find(p => p.id === id)).filter(Boolean)
-          setRecentProps(ordered)
-        }
-      } else {
-        setRecentProps([])
-      }
-    } catch (err) {
-      console.error('[UserDashboard] Load error:', err)
-      // Fallback
-      setFavProps(MOCK_PROPERTIES.filter(p => favorites.includes(p.id)))
-      setRecentProps(recentlyViewed.map(id => MOCK_PROPERTIES.find(p => p.id === id)).filter(Boolean))
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const LoadingRow = () => (
     <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide">

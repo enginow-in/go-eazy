@@ -105,3 +105,28 @@ BEGIN
   WHERE id = property_id;
 END;
 $$;
+
+-- Trigger to prevent role escalation
+CREATE OR REPLACE FUNCTION check_role_update() RETURNS trigger AS $$
+DECLARE
+  jwt_role text;
+BEGIN
+  BEGIN
+    jwt_role := current_setting('request.jwt.claim.role', true);
+  EXCEPTION WHEN OTHERS THEN
+    jwt_role := '';
+  END;
+
+  IF NEW.role IS DISTINCT FROM OLD.role THEN
+    IF jwt_role = 'authenticated' THEN
+      RAISE EXCEPTION 'Users cannot update their own role directly';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER prevent_role_update
+BEFORE UPDATE ON public.profiles
+FOR EACH ROW
+EXECUTE FUNCTION check_role_update();
