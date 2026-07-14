@@ -1,0 +1,174 @@
+name: Bulk Label Existing PRs (run manually, once)
+
+on:
+  workflow_dispatch: {}   # only runs when YOU click "Run workflow" in the Actions tab
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  bulk-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Full classification pass on un-labeled PRs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            function normalize(str) {
+              return str
+                .toLowerCase()
+                .replace(/^(fix|feat|feature|docs|chore|refactor|ci)[:\-]?\s*/i, "")
+                .replace(/[^a-z0-9\s]/g, "")
+                .trim();
+            }
+
+            // Fetch ALL open PRs (paginated, since you have 80+)
+            const allPRs = await github.paginate(github.rest.pulls.list, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              per_page: 100,
+            });
+
+            console.log(`Found ${allPRs.length} open PRs.`);
+
+            for (const pr of allPRs) {
+              const title = pr.title.toLowerCase();
+              const body = (pr.body || "").toLowerCase();
+              const prNumber = pr.number;
+              const author = pr.user.login;
+
+              // ---- STEP 1: skip anything you've already labeled manually ----
+              const { data: existingLabels } = await github.rest.issues.listLabelsOnIssue({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+              });
+              const existingNames = existingLabels.map(l => l.name);
+
+              if (existingNames.length > 0) {
+                console.log(`PR #${prNumber}: already has labels [${existingNames.join(", ")}] - skipping (manual work preserved)`);
+                continue;
+              }
+
+              // ---- STEP 2: classify as bug / refactor / else -> feature, with matching points ----
+              let typeLabel;
+              let pointsLabel;
+
+              if (/^fix|bugfix|\bbug\b/.test(title)) {
+                typeLabel = "bug";
+                pointsLabel = "points: bugfix";       // +40
+              } else if (/^refactor|\brefactor\b/.test(title)) {
+                typeLabel = "refactor";
+                pointsLabel = "points: refactor";     // +30
+              } else {
+                typeLabel = "feature";
+                pointsLabel = "points: merged-pr";     // +50 default
+              }
+
+              const labelsToAdd = [typeLabel];
+
+              // ---- STEP 3: check if an issue is linked via closing keywords ----
+              const hasLinkedIssue = /(closes|fixes|resolves)\s+#\d+/i.test(pr.body || "");
+              if (!hasLinkedIssue) {
+                labelsToAdd.push("no-linked-issue");
+              }
+
+              // ---- STEP 4: check for missing/empty description ----
+              const bodyText = (pr.body || "").trim();
+              const hasNoDescription = bodyText.length < 15;
+              if (hasNoDescription) {
+                labelsToAdd.push("needs-description");
+                labelsToAdd.push("points: none"); // overrides normal points - can't confirm without real description
+              }
+
+              // ---- STEP 5: duplicate detection against other open PRs ----
+              const normalizedTitle = normalize(pr.title);
+              let isDuplicate = false;
+              let duplicateOfNumber = null;
+              for (const other of allPRs) {
+                if (other.number === prNumber) continue;
+                const otherNormalized = normalize(other.title);
+                if (
+                  otherNormalized.length > 0 &&
+                  (otherNormalized === normalizedTitle ||
+                    (otherNormalized.length > 10 && normalizedTitle.includes(otherNormalized)) ||
+                    (normalizedTitle.length > 10 && otherNormalized.includes(normalizedTitle)))
+                ) {
+                  isDuplicate = true;
+                  duplicateOfNumber = other.number;
+                  break;
+                }
+              }
+              if (isDuplicate) {
+                labelsToAdd.push("duplicate");
+                labelsToAdd.push("points: none"); // overrides normal points
+              }
+
+              // ---- STEP 6: only add the normal points label if NOT duplicate and NOT missing description ----
+              if (!isDuplicate && !hasNoDescription) {
+                labelsToAdd.push(pointsLabel);
+              }
+
+              // ---- STEP 7: apply labels ----
+              try {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  labels: labelsToAdd,
+                });
+                console.log(`PR #${prNumber}: added [${labelsToAdd.join(", ")}]`);
+              } catch (e) {
+                console.log(`PR #${prNumber}: ERROR adding labels - ${e.message}`);
+              }
+
+              // ---- STEP 8: comments for duplicate / missing description ----
+              if (isDuplicate) {
+                try {
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: prNumber,
+                    body: `♻️ This looks like it might be a duplicate of #${duplicateOfNumber} (similar title). Flagging for a maintainer/PM to confirm before closing. If this is NOT a duplicate, please clarify how it differs!`,
+                  });
+                } catch (e) {
+                  console.log(`PR #${prNumber}: ERROR posting duplicate comment - ${e.message}`);
+                }
+              }
+
+              if (hasNoDescription) {
+                try {
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: prNumber,
+                    body: `📝 This PR doesn't have a description yet. Could you add a short summary of what this changes and why? That helps with review and makes sure it's tracked correctly.`,
+                  });
+                } catch (e) {
+                  console.log(`PR #${prNumber}: ERROR posting description comment - ${e.message}`);
+                }
+              }
+
+              // ---- STEP 9: assign the PR to its own author ----
+              const currentAssignees = pr.assignees.map(a => a.login);
+              if (!currentAssignees.includes(author)) {
+                try {
+                  await github.rest.issues.addAssignees({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: prNumber,
+                    assignees: [author],
+                  });
+                  console.log(`PR #${prNumber}: assigned to ${author}`);
+                } catch (e) {
+                  console.log(`PR #${prNumber}: ERROR assigning - ${e.message}`);
+                }
+              }
+
+              // small delay to avoid hammering the API too fast across 80+ PRs
+              await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            console.log("Bulk labeling complete.");
