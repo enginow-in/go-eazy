@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { MOCK_PROPERTIES } from '../utils/constants'
+import { getSmartRecommendations, getSimilarProperties } from '../utils/recommendations'
 import {
   setListings, appendListings, setFeatured, setCurrentProperty,
   setFavorites, toggleFavorite as toggleFav,
@@ -293,42 +294,18 @@ export const useProperties = () => {
   }
 
   const getRecommendedProperties = useCallback(() => {
-    // If no listings or no quiz data, return empty
-    if (!listings || listings.length === 0 || !profile?.onboarding_data) return []
+    return getSmartRecommendations({
+      listings,
+      profile,
+      recentlyViewed,
+      favorites,
+      limit: 8
+    })
+  }, [listings, profile, recentlyViewed, favorites])
 
-    const prefs = profile.onboarding_data
-
-    // If user explicitly skipped or haven't finished quiz
-    if (prefs?.skipped || !prefs?.persona) return []
-
-    let filtered = [...listings]
-
-    // 1. Strict filtering (City + Type)
-    if (prefs?.type) {
-      filtered = filtered.filter(p => p.type === prefs.type)
-    }
-    
-    if (prefs?.city) {
-      filtered = filtered.filter(p => 
-        p.city?.toLowerCase() === prefs.city.toLowerCase() || 
-        p.address?.toLowerCase().includes(prefs.city.toLowerCase())
-      )
-    }
-
-    // 2. Budget filtering
-    if (prefs?.budget?.range) {
-      const [min, max] = prefs.budget.range
-      filtered = filtered.filter(p => p.price >= min && p.price <= max)
-    }
-
-    // 3. Fallback logic: if strictly filtered is empty, try type only
-    if (filtered.length === 0 && prefs?.type) {
-      filtered = listings.filter(p => p.type === prefs.type).slice(0, 10)
-    }
-
-    // Sort randomly and limit to 8 results for the section
-    return filtered.sort(() => 0.5 - Math.random()).slice(0, 8)
-  }, [listings, profile])
+  const getSimilarProperties = useCallback((property, limit = 4) => {
+    return getSimilarProperties(property, listings, limit)
+  }, [listings])
 
   return {
     listings, featured, currentProperty, favorites, recentlyViewed, filters,
@@ -339,6 +316,7 @@ export const useProperties = () => {
     updateFilters: useCallback((f) => dispatch(setFilters(f)), [dispatch]),
     resetFilters: useCallback(() => dispatch(resetFilters()), [dispatch]),
     getRecommendedProperties,
+    getSimilarProperties,
     fetchGatedData,
     reviews, reviewsLoading,
     fetchReviews, submitReview, deleteReview
