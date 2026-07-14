@@ -266,7 +266,7 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
             </Select>
           </div>
           <Textarea id="property-description" label="Description" placeholder="Tell renters what makes this place special..."
-            rows={4} value={form.description} onChange={e => set('description', e.target.value)} />
+            rows={4} value={form.description} maxLength={1000} onChange={e => set('description', e.target.value)} />
         </div>
       )
 
@@ -319,7 +319,7 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
             placeholder="e.g. Flat 402, Building B, XYZ Apartments, Near Metro"
             value={form.exact_location} onChange={e => set('exact_location', e.target.value)} />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input id="property-phone" label="Contact Phone" placeholder="+91 9876543210"
+            <Input id="property-phone" label="Contact Phone" type="tel" maxLength={15} placeholder="+91 9876543210"
               value={form.contact_phone} onChange={e => set('contact_phone', e.target.value)} />
             <Input id="property-email" label="Contact Email" type="email" placeholder="owner@email.com"
               value={form.contact_email} onChange={e => set('contact_email', e.target.value)} />

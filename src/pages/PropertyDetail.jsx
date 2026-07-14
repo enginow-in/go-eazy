@@ -162,9 +162,17 @@ export const PropertyDetail = () => {
     toggleFavorite(p.id)
   }
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href)
-    toast.success(t('property.sections.linkCopied'))
+  const handleShare = async () => {
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(window.location.href)
+        toast.success(t('property.sections.linkCopied'))
+      } else {
+        toast.error('Clipboard not supported here')
+      }
+    } catch {
+      toast.error('Failed to copy link')
+    }
   }
 
   const submitSiteVisit = async () => {

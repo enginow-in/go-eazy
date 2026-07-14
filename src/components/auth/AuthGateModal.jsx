@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Sparkles } from 'lucide-react'
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Sparkles, X } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -16,6 +17,7 @@ const ROLE_OPTIONS = [
 export const AuthGateModal = () => {
   const { user, signIn, signUp, signInWithGoogle } = useAuth()
   const { loading } = useSelector(s => s.auth)
+  const navigate = useNavigate()
 
   const [tab, setTab] = useState('login')
   const [formLoading, setFormLoading] = useState(false)
@@ -84,6 +86,14 @@ export const AuthGateModal = () => {
       >
         {/* Top gradient bar */}
         <div className="h-1 w-full bg-gradient-to-r from-[#CA3433] to-rose-400" />
+
+        <button
+          onClick={() => navigate('/')}
+          className="absolute top-3 right-3 z-10 p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600"
+          aria-label="Return to Home"
+        >
+          <X size={18} />
+        </button>
 
         <div className="px-6 pt-5 pb-5">
           {/* Logo row */}
