@@ -19,31 +19,13 @@ import { Skeleton } from '../components/ui/Skeleton'
 import { openAuthModal } from '../store/authSlice'
 import toast from 'react-hot-toast'
 import { LocationViewer } from '../components/map/LocationViewer'
+import { StarRating } from '../components/ui/StarRating'
 
 const getCategoryConfig = (t) => ({
-  tiffin:  { label: t('nearby.categories.tiffin'),  emoji: '🍱', color: 'bg-amber-100 text-amber-700', border: 'border-amber-200' },
+  tiffin: { label: t('nearby.categories.tiffin'), emoji: '🍱', color: 'bg-amber-100 text-amber-700', border: 'border-amber-200' },
   laundry: { label: t('nearby.categories.laundry'), emoji: '🧺', color: 'bg-blue-100 text-blue-700', border: 'border-blue-200' },
   cleaning: { label: t('nearby.categories.cleaning'), emoji: '🧹', color: 'bg-green-100 text-green-700', border: 'border-green-200' },
 })
-
-const StarRating = ({ value, onChange, readonly = false }) => (
-  <div className="flex gap-1">
-    {[1, 2, 3, 4, 5].map(n => (
-      <button
-        key={n}
-        type="button"
-        disabled={readonly}
-        onClick={() => onChange && onChange(n)}
-        className={`transition-transform ${!readonly ? 'hover:scale-125 cursor-pointer' : 'cursor-default'}`}
-      >
-        <Star
-          size={readonly ? 14 : 22}
-          className={n <= value ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}
-        />
-      </button>
-    ))}
-  </div>
-)
 
 export const ServiceDetail = () => {
   const { id } = useParams()
@@ -51,10 +33,10 @@ export const ServiceDetail = () => {
   const dispatch = useDispatch()
   const { user, profile } = useSelector(s => s.auth)
 
-  const { 
-    currentService, reviews, reviewsLoading, 
+  const {
+    currentService, reviews, reviewsLoading,
     fetchServiceById, fetchReviews, submitReview, deleteReview,
-    fetchServiceGatedData 
+    fetchServiceGatedData
   } = useServices()
   const { t } = useTranslation()
 
@@ -99,7 +81,7 @@ export const ServiceDetail = () => {
   useEffect(() => {
     const checkStatus = async () => {
       if (!user || !service || !id) return
-      
+
       const isProvider = service?.provider_id === user.id
       if (isProvider) {
         setContactUnlocked(true)
