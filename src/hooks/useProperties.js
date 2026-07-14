@@ -54,6 +54,18 @@ export const useProperties = () => {
         query = query.ilike('area', fuzzyPattern)
       }
 
+      if (filters.query) {
+        // Strip characters that would break PostgREST's or() filter syntax
+        // (commas and parentheses are used as delimiters there)
+        const term = filters.query.replace(/[,()]/g, ' ').trim()
+        if (term) {
+          const pattern = `%${term}%`
+          query = query.or(
+            `title.ilike.${pattern},description.ilike.${pattern},area.ilike.${pattern},city.ilike.${pattern}`
+          )
+        }
+      }
+
       const from = reset ? 0 : page * PAGE_SIZE
       const { data, error, count: dbCount } = await query
         .order(filters.sortBy || 'created_at', { ascending: filters.sortOrder === 'asc' })
