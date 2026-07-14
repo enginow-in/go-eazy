@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { MOCK_PROPERTIES } from '../utils/constants'
@@ -21,6 +21,7 @@ const PUBLIC_PROFILE_FIELDS = 'full_name, avatar_url, bio'
 
 export const useProperties = () => {
   const dispatch = useDispatch()
+  const fetchingPageRef = useRef(false)
   const { 
     listings, featured, currentProperty, 
     favorites, recentlyViewed, filters, 
@@ -30,6 +31,8 @@ export const useProperties = () => {
   const { user, profile } = useSelector(s => s.auth)
 
   const fetchProperties = useCallback(async (reset = false) => {
+    if (!reset && (loading || fetchingPageRef.current)) return
+    fetchingPageRef.current = true
     dispatch(setLoading(true))
     try {
       let query = supabase
@@ -74,9 +77,10 @@ export const useProperties = () => {
       console.error('fetchProperties error:', err)
       dispatch(setListings([]))
     } finally {
+      fetchingPageRef.current = false
       dispatch(setLoading(false))
     }
-  }, [filters, page, dispatch])
+  }, [filters, page, loading, dispatch])
 
   const fetchFeatured = useCallback(async () => {
     try {
