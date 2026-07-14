@@ -158,6 +158,8 @@ export const useServices = () => {
   // ── Create Service Provider Listing ────────────────────────────────
   const createService = async (providerData, serviceItems, plans, documentFiles, posterImages) => {
     if (!user) throw new Error('Not authenticated')
+    if (!serviceItems || serviceItems.length === 0) throw new Error('At least one valid service item is required.')
+    if (!plans || plans.length === 0) throw new Error('At least one valid plan is required.')
 
     // 1. Upload Poster Images
     const imageUrls = []
