@@ -335,6 +335,7 @@ export const PropertyDetail = () => {
                 src={img} 
                 alt={`${p.title} - View ${i + 1}`} 
                 className="w-full h-full object-contain" 
+                loading="lazy"
               />
             </div>
           </SwiperSlide>
@@ -666,6 +667,7 @@ export const PropertyDetail = () => {
                         src={review.profiles?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(review.profiles?.full_name || 'User')}`}
                         alt="Reviewer"
                         className="w-10 h-10 rounded-full bg-gray-100 object-cover"
+                        loading="lazy"
                       />
                       <div>
                         <h5 className="font-bold text-gray-900 text-[15px]">{review.profiles?.full_name || t('property.sections.anonymous')}</h5>
@@ -721,7 +723,7 @@ export const PropertyDetail = () => {
             >
               {images.map((img, i) => (
                 <SwiperSlide key={i} className="flex items-center justify-center">
-                  <img src={img} className="max-w-full max-h-full object-contain" alt="" />
+                  <img src={img} className="max-w-full max-h-full object-contain" alt="" loading="lazy" />
                 </SwiperSlide>
               ))}
               <button ref={setGalleryPrevEl} className="absolute left-6 top-1/2 -translate-y-1/2 z-50 p-4 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white">
