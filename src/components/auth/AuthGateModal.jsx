@@ -5,6 +5,7 @@ import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Sparkles } from 'lucide-reac
 import { useAuth } from '../../hooks/useAuth'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
+import { getPasswordError } from '../../utils/authValidation'
 import toast from 'react-hot-toast'
 
 const ROLE_OPTIONS = [
@@ -31,7 +32,8 @@ export const AuthGateModal = () => {
     const e = {}
     if (tab === 'signup' && !form.name.trim()) e.name = 'Name required'
     if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) e.email = 'Valid email required'
-    if (form.password.length < 8) e.password = 'Min 8 characters'
+    const passwordError = getPasswordError(form.password, tab)
+    if (passwordError) e.password = passwordError
     setErrors(e)
     return !Object.keys(e).length
   }

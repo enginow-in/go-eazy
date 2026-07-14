@@ -7,6 +7,7 @@ import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { closeAuthModal } from '../../store/authSlice'
 import { useAuth } from '../../hooks/useAuth'
+import { getPasswordError } from '../../utils/authValidation'
 import toast from 'react-hot-toast'
 
 const ROLE_OPTIONS = [
@@ -35,7 +36,8 @@ export const AuthModal = () => {
     const e = {}
     if (tab === 'signup' && !form.name.trim()) e.name = 'Name is required'
     if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) e.email = 'Valid email required'
-    if (form.password.length < 8) e.password = 'Min 8 characters'
+    const passwordError = getPasswordError(form.password, tab)
+    if (passwordError) e.password = passwordError
     setErrors(e)
     return !Object.keys(e).length
   }

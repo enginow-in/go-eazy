@@ -5,6 +5,7 @@ import { Mail, Lock, User, Eye, EyeOff, Home, GraduationCap, Utensils, CheckCirc
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { useAuth } from '../hooks/useAuth'
+import { getPasswordError } from '../utils/authValidation'
 import toast from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -31,7 +32,8 @@ export const AuthHome = () => {
     const e = {}
     if (tab === 'signup' && !form.name.trim()) e.name = 'Name is required'
     if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) e.email = 'Valid email required'
-    if (form.password.length < 8) e.password = 'Min 8 characters'
+    const passwordError = getPasswordError(form.password, tab)
+    if (passwordError) e.password = passwordError
     setErrors(e)
     return !Object.keys(e).length
   }
