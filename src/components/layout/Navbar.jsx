@@ -45,6 +45,13 @@ export const Navbar = () => {
     return () => clearTimeout(timer)
   }, [searchQuery, updateFilters, navigate, location.pathname, filters.query])
 
+  // Keep the navbar city label in sync when filters.city changes elsewhere
+  // (e.g. the "ALL CATEGORY" reset, a city picked on another page, or a deep link).
+  // Without this, selectedCity is seeded once on mount and then goes stale.
+  React.useEffect(() => {
+    setSelectedCity(filters.city || 'All Cities')
+  }, [filters.city])
+
   const languages = [
     { code: 'en', label: 'English', short: 'EN' },
     { code: 'hi', label: 'हिंदी', short: 'HI' }
@@ -275,8 +282,8 @@ export const Navbar = () => {
                     <img src="/1.webp" alt="City" className="w-full h-full object-cover" />
                   </div>
                   <div className="flex flex-col text-sm">
-                    <span className="font-semibold text-gray-900 leading-tight">{selectedCity}</span>
-                    <span className="text-gray-500 text-xs">Uttarakhand</span>
+                    <span className="font-semibold text-gray-900 leading-tight">{filters.city ? t(`cities.${filters.city}`) : t('nearby.allCities')}</span>
+                    <span className="text-gray-500 text-xs">{t('nav.state')}</span>
                   </div>
                   <ChevronDown size={16} className={`text-gray-400 ml-4 transition-transform duration-200 ${cityMenuOpen ? 'rotate-180' : ''}`} />
                 </div>
@@ -294,7 +301,7 @@ export const Navbar = () => {
                         }}
                         className={`w-full text-left px-5 py-2.5 text-sm font-bold transition-colors ${selectedCity === 'All Cities' ? 'bg-[#fff5f5] text-[#CA3433]' : 'text-gray-700 hover:bg-gray-50'}`}
                       >
-                        All Cities
+                        {t('nearby.allCities')}
                       </button>
                       {CITIES.map(city => (
                         <button
@@ -306,7 +313,7 @@ export const Navbar = () => {
                           }}
                           className={`w-full text-left px-5 py-2.5 text-sm font-semibold transition-colors ${selectedCity === city ? 'bg-[#fff5f5] text-[#CA3433]' : 'text-gray-700 hover:bg-gray-50'}`}
                         >
-                          {city}
+                          {t(`cities.${city}`)}
                         </button>
                       ))}
                     </div>
@@ -345,7 +352,7 @@ export const Navbar = () => {
                       }}
                       className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${selectedCity === 'All Cities' ? 'bg-brand-50 text-brand-600' : 'text-gray-700 hover:bg-gray-50'}`}
                     >
-                      All Cities
+                      {t('nearby.allCities')}
                     </button>
                     {CITIES.map(city => (
                       <button
@@ -357,7 +364,7 @@ export const Navbar = () => {
                         }}
                         className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${selectedCity === city ? 'bg-brand-50 text-brand-600' : 'text-gray-700 hover:bg-gray-50'}`}
                       >
-                        {city}
+                        {t(`cities.${city}`)}
                       </button>
                     ))}
                   </div>

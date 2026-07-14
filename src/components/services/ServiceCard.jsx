@@ -139,7 +139,7 @@ const ServiceCardComponent = ({ service, layout = 'grid' }) => {
         </h3>
         
         <p className="text-[11px] text-gray-500 font-bold mb-2 line-clamp-1">
-           {service.speciality || t('services.labels.descriptionFallback') || t('services.labels.aboutFallback')}
+           {service.speciality || service.description || t('services.labels.aboutFallback')}
         </p>
         
         <div className="mt-auto pt-2 border-t border-gray-50 flex items-center justify-between">
