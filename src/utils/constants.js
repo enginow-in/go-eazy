@@ -17,6 +17,10 @@ export const CITIES = [
   'Dehradun', 'Srinagar', 'Rishikesh', 'Haldwani', 'Nainital', 'Haridwar', 'Roorkee', 'Rudrapur'
 ]
 
+export const AREAS = [
+  'Clement Town', 'Dalanwala', 'GMS Road', 'Main Market', 'Mukhani', 'Patel Nagar', 'Prem Nagar', 'Rajpur Road', 'Tapovan', 'Vasant Vihar'
+]
+
 export const SORT_OPTIONS = [
   { value: 'created_at:desc', label: 'Newest First' },
   { value: 'created_at:asc', label: 'Oldest First' },

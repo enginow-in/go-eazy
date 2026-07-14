@@ -4,6 +4,7 @@ import { useDispatch } from 'react-redux'
 import { Search, TrendingUp, Shield, Star } from 'lucide-react'
 import { setFilters } from '../../store/propertySlice'
 import { Button } from '../ui/Button'
+import { Autocomplete } from '../ui/Autocomplete'
 import { CITIES } from '../../utils/constants'
 import { useTranslation } from 'react-i18next'
 
@@ -47,18 +48,16 @@ export const Hero = () => {
 
         {/* Search Bar */}
         <form onSubmit={handleSearch} className="max-w-2xl mx-auto flex gap-3 mb-8 animate-fadeInUp" style={{ animationDelay: '250ms' }}>
-          <div className="flex-1 relative">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              value={searchVal}
-              onChange={e => setSearchVal(e.target.value)}
-              type="text"
-              id="hero-search"
-              name="hero-search"
-              placeholder={t('hero.searchPlaceholder')}
-              className="w-full pl-11 pr-4 py-4 rounded-xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-100 text-gray-900 text-sm transition-all"
-            />
-          </div>
+          <Autocomplete
+            id="hero-search"
+            name="hero-search"
+            value={searchVal}
+            onChange={setSearchVal}
+            suggestions={CITIES}
+            placeholder={t('hero.searchPlaceholder')}
+            className="flex-1"
+            inputClassName="pl-11 pr-4 py-4 text-sm"
+          />
           <Button type="submit" variant="primary" size="lg" className="px-7 rounded-xl shadow-md">
             {t('hero.searchBtn')}
           </Button>
@@ -68,11 +67,11 @@ export const Hero = () => {
         <div className="flex flex-wrap justify-center gap-2.5 mb-12 animate-fadeInUp" style={{ animationDelay: '300ms' }}>
           {CITIES.slice(0, 8).map(city => (
             <button
-              key={city.name}
-              onClick={() => { dispatch(setFilters({ city: city.name })); navigate('/search') }}
+              key={city}
+              onClick={() => { dispatch(setFilters({ city })); navigate('/search') }}
               className="flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-200 rounded-full text-sm font-medium text-gray-600 hover:border-brand-400 hover:text-brand-700 hover:bg-brand-50 transition-all shadow-sm hover:shadow-md"
             >
-              {city.name}
+              {city}
             </button>
           ))}
         </div>

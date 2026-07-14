@@ -2,6 +2,8 @@ import React, { useEffect, useState, useMemo } from 'react'
 import { useDispatch } from 'react-redux'
 import { useSearchParams } from 'react-router-dom'
 import { Search, Filter, ChevronDown, Grid, List as ListIcon, RefreshCw, MapPin, ArrowLeft } from 'lucide-react'
+import { Autocomplete } from '../components/ui/Autocomplete'
+import { AREAS } from '../utils/constants'
 import { useNavigate } from 'react-router-dom'
 import { useServices } from '../hooks/useServices'
 import { ServiceCard } from '../components/services/ServiceCard'
@@ -244,16 +246,17 @@ export const NearbyServices = () => {
 
           <div className="flex items-center gap-3 w-full">
             {/* Area input (Full width to match row above) */}
-            <div className="relative flex-1">
-              <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder={t('nearby.areaSearchPlaceholder')}
-                value={filters.area || ''}
-                onChange={e => updateFilters({ area: e.target.value })}
-                className="w-full pl-11 pr-4 py-3 bg-white border border-[#CA3433] sm:border-gray-200 rounded-full sm:rounded-2xl text-sm focus:outline-none focus:border-[#CA3433] focus:ring-4 focus:ring-[#CA3433]/5 transition-all shadow-sm"
-              />
-            </div>
+            <Autocomplete
+              id="area-search"
+              name="area-search"
+              placeholder={t('nearby.areaSearchPlaceholder')}
+              value={filters.area || ''}
+              onChange={val => updateFilters({ area: val })}
+              suggestions={AREAS}
+              className="flex-1"
+              inputClassName="pl-11 pr-4 py-3 text-sm rounded-full sm:rounded-2xl border-[#CA3433] sm:border-gray-200"
+              icon={<MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 z-10" />}
+            />
 
             {/* Advanced Filters Toggle */}
             <div className="relative">
