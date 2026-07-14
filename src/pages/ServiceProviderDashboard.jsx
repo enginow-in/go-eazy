@@ -35,7 +35,7 @@ const StatusBadge = ({ status }) => {
 export const ServiceProviderDashboard = () => {
   const navigate = useNavigate()
   const { profile } = useSelector(s => s.auth)
-  const { getMyServices, deleteService, payServiceListing } = useServices()
+  const { getMyServices, deleteService } = useServices()
 
   const [myServices, setMyServices] = useState([])
   const [loading, setLoading] = useState(true)
@@ -110,8 +110,18 @@ export const ServiceProviderDashboard = () => {
         image: '/favicon.svg',
         handler: async function(response) {
           try {
-            // Mark payment as paid in DB
-            await payServiceListing(serviceId)
+            // Verify payment on the backend
+            const verifyResp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-service-payment`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+              },
+              body: JSON.stringify({ ...response, service_id: serviceId })
+            })
+            if (!verifyResp.ok) throw new Error('Payment verification failed')
+
             // Refresh the service in UI
             setMyServices(prev => prev.map(s =>
               s.id === serviceId ? { ...s, payment_status: 'paid' } : s
