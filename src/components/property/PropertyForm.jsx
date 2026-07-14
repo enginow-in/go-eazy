@@ -95,6 +95,7 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   const [step, setStep] = useState(1)
   const [images, setImages] = useState([])
   const [previewUrls, setPreviewUrls] = useState(initialData?.images || [])
+  const [draftId, setDraftId] = useState(null)
 
   const [form, setForm] = useState({
     title:             initialData?.title || '',
@@ -205,13 +206,41 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
       })
       if (!await loadRazorpay()) throw new Error('Razorpay SDK failed to load')
 
+      let currentDraftId = draftId;
+      if (!currentDraftId) {
+        const { data: draftProp, error: draftError } = await supabase
+          .from('properties')
+          .insert({
+            ...form,
+            images: uploadedUrls,
+            landlord_id: user.id,
+            payment_status: 'pending'
+          })
+          .select('id')
+          .single()
+        
+        if (draftError) throw new Error('Failed to create draft listing: ' + draftError.message)
+        currentDraftId = draftProp.id
+        setDraftId(currentDraftId)
+      } else {
+        const { error: updateError } = await supabase
+          .from('properties')
+          .update({
+            ...form,
+            images: uploadedUrls
+          })
+          .eq('id', currentDraftId)
+        if (updateError) throw new Error('Failed to update draft listing: ' + updateError.message)
+      }
+
       const orderResp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-listing-order`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY }
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+        body: JSON.stringify({ property_id: currentDraftId })
       })
       if (!orderResp.ok) {
         const errText = await orderResp.text()
-        let errJson = {}; try { errJson = JSON.parse(errText) } catch(e) {}
+        let errJson = {}; try { errJson = JSON.parse(errText) } catch { /* ignore */ }
         const msg = [errJson.error, errJson.detail, `HTTP ${orderResp.status}`].filter(Boolean).join(' | ')
         toast.error(msg, { duration: 8000 }); throw new Error(msg)
       }
@@ -228,7 +257,7 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
             const verifyResp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-listing-payment`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s2?.access_token}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
-              body: JSON.stringify({ ...response, property_data: { ...form, images: uploadedUrls } })
+              body: JSON.stringify({ ...response, property_id: currentDraftId })
             })
             if (!verifyResp.ok) { const e = await verifyResp.json().catch(() => ({})); throw new Error(e.error || 'Payment verification failed') }
             setShowSuccess(true)

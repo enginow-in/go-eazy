@@ -75,6 +75,15 @@ serve(async (req: Request) => {
       })
     }
 
+    const body = await req.json().catch(() => ({}))
+    const { property_id } = body
+    if (!property_id) {
+      return new Response(JSON.stringify({ error: 'property_id is required' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      })
+    }
+
     // 3. Create Razorpay Order for ₹199
     const auth = btoa(`${key_id}:${key_secret}`)
     const resp = await fetch('https://api.razorpay.com/v1/orders', {
@@ -89,6 +98,7 @@ serve(async (req: Request) => {
         receipt: `listing_${user.id.substring(0, 8)}_${Date.now()}`,
         notes: {
           user_id: user.id,
+          property_id: property_id,
           purpose: 'property_listing'
         }
       })

@@ -42,9 +42,9 @@ serve(async (req: Request) => {
 
   try {
     const body = await req.json()
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, property_data } = body
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, property_id } = body
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !property_data) {
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !property_id) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400,
       })
@@ -118,19 +118,18 @@ serve(async (req: Request) => {
       })
     }
 
-    // 4. All checks pass — create the property using the same admin client
-    const { data: property, error: insertError } = await supabaseAdmin
+    // 4. All checks pass — update the property payment status
+    const { data: property, error: updateError } = await supabaseAdmin
       .from('properties')
-      .insert({
-        ...property_data,
-        landlord_id: user.id,
-      })
+      .update({ payment_status: 'paid' })
+      .eq('id', property_id)
+      .eq('landlord_id', user.id)
       .select()
       .single()
 
-    if (insertError) {
-      console.error('Failed to insert property:', insertError)
-      return new Response(JSON.stringify({ error: 'Failed to create listing: ' + insertError.message }), {
+    if (updateError) {
+      console.error('Failed to update property status:', updateError)
+      return new Response(JSON.stringify({ error: 'Failed to confirm listing payment: ' + updateError.message }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500,
       })
     }

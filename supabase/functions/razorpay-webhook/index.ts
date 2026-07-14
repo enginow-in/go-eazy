@@ -96,33 +96,47 @@ serve(async (req) => {
     }
 
     // 6. Verify payment amount and currency (prevent tampered webhooks)
-    if (event === 'payment.captured') {
-      const amount   = paymentEntity?.amount
-      const currency = paymentEntity?.currency
-      const status   = paymentEntity?.status
+    const amount   = paymentEntity?.amount || orderEntity?.amount
+    const currency = paymentEntity?.currency || orderEntity?.currency
+    const purpose  = notes?.purpose
 
-      if (amount !== 900) {
-        console.error(`Webhook: unexpected amount ${amount}, expected 900`)
-        return new Response('OK', { status: 200 })
-      }
-
-      if (currency !== 'INR') {
-        console.error(`Webhook: unexpected currency ${currency}`)
-        return new Response('OK', { status: 200 })
-      }
-
-      if (status !== 'captured') {
-        console.error(`Webhook: payment not captured, status: ${status}`)
-        return new Response('OK', { status: 200 })
-      }
+    if (currency !== 'INR') {
+      console.error(`Webhook: unexpected currency ${currency}`)
+      return new Response('OK', { status: 200 })
     }
 
-    // 7. All checks passed — record the unlock in database
+    // 7. Execute business logic based on purpose
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
       { auth: { persistSession: false } }
     )
+
+    if (purpose === 'property_listing') {
+      if (amount !== 19900) {
+        console.error(`Webhook: unexpected amount ${amount} for property_listing, expected 19900`)
+        return new Response('OK', { status: 200 })
+      }
+      
+      const { error } = await supabaseAdmin
+        .from('properties')
+        .update({ payment_status: 'paid' })
+        .eq('id', propertyId)
+        
+      if (error) {
+        console.error('Webhook: Property update failed:', error)
+        return new Response('Database Error', { status: 500 })
+      }
+      
+      console.log(`Webhook: Successfully marked property ${propertyId} as paid for user ${userId}`)
+      return new Response('OK', { status: 200 })
+    } 
+    
+    // Default fallback: Contact Unlock logic (₹9)
+    if (amount !== 900) {
+      console.error(`Webhook: unexpected amount ${amount} for contact unlock, expected 900`)
+      return new Response('OK', { status: 200 })
+    }
 
     const { error } = await supabaseAdmin
       .from('unlocked_properties')
