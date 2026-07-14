@@ -134,30 +134,21 @@ export const useProperties = () => {
   const fetchGatedData = useCallback(async (id) => {
     if (!user) return null
     try {
-      // 1. Try the RPC first
-      const rpcResult = await supabase.rpc('get_unlocked_property_details', { prop_id: id })
-      const rpcData = rpcResult.data?.[0] || {}
-
-      // 2. ALWAYS also directly fetch contact_phone + contact_email from properties table
-      //    (the RPC may not include these fields, and landlords can always read their own data)
-      const { data: directData } = await supabase
-        .from('properties')
-        .select('contact_phone, contact_email, exact_location')
-        .eq('id', id)
-        .maybeSingle()
-
-      // 3. Merge — RPC fields take priority, direct fields fill any gaps
-      return {
-        ...rpcData,
-        contact_phone: rpcData?.contact_phone || directData?.contact_phone || null,
-        contact_email: rpcData?.contact_email || directData?.contact_email || null,
-        exact_location: rpcData?.exact_location || directData?.exact_location || null,
-      }
+      // Only the RPC is used to retrieve gated contact details.
+      // A previous implementation also made a direct SELECT on the `properties`
+      // table (contact_phone, contact_email, exact_location) as a fallback.
+      // That fallback bypassed the payment check entirely — any authenticated
+      // user could read landlord contact info without unlocking the listing.
+      // The RPC enforces the payment/unlock gate server-side.
+      const { data, error } = await supabase.rpc('get_unlocked_property_details', { prop_id: id })
+      if (error) throw error
+      return data?.[0] || null
     } catch (err) {
       console.error('Error fetching gated data:', err)
       return null
     }
   }, [user])
+
 
   const fetchReviews = useCallback(async (propertyId) => {
     dispatch(setReviewsLoading(true))
