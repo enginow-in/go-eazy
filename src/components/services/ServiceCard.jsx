@@ -70,7 +70,7 @@ const ServiceCardComponent = ({ service, layout = 'grid' }) => {
               {service.name}
             </h3>
             <p className="text-[11px] sm:text-xs font-semibold text-gray-500 line-clamp-2">
-              {service.speciality || service.description}
+              {service.speciality || service.description || t('service.labels.descriptionFallback')}
             </p>
           </div>
 
