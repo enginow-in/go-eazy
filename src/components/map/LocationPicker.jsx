@@ -80,8 +80,8 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v12',
-      center: value?.longitude ? [value.longitude, value.latitude] : DEFAULT_CENTER,
-      zoom: value?.longitude ? 15 : DEFAULT_ZOOM,
+      center: value?.longitude != null ? [value.longitude, value.latitude] : DEFAULT_CENTER,
+      zoom: value?.longitude != null ? 15 : DEFAULT_ZOOM,
       attributionControl: false,
     })
 
@@ -92,7 +92,7 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
       placeMarker(e.lngLat.lng, e.lngLat.lat)
     })
 
-    if (value?.latitude && value?.longitude) {
+    if (value?.latitude != null && value?.longitude != null) {
       map.current.on('load', () => {
         placeMarker(value.longitude, value.latitude, value.map_address)
       })
