@@ -195,7 +195,7 @@ export const AuthModal = () => {
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
-                  <span className="text-lg">{opt.icon}</span>
+                  <div className="flex items-center justify-center">{opt.icon}</div>
                   <p className="text-sm font-semibold text-gray-900">{opt.label}</p>
                 </button>
               ))}
