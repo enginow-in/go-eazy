@@ -15,6 +15,7 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
   const marker = useRef(null)
   const searchRef = useRef(null)
   const debounceRef = useRef(null)
+  const isMounted = useRef(true) // Track mount state to prevent memory leaks
 
   const [gpsLoading, setGpsLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -23,6 +24,15 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
   const [showResults, setShowResults] = useState(false)
   const [hasPin, setHasPin] = useState(false)
 
+  // Track mount/unmount lifecycle
+  useEffect(() => {
+    isMounted.current = true
+    return () => {
+      isMounted.current = false
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [])
+
   // Reverse geocode coordinates → human-readable address
   const reverseGeocode = useCallback(async (lng, lat) => {
     try {
@@ -30,6 +40,7 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${import.meta.env.VITE_MAPBOX_TOKEN}&language=en&country=IN`
       )
       const data = await res.json()
+      if (!isMounted.current) return ''
       return data.features?.[0]?.place_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`
     } catch {
       return `${lat.toFixed(5)}, ${lng.toFixed(5)}`
@@ -57,15 +68,24 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
       .addTo(map.current)
 
     map.current.flyTo({ center: [lng, lat], zoom: 15, duration: 1200 })
-    setHasPin(true)
+    
+    if (isMounted.current) {
+      setHasPin(true)
+    }
 
     const address = addressOverride || await reverseGeocode(lng, lat)
-    onChange?.({ latitude: lat, longitude: lng, map_address: address })
+    
+    if (isMounted.current) {
+      onChange?.({ latitude: lat, longitude: lng, map_address: address })
+    }
 
     marker.current.on('dragend', async () => {
+      if (!marker.current) return
       const { lng: newLng, lat: newLat } = marker.current.getLngLat()
       const newAddress = await reverseGeocode(newLng, newLat)
-      onChange?.({ latitude: newLat, longitude: newLng, map_address: newAddress })
+      if (isMounted.current) {
+        onChange?.({ latitude: newLat, longitude: newLng, map_address: newAddress })
+      }
     })
   }, [reverseGeocode, onChange])
 
@@ -88,9 +108,12 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
     map.current.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right')
     map.current.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-left')
 
-    map.current.on('click', (e) => {
+    // Handle map click securely
+    const handleMapClick = (e) => {
       placeMarker(e.lngLat.lng, e.lngLat.lat)
-    })
+    }
+
+    map.current.on('click', handleMapClick)
 
     if (value?.latitude && value?.longitude) {
       map.current.on('load', () => {
@@ -99,10 +122,13 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
     }
 
     return () => {
-      map.current?.remove()
-      map.current = null
+      if (map.current) {
+        map.current.off('click', handleMapClick)
+        map.current.remove()
+        map.current = null
+      }
     }
-  }, []) // eslint-disable-line
+  }, [placeMarker]) // Added placeMarker dependency for sync stability
 
   // GPS: Use Current Location
   const handleGPS = () => {
@@ -113,14 +139,18 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
     setGpsLoading(true)
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        placeMarker(pos.coords.longitude, pos.coords.latitude)
-        setGpsLoading(false)
-        toast.success('Location detected!')
+        if (isMounted.current) {
+          placeMarker(pos.coords.longitude, pos.coords.latitude)
+          setGpsLoading(false)
+          toast.success('Location detected!')
+        }
       },
       (err) => {
-        setGpsLoading(false)
-        if (err.code === 1) toast.error('Location permission denied. Please allow access.')
-        else toast.error('Could not get your location. Try searching instead.')
+        if (isMounted.current) {
+          setGpsLoading(false)
+          if (err.code === 1) toast.error('Location permission denied. Please allow access.')
+          else toast.error('Could not get your location. Try searching instead.')
+        }
       },
       { timeout: 10000, enableHighAccuracy: true }
     )
@@ -128,26 +158,34 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
 
   // Mapbox Geocoding Search
   const handleSearch = useCallback(async (query) => {
-    if (!query.trim() || query.trim().length < 3) { setSearchResults([]); setShowResults(false); return }
+    if (!query.trim() || query.trim().length < 3) { 
+      setSearchResults([])
+      setShowResults(false)
+      return 
+    }
     setSearchLoading(true)
     try {
       const res = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${import.meta.env.VITE_MAPBOX_TOKEN}&country=IN&proximity=78.0322,30.3165&language=en&limit=5`
       )
       const data = await res.json()
-      setSearchResults(data.features || [])
-      setShowResults(true)
+      if (isMounted.current) {
+        setSearchResults(data.features || [])
+        setShowResults(true)
+      }
     } catch {
       toast.error('Search failed, please try again')
     } finally {
-      setSearchLoading(false)
+      if (isMounted.current) {
+        setSearchLoading(false)
+      }
     }
   }, [])
 
   const handleSearchInput = (e) => {
     const q = e.target.value
     setSearchQuery(q)
-    clearTimeout(debounceRef.current)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => handleSearch(q), 500)
   }
 
@@ -160,7 +198,10 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
   }
 
   const handleClearPin = () => {
-    if (marker.current) { marker.current.remove(); marker.current = null }
+    if (marker.current) { 
+      marker.current.remove()
+      marker.current = null 
+    }
     setHasPin(false)
     onChange?.({ latitude: null, longitude: null, map_address: '' })
     map.current?.flyTo({ center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM, duration: 800 })
@@ -168,7 +209,9 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
 
   // Close dropdown on outside click
   useEffect(() => {
-    const handler = (e) => { if (!searchRef.current?.contains(e.target)) setShowResults(false) }
+    const handler = (e) => { 
+      if (!searchRef.current?.contains(e.target)) setShowResults(false) 
+    }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
