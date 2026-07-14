@@ -35,7 +35,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    // 1. Authenticate user
+    // 1. Authenticate user via ES256 JWT
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -65,7 +65,7 @@ serve(async (req: Request) => {
 
     const user = authData.user
 
-    // 2. Check secrets
+    // 2. Check Razorpay credentials are configured
     const key_id = Deno.env.get('RAZORPAY_KEY_ID')
     const key_secret = Deno.env.get('RAZORPAY_KEY_SECRET')
     if (!key_id || !key_secret) {
@@ -76,6 +76,7 @@ serve(async (req: Request) => {
     }
 
     // 3. Create Razorpay Order for ₹199
+    // CRITICAL: Amount is hardcoded server-side, never from client
     const auth = btoa(`${key_id}:${key_secret}`)
     const resp = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
@@ -84,7 +85,7 @@ serve(async (req: Request) => {
         'Authorization': `Basic ${auth}`
       },
       body: JSON.stringify({
-        amount: 19900,        // ₹199.00 in paise — hardcoded server-side
+        amount: 19900,        // ₹199.00 in paise — hardcoded server-side only
         currency: 'INR',
         receipt: `listing_${user.id.substring(0, 8)}_${Date.now()}`,
         notes: {
