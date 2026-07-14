@@ -210,6 +210,22 @@ export const useProperties = () => {
     dispatch(removeReview(reviewId))
   }
 
+  const validatePropertyData = (data) => {
+    const title = data.title?.trim()
+    const description = data.description?.trim()
+    if (!title || title.length < 5) throw new Error('Title must be at least 5 characters')
+    if (title.length > 200) throw new Error('Title is too long (max 200 characters)')
+    if (!description || description.length < 20) throw new Error('Description must be at least 20 characters')
+    if (description.length > 5000) throw new Error('Description is too long (max 5000 characters)')
+    if (typeof data.price !== 'number' || data.price <= 0 || data.price > 100000000) {
+      throw new Error('Price must be a positive number')
+    }
+    if (data.bedrooms != null && (data.bedrooms < 0 || data.bedrooms > 20)) {
+      throw new Error('Bedrooms must be between 0 and 20')
+    }
+    return { ...data, title, description }
+  }
+
   const createProperty = async (propertyData, images) => {
     const imageUrls = []
     for (const img of images) {
@@ -220,7 +236,8 @@ export const useProperties = () => {
       const { data: { publicUrl } } = supabase.storage.from('property-images').getPublicUrl(path)
       imageUrls.push(publicUrl)
     }
-    const { data, error } = await supabase.from('properties').insert({ ...propertyData, landlord_id: user.id, images: imageUrls, views: 0 }).select().maybeSingle()
+    const validatedData = validatePropertyData(propertyData)
+    const { data, error } = await supabase.from('properties').insert({ ...validatedData, landlord_id: user.id, images: imageUrls, views: 0 }).select().maybeSingle()
     if (error) throw error
     return data
   }
