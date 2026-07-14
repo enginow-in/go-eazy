@@ -1,4 +1,3 @@
-import React from 'react'
 import { Wifi, Snowflake, Utensils, Box, WashingMachine, Dumbbell, ShieldCheck, Video, Zap, Droplets } from 'lucide-react'
 
 export const formatPrice = (price) => {
@@ -17,11 +16,15 @@ export const formatPriceShort = (price) => {
   return `₹${price}`
 }
 
-export const truncate = (str, n = 80) =>
-  str && str.length > n ? str.slice(0, n) + '…' : str
+export const truncate = (str, n = 80) => {
+  if (!str || typeof str !== 'string') return ''
+  return str.length > n ? str.slice(0, n) + '…' : str
+}
 
-export const getInitials = (name = '') =>
-  name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+export const getInitials = (name) => {
+  if (!name || typeof name !== 'string') return ''
+  return name.trim().split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2)
+}
 
 export const cn = (...classes) =>
   classes.filter(Boolean).join(' ')
