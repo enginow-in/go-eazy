@@ -29,7 +29,12 @@ export const AuthModal = () => {
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [errors, setErrors] = useState({})
 
-  React.useEffect(() => { setTab(authModalTab) }, [authModalTab])
+  React.useEffect(() => {
+    if (!authModalOpen) return
+    setTab(authModalTab)
+    setErrors({})
+    setShowPass(false)
+  }, [authModalOpen, authModalTab])
 
   const validate = () => {
     const e = {}
