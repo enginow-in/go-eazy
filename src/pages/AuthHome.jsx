@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { Mail, Lock, User, Eye, EyeOff, Home, GraduationCap, Utensils, CheckCircle2, Sparkles, ArrowRight } from 'lucide-react'
 import { Button } from '../components/ui/Button'
@@ -15,7 +14,7 @@ const ROLE_OPTIONS = [
 ]
 
 export const AuthHome = () => {
-  const dispatch = useDispatch()
+  const MotionDiv = motion.div
   const navigate = useNavigate()
   const { signIn, signUp, signInWithGoogle } = useAuth()
 
@@ -78,7 +77,7 @@ export const AuthHome = () => {
 
       {/* Hero Content Section */}
       <div className="md:w-1/2 flex flex-col justify-center p-8 sm:p-12 lg:p-20 relative z-10">
-        <motion.div 
+        <MotionDiv 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -97,9 +96,9 @@ export const AuthHome = () => {
           <p className="text-lg text-gray-500 font-medium max-w-md leading-relaxed">
             Simplifying your hunt for PGs, hostles, and service providers in your city. One account, endless ease.
           </p>
-        </motion.div>
+        </MotionDiv>
 
-        <motion.div 
+        <MotionDiv 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
@@ -117,12 +116,12 @@ export const AuthHome = () => {
             <CheckCircle2 size={18} className="text-green-500" />
             Zero Commission Architecture
           </div>
-        </motion.div>
+        </MotionDiv>
       </div>
 
       {/* Auth Form Section */}
       <div className="md:w-1/2 flex items-center justify-center p-6 sm:p-12 lg:p-20 bg-gray-50/30 relative z-10">
-        <motion.div 
+        <MotionDiv 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
@@ -152,7 +151,7 @@ export const AuthHome = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <AnimatePresence mode="wait">
-              <motion.div
+              <MotionDiv
                 key={tab}
                 initial={{ opacity: 0, x: 10 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -221,7 +220,7 @@ export const AuthHome = () => {
                     </div>
                   </div>
                 )}
-              </motion.div>
+              </MotionDiv>
             </AnimatePresence>
 
             <Button type="submit" variant="primary" size="lg" className="w-full py-6 rounded-2xl bg-[#CA3433] shadow-xl shadow-red-500/20 text-lg group" loading={loading}>
@@ -253,7 +252,7 @@ export const AuthHome = () => {
             </svg>
             Continue with Google
           </Button>
-        </motion.div>
+        </MotionDiv>
       </div>
     </div>
   )

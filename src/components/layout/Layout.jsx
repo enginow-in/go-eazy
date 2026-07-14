@@ -8,6 +8,7 @@ import { Toaster } from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export const Layout = ({ children }) => {
+  const MotionMain = motion.main
   const location = useLocation()
   
   return (
@@ -25,7 +26,7 @@ export const Layout = ({ children }) => {
       
       {location.pathname !== '/systemadmin' && <Navbar />}
       <AnimatePresence mode="wait">
-        <motion.main
+        <MotionMain
           key={location.pathname}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -34,7 +35,7 @@ export const Layout = ({ children }) => {
           className={location.pathname === '/systemadmin' ? "" : "min-h-screen"}
         >
           {children}
-        </motion.main>
+        </MotionMain>
       </AnimatePresence>
       {location.pathname === '/search' && <Footer />}
       <AuthModal />

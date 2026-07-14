@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { useSearchParams } from 'react-router-dom'
 import { Filter, Grid, List as ListIcon, ChevronDown } from 'lucide-react'
@@ -11,7 +11,6 @@ import { resetFilters } from '../store/propertySlice'
 import { PROPERTY_TYPES, AMENITIES, SORT_OPTIONS } from '../utils/constants'
 import { AMENITY_ICONS, cn } from '../utils/helpers'
 import { Skeleton } from '../components/ui/Skeleton'
-import { useAuth } from '../hooks/useAuth'
 import { RecommendedSection } from '../components/property/RecommendedSection'
 
 export const Search = () => {
@@ -20,17 +19,20 @@ export const Search = () => {
   const [searchParams] = useSearchParams()
   const { listings, filters, loading, hasMore, fetchProperties, updateFilters, totalCount } = useProperties()
   
+  const buildLocalFilters = (currentFilters) => ({
+    city: currentFilters.city || '',
+    area: currentFilters.area || '',
+    type: currentFilters.type || '',
+    priceMin: currentFilters.priceMin || 0,
+    priceMax: currentFilters.priceMax || 100000,
+    amenities: [...(currentFilters.amenities || [])],
+    sortBy: currentFilters.sortBy || 'created_at',
+    sortOrder: currentFilters.sortOrder || 'desc',
+  })
+
   const [viewMode, setViewMode] = useState('grid')
   const [showFilters, setShowFilters] = useState(false)
-  const [localFilters, setLocalFilters] = useState({
-    city: filters.city || '', 
-    area: filters.area || '', 
-    priceMin: filters.priceMin || 0, 
-    priceMax: filters.priceMax || 100000, 
-    amenities: [...(filters.amenities || [])], 
-    sortBy: filters.sortBy || 'created_at', 
-    sortOrder: filters.sortOrder || 'desc'
-  })
+  const [localFilters, setLocalFilters] = useState(() => buildLocalFilters(filters))
 
   // Read ?type= from URL and apply as filter
   useEffect(() => {
@@ -43,20 +45,6 @@ export const Search = () => {
     }
   }, [searchParams, updateFilters, filters.type])
 
-  // Sync local filters with global filters when global filters change
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    setLocalFilters({
-      city: filters.city || '', 
-      area: filters.area || '', 
-      priceMin: filters.priceMin || 0, 
-      priceMax: filters.priceMax || 100000, 
-      amenities: [...(filters.amenities || [])], 
-      sortBy: filters.sortBy || 'created_at', 
-      sortOrder: filters.sortOrder || 'desc'
-    })
-  }, [filters])
-
   const applyFilters = () => {
     updateFilters(localFilters)
     setShowFilters(false)
@@ -67,7 +55,7 @@ export const Search = () => {
   }, [filters, fetchProperties])
 
   // Use the actual totalCount from database
-  const count = useMemo(() => totalCount, [totalCount])
+  const count = totalCount
 
   const renderFilterContent = () => (
     <div className="space-y-6">
@@ -172,8 +160,7 @@ export const Search = () => {
     </div>
   )
 
-  // Memoize Filter UI to prevent unnecessary re-calculation during typing
-  const filterContent = useMemo(() => renderFilterContent(), [localFilters, t, dispatch, showFilters])
+  const filterContent = renderFilterContent()
 
   return (
     <div className="pt-4 pb-12 min-h-screen bg-gray-50/50">
@@ -215,7 +202,10 @@ export const Search = () => {
 
                 <div className="relative">
                   <button 
-                    onClick={() => setShowFilters(!showFilters)} 
+                    onClick={() => {
+                      if (!showFilters) setLocalFilters(buildLocalFilters(filters))
+                      setShowFilters(!showFilters)
+                    }} 
                     className={`flex items-center justify-center p-2.5 bg-white border rounded-xl transition-all shadow-sm ${showFilters ? 'border-brand-500 text-brand-600 ring-2 ring-brand-50' : 'border-gray-200 text-gray-700 hover:border-gray-300'}`}
                     aria-label="Toggle Filters"
                   >
@@ -248,7 +238,10 @@ export const Search = () => {
              
              {/* Desktop Filters Button & Dropdown */}
              <div className="relative z-20">
-               <button onClick={() => setShowFilters(!showFilters)} className={`flex items-center gap-2 px-6 py-2.5 bg-white border rounded-xl text-sm font-semibold transition-all ml-4 ${showFilters ? 'border-brand-500 text-brand-600 shadow-sm' : 'border-gray-200 text-gray-700 hover:shadow-sm'}`}>
+               <button onClick={() => {
+                 if (!showFilters) setLocalFilters(buildLocalFilters(filters))
+                 setShowFilters(!showFilters)
+               }} className={`flex items-center gap-2 px-6 py-2.5 bg-white border rounded-xl text-sm font-semibold transition-all ml-4 ${showFilters ? 'border-brand-500 text-brand-600 shadow-sm' : 'border-gray-200 text-gray-700 hover:shadow-sm'}`}>
                   <Filter size={16} />
                   <span>{t('search.filters')}</span>
                   <ChevronDown size={14} className={`ml-2 transition-transform duration-300 ${showFilters ? 'rotate-180 text-brand-500' : 'text-gray-400'}`} />

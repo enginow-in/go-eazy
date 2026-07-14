@@ -50,6 +50,7 @@ const QUIZ_STEPS = [
 ]
 
 export const OnboardingQuiz = () => {
+  const MotionDiv = motion.div
   const { user, profile, updateProfile } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [step, setStep] = useState(0)
@@ -114,14 +115,14 @@ export const OnboardingQuiz = () => {
   return (
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
       {/* Backdrop — non-clickable, mandatory */}
-      <motion.div 
+      <MotionDiv 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         className="absolute inset-0 bg-black/75 backdrop-blur-lg"
       />
 
       {/* Quiz Card */}
-      <motion.div 
+      <MotionDiv 
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
@@ -130,7 +131,7 @@ export const OnboardingQuiz = () => {
         {/* Progress Bar */}
         <div className="absolute top-0 left-0 right-0 h-1.5 flex gap-0.5 bg-gray-100">
           {QUIZ_STEPS.map((_, i) => (
-            <motion.div 
+            <MotionDiv 
               key={i} 
               className="h-full bg-[#CA3433]"
               initial={{ width: 0 }}
@@ -142,7 +143,7 @@ export const OnboardingQuiz = () => {
 
         <div className="p-8 sm:p-10 pt-10">
           <AnimatePresence mode="wait">
-            <motion.div
+            <MotionDiv
               key={step}
               initial={{ x: 24, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
@@ -249,7 +250,7 @@ export const OnboardingQuiz = () => {
                   })}
                 </div>
               )}
-            </motion.div>
+            </MotionDiv>
           </AnimatePresence>
 
           <div className="mt-8 flex items-center justify-between pt-5 border-t border-gray-100">
@@ -270,7 +271,7 @@ export const OnboardingQuiz = () => {
             </Button>
           </div>
         </div>
-      </motion.div>
+      </MotionDiv>
     </div>
   )
 }
