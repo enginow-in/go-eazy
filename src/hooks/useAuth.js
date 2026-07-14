@@ -168,6 +168,7 @@ export const useAuth = () => {
   }
 
   const updateProfile = async (updates) => {
+    if (!user) throw new Error('Not authenticated')
     const { data, error } = await supabase
       .from('profiles')
       .update(updates)
