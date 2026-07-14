@@ -112,7 +112,7 @@ export const useAuth = () => {
     }
   }
 
-  const signUp = async ({ email, password, name, role }) => {
+ const signUp = async ({ email, password, name, role }) => {
     const { data, error } = await supabase.auth.signUp({
       email, password,
       options: { 
@@ -134,7 +134,9 @@ export const useAuth = () => {
         created_at: new Date().toISOString(),
       })
     }
-    return data
+    // Return whether a session was actually created — it will be null
+    // when email confirmation is required, so callers can react accordingly.
+    return { ...data, requiresEmailConfirmation: !data.session }
   }
 
   const signIn = async ({ email, password }) => {

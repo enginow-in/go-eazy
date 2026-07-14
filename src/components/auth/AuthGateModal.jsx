@@ -45,8 +45,14 @@ export const AuthGateModal = () => {
         await signIn({ email: form.email, password: form.password })
         toast.success('Welcome back!')
       } else {
-        await signUp({ email: form.email, password: form.password, name: form.name, role: selectedRole })
-        toast.success('Account created!')
+        const result = await signUp({ email: form.email, password: form.password, name: form.name, role: selectedRole })
+        if (result.requiresEmailConfirmation) {
+          toast.success('Account created!')
+          toast('Please check your email to confirm your account.', { icon: '📧' })
+          setTab('login')
+        } else {
+          toast.success('Account created!')
+        }
       }
     } catch (err) {
       toast.error(err.message || 'Something went wrong')
