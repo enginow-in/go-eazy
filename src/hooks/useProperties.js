@@ -220,7 +220,12 @@ export const useProperties = () => {
       const { data: { publicUrl } } = supabase.storage.from('property-images').getPublicUrl(path)
       imageUrls.push(publicUrl)
     }
-    const { data, error } = await supabase.from('properties').insert({ ...propertyData, landlord_id: user.id, images: imageUrls, views: 0 }).select().maybeSingle()
+    
+    const { generateEmbedding } = await import('../utils/ai')
+    const searchText = `${propertyData.title}. ${propertyData.description}. Located in ${propertyData.city}, ${propertyData.area}. Amenities: ${propertyData.amenities?.join(', ')}. Type: ${propertyData.type}. Price: ${propertyData.price}.`
+    const embedding = await generateEmbedding(searchText)
+
+    const { data, error } = await supabase.from('properties').insert({ ...propertyData, landlord_id: user.id, images: imageUrls, views: 0, embedding }).select().maybeSingle()
     if (error) throw error
     return data
   }
@@ -237,7 +242,12 @@ export const useProperties = () => {
         imageUrls.push(publicUrl)
       }
     }
-    const { data, error } = await supabase.from('properties').update({ ...updates, images: imageUrls }).eq('id', id).eq('landlord_id', user.id).select().maybeSingle()
+    
+    const { generateEmbedding } = await import('../utils/ai')
+    const searchText = `${updates.title || ''}. ${updates.description || ''}. Located in ${updates.city || ''}, ${updates.area || ''}. Amenities: ${updates.amenities?.join(', ') || ''}. Type: ${updates.type || ''}. Price: ${updates.price || ''}.`
+    const embedding = await generateEmbedding(searchText)
+
+    const { data, error } = await supabase.from('properties').update({ ...updates, images: imageUrls, embedding }).eq('id', id).eq('landlord_id', user.id).select().maybeSingle()
     if (error) throw error
     return data
   }
@@ -247,6 +257,86 @@ export const useProperties = () => {
     if (error) throw error
     return count > 0
   }
+
+  const searchSemanticProperties = useCallback(async (queryText) => {
+    dispatch(setLoading(true))
+    try {
+      const { generateEmbedding } = await import('../utils/ai')
+      const { getAllEmbeddings, saveEmbeddings } = await import('../utils/indexedDB')
+      
+      const query_embedding = await generateEmbedding(queryText)
+      if (!query_embedding) throw new Error('Failed to generate embedding')
+
+      // Check IDB cache
+      let cached = await getAllEmbeddings()
+      
+      // Fetch all embeddings from Supabase to sync cache
+      const { data: dbEmbeddings, error: dbErr } = await supabase
+        .from('properties')
+        .select('id, embedding')
+        .not('embedding', 'is', null)
+        .eq('availability', true)
+        
+      if (dbErr) throw dbErr
+      
+      // Save to IDB
+      if (dbEmbeddings?.length) {
+        await saveEmbeddings(dbEmbeddings)
+        cached = dbEmbeddings
+      }
+
+      // Compute local Cosine Similarity
+      const similarities = cached.map(prop => {
+        let sum = 0;
+        let a = typeof prop.embedding === 'string' ? JSON.parse(prop.embedding) : prop.embedding;
+        let b = query_embedding;
+        if(a && a.length === b.length) {
+          for (let i = 0; i < a.length; i++) sum += a[i] * b[i];
+        }
+        return { id: prop.id, score: sum };
+      });
+
+      const topMatches = similarities
+        .filter(s => s.score > 0.1)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 20);
+        
+      if (topMatches.length === 0) {
+        dispatch(setListings([]))
+        dispatch(setTotalCount(0))
+        dispatch(setHasMore(false))
+        dispatch(setPage(1))
+        return
+      }
+
+      const matchIds = topMatches.map(m => m.id);
+      
+      // Fetch full property details
+      const { data: fullProps, error } = await supabase
+        .from('properties')
+        .select(`${PUBLIC_PROPERTY_FIELDS}, profiles!properties_landlord_id_fkey(${PUBLIC_PROFILE_FIELDS})`)
+        .in('id', matchIds);
+
+      if (error) throw error
+      
+      // Sort to match ranking order
+      const sortedProps = [];
+      matchIds.forEach(id => {
+        const found = fullProps.find(p => p.id === id);
+        if (found) sortedProps.push(found);
+      });
+
+      dispatch(setListings(sortedProps))
+      dispatch(setTotalCount(sortedProps.length))
+      dispatch(setHasMore(false))
+      dispatch(setPage(1))
+    } catch (err) {
+      console.error('Semantic search error:', err)
+      dispatch(setListings([]))
+    } finally {
+      dispatch(setLoading(false))
+    }
+  }, [dispatch])
 
   const fetchFavorites = useCallback(async () => {
     if (!user) return
@@ -328,7 +418,7 @@ export const useProperties = () => {
   return {
     listings, featured, currentProperty, favorites, recentlyViewed, filters,
     loading, hasMore, page, totalCount,
-    fetchProperties, fetchFeatured, fetchByType, fetchPropertyById,
+    fetchProperties, fetchFeatured, fetchByType, fetchPropertyById, searchSemanticProperties,
     createProperty, updateProperty, deleteProperty,
     fetchFavorites, toggleFavorite, fetchRecentlyViewed, getLandlordProperties,
     updateFilters: useCallback((f) => dispatch(setFilters(f)), [dispatch]),
