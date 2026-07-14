@@ -7,35 +7,7 @@ export const useAuth = () => {
   const dispatch = useDispatch()
   const { user, profile, role, loading, authModalOpen, authModalTab } = useSelector(s => s.auth)
 
-  useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-
-      if (error) console.error('Auth: Session error', error)
-      
-      dispatch(setUser(session?.user ?? null))
-      if (session?.user) fetchProfile(session.user.id)
-      else dispatch(setLoading(false))
-    })
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-
-      
-      dispatch(setUser(session?.user ?? null))
-      if (session?.user) {
-        fetchProfile(session.user.id)
-      } else if (event === 'SIGNED_OUT') {
-        dispatch(logout())
-      } else {
-        dispatch(setLoading(false))
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  const fetchProfile = async (userId) => {
+  async function fetchProfile(userId) {
     try {
       // First try to fetch
       let { data, error } = await supabase
@@ -111,6 +83,36 @@ export const useAuth = () => {
       dispatch(setLoading(false))
     }
   }
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+
+      if (error) console.error('Auth: Session error', error)
+      
+      dispatch(setUser(session?.user ?? null))
+      if (session?.user) fetchProfile(session.user.id)
+      else dispatch(setLoading(false))
+    })
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+
+      
+      dispatch(setUser(session?.user ?? null))
+      if (session?.user) {
+        fetchProfile(session.user.id)
+      } else if (event === 'SIGNED_OUT') {
+        dispatch(logout())
+      } else {
+        dispatch(setLoading(false))
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+
 
   const signUp = async ({ email, password, name, role }) => {
     const { data, error } = await supabase.auth.signUp({

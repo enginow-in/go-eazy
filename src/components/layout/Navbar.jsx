@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { Search, ChevronDown, User, LogOut, Home, Building, Tent, MapPin, Grid, PlusCircle, LayoutDashboard, Menu, X } from 'lucide-react'
+import { Search, ChevronDown, User, LogOut, Home, Building, Tent, MapPin, Grid, PlusCircle, LayoutDashboard, Menu, X, Heart } from 'lucide-react'
 import { openAuthModal } from '../../store/authSlice'
 import { toggleMobileMenu, closeMobileMenu } from '../../store/uiSlice'
 import { useAuth } from '../../hooks/useAuth'
@@ -18,7 +18,7 @@ export const Navbar = () => {
   const location = useLocation()
   const { t, i18n } = useTranslation()
   const { user, profile, role, signOut, loading } = useAuth()
-  const { filters, updateFilters, resetFilters } = useProperties()
+  const { filters, updateFilters, resetFilters, favorites } = useProperties()
   const { mobileMenuOpen } = useSelector(s => s.ui)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [cityMenuOpen, setCityMenuOpen] = useState(false)
@@ -145,8 +145,17 @@ export const Navbar = () => {
           {/* Right Links & Auth */}
           <div className="hidden md:flex items-center gap-6">
             <div className="flex items-center space-x-6 text-sm font-medium text-gray-500">
-              <Link to="/search" className="px-3 py-1 bg-brand-lime text-gray-900 rounded-md font-semibold hover:bg-lime-400 transition-colors">{t('nav.home')}</Link>
+              <Link to="/" className="px-3 py-1 bg-brand-lime text-gray-900 rounded-md font-semibold hover:bg-lime-400 transition-colors">{t('nav.home')}</Link>
+              <Link to="/ai-finder" className="px-3.5 py-1 bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-600 hover:to-amber-600 text-white rounded-full font-bold shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center gap-1">✨ AI Finder</Link>
               <Link to="/nearby" className="hover:text-gray-900 transition-colors py-2">{t('nav.nearby')}</Link>
+              <Link to="/favorites" className="hover:text-gray-900 transition-colors py-2 flex items-center gap-1.5">
+                <span>Favorites</span>
+                {favorites?.length > 0 && (
+                  <span className="bg-[#CA3433] text-white text-[10px] font-black px-1.5 py-0.5 rounded-full min-w-[16px] h-4 flex items-center justify-center">
+                    {favorites.length}
+                  </span>
+                )}
+              </Link>
               <button onClick={() => user ? navigate('/landlord') : dispatch(openAuthModal('login'))} className="hover:text-gray-900 transition-colors">{t('nav.list')}</button>
               <Link to="/about" className="hover:text-gray-900 transition-colors py-2">{t('nav.about')}</Link>
             </div>
@@ -298,15 +307,15 @@ export const Navbar = () => {
                       </button>
                       {CITIES.map(city => (
                         <button
-                          key={city}
+                          key={city.name}
                           onClick={() => {
-                            setSelectedCity(city)
-                            updateFilters({ city })
+                            setSelectedCity(city.name)
+                            updateFilters({ city: city.name })
                             setCityMenuOpen(false)
                           }}
-                          className={`w-full text-left px-5 py-2.5 text-sm font-semibold transition-colors ${selectedCity === city ? 'bg-[#fff5f5] text-[#CA3433]' : 'text-gray-700 hover:bg-gray-50'}`}
+                          className={`w-full text-left px-5 py-2.5 text-sm font-semibold transition-colors ${selectedCity === city.name ? 'bg-[#fff5f5] text-[#CA3433]' : 'text-gray-700 hover:bg-gray-50'}`}
                         >
-                          {city}
+                          {city.name}
                         </button>
                       ))}
                     </div>
@@ -348,18 +357,18 @@ export const Navbar = () => {
                       All Cities
                     </button>
                     {CITIES.map(city => (
-                      <button
-                        key={city}
-                        onClick={() => {
-                          setSelectedCity(city)
-                          updateFilters({ city })
-                          setCityMenuOpen(false)
-                        }}
-                        className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${selectedCity === city ? 'bg-brand-50 text-brand-600' : 'text-gray-700 hover:bg-gray-50'}`}
-                      >
-                        {city}
-                      </button>
-                    ))}
+                       <button
+                         key={city.name}
+                         onClick={() => {
+                           setSelectedCity(city.name)
+                           updateFilters({ city: city.name })
+                           setCityMenuOpen(false)
+                         }}
+                         className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors ${selectedCity === city.name ? 'bg-brand-50 text-brand-600' : 'text-gray-700 hover:bg-gray-50'}`}
+                       >
+                         {city.name}
+                       </button>
+                     ))}
                   </div>
                 </>
               )}
@@ -388,8 +397,17 @@ export const Navbar = () => {
         <div className="md:hidden absolute top-20 left-0 right-0 bg-white border-b border-gray-100 shadow-xl overflow-y-auto max-h-[80vh] z-50">
           <div className="px-4 py-4 space-y-4">
             
-            <Link to="/search" onClick={() => dispatch(closeMobileMenu())} className="block font-semibold text-gray-700 py-2">{t('nav.home')}</Link>
+            <Link to="/" onClick={() => dispatch(closeMobileMenu())} className="block font-semibold text-gray-700 py-2">{t('nav.home')}</Link>
+            <Link to="/ai-finder" onClick={() => dispatch(closeMobileMenu())} className="inline-flex items-center gap-1.5 font-bold text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-amber-500 py-2">✨ AI Property Finder</Link>
             <Link to="/nearby" onClick={() => dispatch(closeMobileMenu())} className="block w-full text-left font-semibold text-gray-700 py-2">{t('nav.nearby')}</Link>
+            <Link to="/favorites" onClick={() => dispatch(closeMobileMenu())} className="block w-full text-left font-semibold text-gray-700 py-2 flex items-center justify-between">
+              <span>Favorites</span>
+              {favorites?.length > 0 && (
+                <span className="bg-[#CA3433] text-white text-xs font-bold px-2.5 py-0.5 rounded-full">
+                  {favorites.length}
+                </span>
+              )}
+            </Link>
             <button onClick={() => { dispatch(closeMobileMenu()); user ? navigate(role === 'landlord' ? '/landlord' : role === 'service_provider' ? '/service-provider' : '/landlord') : dispatch(openAuthModal('login')) }} className="block w-full text-left font-semibold text-gray-700 py-2">{t('nav.list')}</button>
             <Link to="/about" onClick={() => dispatch(closeMobileMenu())} className="block w-full text-left font-semibold text-gray-700 py-2">{t('nav.about')}</Link>
             

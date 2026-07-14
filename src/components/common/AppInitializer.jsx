@@ -9,8 +9,8 @@ export const AppInitializer = () => {
   // Initialize global data once on login — use user.id to avoid re-firing
   // on every render when hook references change
   useEffect(() => {
+    fetchFavorites()
     if (user?.id) {
-      fetchFavorites()
       fetchRecentlyViewed()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
