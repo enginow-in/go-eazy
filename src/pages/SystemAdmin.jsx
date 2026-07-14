@@ -23,14 +23,6 @@ export const SystemAdmin = () => {
   const [showApprovals, setShowApprovals] = useState(false)
 
 
-  useEffect(() => {
-    // Only load stats if authorized
-    if (user && role === 'admin') {
-      loadStats()
-      loadProviders()
-    }
-  }, [user])
-
   const loadStats = async () => {
     try {
       const [uRes, pRes, sRes] = await Promise.all([
@@ -61,6 +53,15 @@ export const SystemAdmin = () => {
       setLoadingProviders(false)
     }
   }
+
+  useEffect(() => {
+    // Only load stats if authorized
+    if (user && role === 'admin') {
+      loadStats()
+      loadProviders()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, role])
 
   const handleAction = async (id, newStatus) => {
     const toastId = toast.loading(`Marking as ${newStatus}...`)

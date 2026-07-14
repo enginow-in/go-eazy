@@ -25,8 +25,11 @@
     
     <!-- Console Cleanup & Permissions Policy -->
     <meta http-equiv="Permissions-Policy" content="accelerometer=(self), gyroscope=(self), magnetometer=(self), camera=(), microphone=(), geolocation=(self)">
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#CA3433" />
     <script>
       (function() {
+
         // Dynamic Tab Title
         let originalTitle = document.title;
         window.addEventListener('blur', () => {

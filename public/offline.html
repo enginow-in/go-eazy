@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GoEazy - Offline</title>
+    <style>
+      :root {
+        --brand: #CA3433;
+      }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica,
+          Arial, sans-serif;
+        background: #fff;
+        color: #111827;
+      }
+      .wrap {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      .card {
+        width: min(520px, 100%);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 16px;
+        padding: 22px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--brand);
+        font-weight: 700;
+      }
+      h1 {
+        margin: 14px 0 8px;
+        font-size: 22px;
+      }
+      p {
+        margin: 0;
+        color: rgba(17, 24, 39, 0.85);
+        line-height: 1.5;
+      }
+      .muted {
+        margin-top: 14px;
+        font-size: 13px;
+        color: rgba(17, 24, 39, 0.6);
+      }
+      .btn {
+        margin-top: 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 14px;
+        background: var(--brand);
+        color: white;
+        border-radius: 12px;
+        font-weight: 700;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <div class="badge">📶 Offline</div>
+        <h1>You’re offline</h1>
+        <p>
+          GoEazy can still open pages and assets that were already cached on your
+          device. Please reconnect to the internet to load the latest property
+          data.
+        </p>
+        <a class="btn" href="/">Go to Home</a>
+        <div class="muted">Tip: turn on Wi‑Fi/mobile data and refresh.</div>
+      </div>
+    </div>
+  </body>
+</html>
+

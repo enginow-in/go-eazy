@@ -87,12 +87,6 @@ export const PropertyDetail = () => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  useEffect(() => {
-    fetchPropertyById(id)
-    fetchReviews(id)
-    checkUnlockStatus()
-  }, [id, user, fetchPropertyById, fetchReviews])
-
   const checkUnlockStatus = async () => {
     if (!user || !id) return
     const { data } = await supabase
@@ -107,6 +101,13 @@ export const PropertyDetail = () => {
       setGatedData(gated)
     }
   }
+
+  useEffect(() => {
+    fetchPropertyById(id)
+    fetchReviews(id)
+    checkUnlockStatus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, user, fetchPropertyById, fetchReviews])
 
   // Also fetch gated data if current user is the landlord
   useEffect(() => {
@@ -191,6 +192,28 @@ export const PropertyDetail = () => {
         status: 'pending'
       })
       if (error) throw error
+      
+      // Trigger booking confirmation notification
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-notification`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify({
+              type: 'booking_confirmation',
+              userId: user.id,
+              propertyId: p.id
+            })
+          });
+        }
+      } catch (e) {
+        console.error('Failed to send notification:', e);
+      }
+
       toast.success('Visit Request Sent! Track it in your dashboard.')
       setVisitDate('')
     } catch (err) {
@@ -267,6 +290,25 @@ export const PropertyDetail = () => {
             toast.success('Payment verified! Contact details unlocked.')
             setHasUnlocked(true)
             checkUnlockStatus() 
+
+            // Trigger payment success notification
+            try {
+              await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-notification`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                  type: 'payment_success',
+                  userId: user.id,
+                  propertyId: p.id
+                })
+              });
+            } catch (e) {
+              console.error('Failed to send notification:', e);
+            }
+
             if (visitDateRef.current) {
               const { error: visitErr } = await supabase.from('site_visits').insert({
                  property_id: p.id,
@@ -280,7 +322,7 @@ export const PropertyDetail = () => {
                  setVisitDate('')
               }
             }
-          } catch (vErr) {
+          } catch {
             toast.error('Payment verification failed')
           } finally {
             setUnlocking(false)
@@ -308,7 +350,7 @@ export const PropertyDetail = () => {
   }
 
   const images = p.images || []
-  const otherImages = images.slice(1, 5)
+
 
   const renderSlider = (prefix) => (
     <div className="relative w-full aspect-square md:aspect-[4/3] bg-gray-100 rounded-xl sm:rounded-2xl overflow-hidden shadow-md group border border-gray-200/50">

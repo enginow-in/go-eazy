@@ -5,6 +5,7 @@ import { Footer } from '../layout/Footer'
 import { AuthModal } from '../auth/AuthModal'
 import { AuthGateModal } from '../auth/AuthGateModal'
 import { Toaster } from 'react-hot-toast'
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion'
 
 export const Layout = ({ children }) => {
@@ -36,7 +37,7 @@ export const Layout = ({ children }) => {
           {children}
         </motion.main>
       </AnimatePresence>
-      {location.pathname === '/search' && <Footer />}
+      {location.pathname !== '/systemadmin' && <Footer />}
       <AuthModal />
     </>
   )

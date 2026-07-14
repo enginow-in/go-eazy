@@ -1,8 +1,10 @@
 import React, { useState, useMemo, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useDispatch, useSelector } from 'react-redux'
-import { Bookmark, Star, Home, Eye } from 'lucide-react'
-import { openAuthModal } from '../../store/authSlice'
+
+import { Heart, Star, Home, Eye } from 'lucide-react'
+// eslint-disable-next-line no-unused-vars
+import { motion } from 'framer-motion'
+// import { openAuthModal } from '../../store/authSlice'
 import { useProperties } from '../../hooks/useProperties'
 import { cn } from '../../utils/helpers'
 import { useTranslation } from 'react-i18next'
@@ -10,8 +12,6 @@ import { useTranslation } from 'react-i18next'
 const PropertyCardComponent = ({ property, layout = 'grid', compact = false, condensed = false, badge = null }) => {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const dispatch = useDispatch()
-  const { user } = useSelector(s => s.auth)
   const { favorites, toggleFavorite } = useProperties()
   const [imgLoaded, setImgLoaded] = useState(false)
 
@@ -21,17 +21,15 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
 
   const handleFav = (e) => {
     e.stopPropagation()
-    if (!user) { dispatch(openAuthModal('signup')); return }
     toggleFavorite(property.id)
   }
 
   // Memoize values with deterministic calculation
-  const { rating, numBeds } = useMemo(() => {
+  const { rating } = useMemo(() => {
     return {
       rating: property.rating || '0.0',
-      numBeds: property.bedrooms || 0,
     }
-  }, [property.rating, property.bedrooms])
+  }, [property.rating])
 
   const formatPrice = (p) => {
     if (!p) return '0'
@@ -55,15 +53,23 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           />
           {!imgLoaded && <div className="skeleton absolute inset-0" />}
           {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
-          <button
+          <motion.button
             onClick={handleFav}
+            aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
+            whileHover={{ scale: 1.15 }}
+            whileTap={{ scale: 0.85 }}
             className={cn(
-              "absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center z-10 transition-all",
+              "absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center z-10 transition-all focus:outline-none focus:ring-2 focus:ring-brand-500/50",
               isFav ? "bg-brand-500 text-white shadow-lg" : "bg-white/80 backdrop-blur-sm text-gray-600 hover:bg-white"
             )}
           >
-            <Bookmark size={14} fill={isFav ? "currentColor" : "none"} />
-          </button>
+            <motion.div
+              animate={isFav ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Heart size={14} fill={isFav ? "currentColor" : "none"} className={isFav ? "text-white" : "text-gray-600"} />
+            </motion.div>
+          </motion.button>
         </div>
 
         <div className="flex-1 py-3 flex flex-col justify-between min-w-0 pr-4">
@@ -157,16 +163,24 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         />
         {!imgLoaded && <div className="skeleton absolute inset-0" />}
         {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
-        <button
+        <motion.button
           onClick={handleFav}
+          aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
+          whileHover={{ scale: 1.15 }}
+          whileTap={{ scale: 0.85 }}
           className={cn(
             'absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center z-10',
-            'transition-all duration-200 shadow-sm transition-opacity',
+            'transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500/50',
             isFav ? 'bg-brand-500 text-white' : 'bg-white/90 backdrop-blur-sm text-gray-600'
           )}
         >
-          <Bookmark size={14} fill={isFav ? 'currentColor' : 'none'} />
-        </button>
+          <motion.div
+            animate={isFav ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Heart size={14} fill={isFav ? 'currentColor' : 'none'} className={isFav ? 'text-white' : 'text-gray-600'} />
+          </motion.div>
+        </motion.button>
       </div>
 
       <div className="px-3 py-2 flex-1 flex flex-col">

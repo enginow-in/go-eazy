@@ -6,7 +6,7 @@ import { useProperties } from '../hooks/useProperties'
 import { Button } from '../components/ui/Button'
 import { Badge, TypeBadge } from '../components/ui/Badge'
 import { PropertyCard } from '../components/property/PropertyCard'
-import { formatPriceShort, cn } from '../utils/helpers'
+import { formatPriceShort } from '../utils/helpers'
 import toast from 'react-hot-toast'
 import { Skeleton } from '../components/ui/Skeleton'
 import { supabase } from '../lib/supabase'
@@ -23,13 +23,6 @@ export const LandlordDashboard = () => {
   const [loadingVisits, setLoadingVisits] = useState(true)
   const [actioningVisitId, setActioningVisitId] = useState(null)
 
-  useEffect(() => {
-    if (user) {
-      loadProperties()
-      loadSiteVisits()
-    }
-  }, [user])
-
   const loadProperties = async () => {
     try {
       const data = await getLandlordProperties()
@@ -39,19 +32,6 @@ export const LandlordDashboard = () => {
       toast.error('Failed to load listings')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this listing?')) return
-    const toastId = toast.loading('Deleting property...')
-    try {
-      await deleteProperty(id)
-      setProperties(prev => prev.filter(p => p.id !== id))
-      toast.success('Property deleted permanently', { id: toastId })
-    } catch (err) {
-      console.error('Delete failed:', err)
-      toast.error(err.message || 'Failed to delete property', { id: toastId })
     }
   }
 
@@ -74,6 +54,27 @@ export const LandlordDashboard = () => {
       console.error('Failed to load visits:', err)
     } finally {
       setLoadingVisits(false)
+    }
+  }
+
+  useEffect(() => {
+    if (user) {
+      loadProperties()
+      loadSiteVisits()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this listing?')) return
+    const toastId = toast.loading('Deleting property...')
+    try {
+      await deleteProperty(id)
+      setProperties(prev => prev.filter(p => p.id !== id))
+      toast.success('Property deleted permanently', { id: toastId })
+    } catch (err) {
+      console.error('Delete failed:', err)
+      toast.error(err.message || 'Failed to delete property', { id: toastId })
     }
   }
 

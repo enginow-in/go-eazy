@@ -13,6 +13,9 @@ import { OnboardingQuiz } from './components/common/OnboardingQuiz'
 import { useSelector } from 'react-redux'
 import { useAuth } from './hooks/useAuth'
 import ScrollToTop from './components/common/ScrollToTop'
+import { InstallAppBanner } from './components/ui/InstallAppBanner'
+import { PwaUpdateNotifier } from './components/common/PwaUpdateNotifier'
+
 
 // Heavy pages: lazy-loaded into separate chunks to prevent
 // "Cannot access X before initialization" TDZ errors from
@@ -33,6 +36,7 @@ const PrivacyPolicy           = lazy(() => import('./pages/legal/PrivacyPolicy')
 const TermsOfService          = lazy(() => import('./pages/legal/TermsOfService'))
 const CookiePolicy            = lazy(() => import('./pages/legal/CookiePolicy'))
 const RefundPolicy            = lazy(() => import('./pages/legal/RefundPolicy'))
+const AiPropertyFinder        = lazy(() => import('./pages/AiPropertyFinder').then(m => ({ default: m.AiPropertyFinder })))
 
 const PageSpinner = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -60,9 +64,13 @@ function App() {
       <RoleSelectionModal />
       <Layout>
         <Suspense fallback={<PageSpinner />}>
+          <PwaUpdateNotifier />
+          <InstallAppBanner />
           <Routes>
-          <Route path="/" element={<Navigate to="/search" replace />} />
+
+          <Route path="/" element={<Home />} />
           <Route path="/search" element={<Search />} />
+          <Route path="/ai-finder" element={<AiPropertyFinder />} />
           <Route path="/property/:id" element={<PropertyDetail />} />
           
           {/* Legal Routes */}
@@ -102,11 +110,8 @@ function App() {
             </ProtectedRoute>
           } />
           
-          <Route path="/dashboard/saved" element={
-            <ProtectedRoute>
-              <SavedProperties />
-            </ProtectedRoute>
-          } />
+          <Route path="/favorites" element={<SavedProperties />} />
+          <Route path="/dashboard/saved" element={<Navigate to="/favorites" replace />} />
           
           <Route path="/settings" element={
             <ProtectedRoute>

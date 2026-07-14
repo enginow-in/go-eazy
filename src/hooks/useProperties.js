@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { MOCK_PROPERTIES } from '../utils/constants'
+import toast from 'react-hot-toast'
 import {
   setListings, appendListings, setFeatured, setCurrentProperty,
   setFavorites, toggleFavorite as toggleFav,
@@ -249,26 +250,111 @@ export const useProperties = () => {
   }
 
   const fetchFavorites = useCallback(async () => {
-    if (!user) return
+    if (!user) {
+      try {
+        const localFavs = JSON.parse(localStorage.getItem('favorite_property_ids') || '[]')
+        dispatch(setFavorites(localFavs))
+      } catch {
+        dispatch(setFavorites([]))
+      }
+      return
+    }
+
     try {
       const { data, error } = await supabase.from('favorites').select('property_id').eq('user_id', user.id)
       if (error) throw error
-      dispatch(setFavorites(data?.map(f => f.property_id) || []))
-    } catch { /* silent */ }
+      const dbFavs = data?.map(f => f.property_id) || []
+
+      // Migrate guest favorites from localStorage
+      let localFavs = []
+      try {
+        localFavs = JSON.parse(localStorage.getItem('favorite_property_ids') || '[]')
+      } catch {
+        localFavs = []
+      }
+
+      if (localFavs.length > 0) {
+        const mergedFavs = Array.from(new Set([...dbFavs, ...localFavs]))
+        const toInsert = localFavs.filter(id => !dbFavs.includes(id))
+
+        if (toInsert.length > 0) {
+          const insertData = toInsert.map(propertyId => ({
+            user_id: user.id,
+            property_id: propertyId
+          }))
+          const { error: insertError } = await supabase.from('favorites').insert(insertData)
+          if (!insertError) {
+            dispatch(setFavorites(mergedFavs))
+            toast.success('Synced your saved properties to your account! ❤️')
+            localStorage.removeItem('favorite_property_ids')
+          } else {
+            console.error('Migration failed:', insertError)
+            dispatch(setFavorites(dbFavs))
+          }
+        } else {
+          dispatch(setFavorites(dbFavs))
+          localStorage.removeItem('favorite_property_ids')
+        }
+      } else {
+        dispatch(setFavorites(dbFavs))
+      }
+    } catch (err) {
+      console.error('fetchFavorites error:', err)
+    }
   }, [user, dispatch])
 
   const toggleFavorite = async (propertyId) => {
-    if (!user) return
     const isFav = favorites.includes(propertyId)
+    
+    // Optimistic UI Update
     dispatch(toggleFav(propertyId))
+
+    if (!user) {
+      // Guest logic
+      try {
+        let localFavs = JSON.parse(localStorage.getItem('favorite_property_ids') || '[]')
+        if (isFav) {
+          localFavs = localFavs.filter(id => id !== propertyId)
+          toast.success('Removed from Favorites')
+        } else {
+          if (!localFavs.includes(propertyId)) {
+            localFavs.push(propertyId)
+          }
+          toast.success('Added to Favorites ❤️')
+          toast('Please login to sync across devices', { icon: '🔑' })
+        }
+        localStorage.setItem('favorite_property_ids', JSON.stringify(localFavs))
+      } catch (err) {
+        console.error('Error modifying guest favorites:', err)
+        // Rollback state if localStorage fails
+        dispatch(toggleFav(propertyId))
+      }
+      return
+    }
+
+    // Authenticated logic
     try {
       if (isFav) {
-        await supabase.from('favorites').delete().eq('user_id', user.id).eq('property_id', propertyId)
+        const { error } = await supabase.from('favorites').delete().eq('user_id', user.id).eq('property_id', propertyId)
+        if (error) throw error
+        toast.success('Removed from Favorites')
       } else {
-        await supabase.from('favorites').insert({ user_id: user.id, property_id: propertyId })
+        const { error } = await supabase.from('favorites').insert({ user_id: user.id, property_id: propertyId })
+        if (error) {
+          if (error.code === '23505') { // unique constraint violation
+            toast.error('Already saved')
+          } else {
+            throw error
+          }
+        } else {
+          toast.success('Added to Favorites ❤️')
+        }
       }
     } catch (err) {
+      console.error('toggleFavorite error:', err)
+      // Rollback UI update on failure
       dispatch(toggleFav(propertyId))
+      toast.error('Failed to update favorites')
     }
   }
 
@@ -278,7 +364,7 @@ export const useProperties = () => {
       const seventyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString()
       const { data } = await supabase.from('recently_viewed').select('property_id').eq('user_id', user.id).gte('viewed_at', seventyTwoHoursAgo).order('viewed_at', { ascending: false }).limit(20)
       dispatch(setRecentlyViewed(data?.map(r => r.property_id) || []))
-    } catch {}
+    } catch { /* ignore */ }
   }, [user, dispatch])
 
   const getLandlordProperties = async () => {

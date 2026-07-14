@@ -1,5 +1,6 @@
 import { defineConfig, createLogger } from 'vite'
 import react from '@vitejs/plugin-react'
+import { VitePWA } from 'vite-plugin-pwa'
 
 // Plugin to silence [vite] HMR browser console messages
 const silenceViteLogs = () => ({
@@ -9,9 +10,12 @@ const silenceViteLogs = () => ({
       // More aggressive regex to catch styled and unstyled [vite] messages
       // This targets console.log/debug/info calls that start with [vite]
       return code
-        .replace(/console\.(log|debug|info)\(['"`](%c)?\[vite\][\s\S]*?['"`]\s*(,[^)]*)?\)/g, '(void 0)')
+        .replace(
+          /console\.(log|debug|info)\(['"`](%c)?\[vite\][\s\S]*?['"`]\s*(,[^)]*)?\)/g,
+          '(void 0)'
+        )
     }
-  }
+  },
 })
 
 const logger = createLogger()
@@ -25,6 +29,66 @@ export default defineConfig({
   plugins: [
     react(),
     silenceViteLogs(),
+    VitePWA({
+      // Auto-register service worker and update in the background.
+      registerType: 'autoUpdate',
+      // We provide `public/manifest.webmanifest` ourselves.
+      manifest: false,
+      filename: 'sw.js',
+
+      // Let VitePWA generate the service worker (no custom src/sw.js needed).
+      strategies: 'generateSW',
+
+      workbox: {
+        // Offline fallback for navigations (SPA route deep links).
+        navigateFallback: '/offline.html',
+        clientsClaim: true,
+
+        runtimeCaching: [
+          // Cache-first for static assets -> offline access.
+          {
+            urlPattern: ({ request }) =>
+              request.destination === 'script' ||
+              request.destination === 'style' ||
+              request.destination === 'font' ||
+              request.destination === 'image' ||
+              request.destination === 'manifest',
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'goeazy-static-v1',
+              cacheableResponse: { statuses: [0, 200] },
+              expiration: {
+                maxEntries: 250,
+                maxAgeSeconds: 60 * 60 * 24 * 30,
+              },
+            },
+          },
+
+          // Network-first for Supabase/API calls -> fresh data when online,
+          // cached fallback when offline.
+          {
+            urlPattern: ({ url }) =>
+              url.hostname.includes('supabase') ||
+              url.pathname.includes('/rest/v1') ||
+              url.pathname.includes('/functions/v1'),
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'goeazy-api-v1',
+              cacheableResponse: { statuses: [0, 200] },
+              networkTimeoutSeconds: 3,
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 7,
+              },
+            },
+          },
+        ],
+      },
+
+      devOptions: {
+        enabled: false,
+      },
+    }),
   ],
   customLogger: logger,
   resolve: {
@@ -40,7 +104,7 @@ export default defineConfig({
   server: {
     hmr: {
       overlay: false,
-    }
+    },
   },
   build: {
     chunkSizeWarningLimit: 5000,
@@ -51,3 +115,4 @@ export default defineConfig({
     },
   },
 })
+
