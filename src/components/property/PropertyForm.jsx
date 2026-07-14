@@ -9,6 +9,7 @@ import { useSelector } from 'react-redux'
 import { supabase } from '../../lib/supabase'
 import toast from 'react-hot-toast'
 import { LocationPicker } from '../map/LocationPicker'
+import CompressionWorker from '../../workers/compression.worker.js?worker'
 
 // ── Success Overlay ───────────────────────────────────────────────────────────
 const ListingSuccessOverlay = () => (
@@ -127,8 +128,39 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
     for (const file of files) {
       if (file.size > 7 * 1024 * 1024) { toast.error(`Image ${file.name} exceeds 7MB limit`); return }
     }
-    setImages(prev => [...prev, ...files])
-    setPreviewUrls(prev => [...prev, ...files.map(f => URL.createObjectURL(f))])
+    
+    // Background Web Worker Processing
+    toast.loading('Optimizing images...', { id: 'img-compress' })
+    let processedCount = 0
+    const compressedResults = []
+
+    files.forEach((file, idx) => {
+      const worker = new CompressionWorker()
+      
+      worker.onmessage = (event) => {
+        const { success, blob, originalName, error, file: fallbackFile } = event.data
+        
+        if (success && blob) {
+          const baseName = originalName.substring(0, originalName.lastIndexOf('.')) || 'image'
+          const newFile = new File([blob], `${baseName}.webp`, { type: 'image/webp' })
+          compressedResults[idx] = newFile
+        } else {
+          console.warn('Compression fallback:', error)
+          compressedResults[idx] = fallbackFile || file
+        }
+        
+        worker.terminate()
+        processedCount++
+        
+        if (processedCount === files.length) {
+          toast.success('Images optimized!', { id: 'img-compress' })
+          setImages(prev => [...prev, ...compressedResults])
+          setPreviewUrls(prev => [...prev, ...compressedResults.map(f => URL.createObjectURL(f))])
+        }
+      }
+      
+      worker.postMessage({ id: idx, file, maxWidth: 1920, maxHeight: 1080, quality: 0.8 })
+    })
   }
 
   const removeImage = (index) => {
