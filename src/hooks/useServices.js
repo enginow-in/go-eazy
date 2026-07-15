@@ -167,15 +167,15 @@ export const useServices = () => {
         const { error: uploadError } = await supabase.storage
           .from('service-images')
           .upload(path, img)
-        
-        if (!uploadError) {
-          const { data: { publicUrl } } = supabase.storage
-            .from('service-images')
-            .getPublicUrl(path)
-          imageUrls.push(publicUrl)
-        } else {
-          console.error('Poster upload error:', uploadError)
+
+        if (uploadError) {
+          throw new Error(`Failed to upload service image "${img.name}": ${uploadError.message}`)
         }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('service-images')
+          .getPublicUrl(path)
+        imageUrls.push(publicUrl)
       }
     }
 
@@ -187,12 +187,15 @@ export const useServices = () => {
         const { error: uploadError } = await supabase.storage
           .from('service-documents')
           .upload(path, file)
-        if (!uploadError) {
-          const { data: { publicUrl } } = supabase.storage
-            .from('service-documents')
-            .getPublicUrl(path)
-          documentUrls.push(publicUrl)
+
+        if (uploadError) {
+          throw new Error(`Failed to upload document "${file.name}": ${uploadError.message}`)
         }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('service-documents')
+          .getPublicUrl(path)
+        documentUrls.push(publicUrl)
       }
     }
 
