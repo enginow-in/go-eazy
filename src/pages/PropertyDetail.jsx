@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { 
   MapPin, Heart, Share2, Phone, Mail, ArrowLeft, 
   CheckCircle2, ChevronDown, ChevronUp, Lock, EyeOff, X, 
-  Star, Trash2, Sparkles, Calendar 
+  Star, Trash2, Sparkles, Calendar, ShieldCheck
 } from 'lucide-react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay, Pagination, Navigation } from 'swiper/modules'
@@ -150,6 +150,9 @@ export const PropertyDetail = () => {
   const p = currentProperty
   const isFav = favorites.includes(p.id)
   const isAvailable = p.availability !== false
+  const verification = Array.isArray(p.property_verifications)
+    ? p.property_verifications[0]
+    : p.property_verifications
 
   const avgRating = reviews.length > 0
     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
@@ -403,6 +406,15 @@ export const PropertyDetail = () => {
                 <span className="text-gray-300">•</span>
                 <span>{t(`cities.${p.city}`) || p.city}</span>
               </div>
+              {verification?.status === 'approved' && (
+                <div className="mt-4 flex items-center gap-3 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-emerald-800">
+                  <ShieldCheck size={22} className="shrink-0 text-emerald-600" />
+                  <div>
+                    <p className="font-bold">Verified property</p>
+                    <p className="text-xs">Trust score: {verification.trust_score}/100</p>
+                  </div>
+                </div>
+              )}
               <p className="text-gray-500 text-sm">
                 {(hasUnlocked || p.landlord_id === user?.id) ? (gatedData?.exact_location || `${p.area}, ${p.city}`) : `${p.area}, ${p.city} • ${p.pincode}`}
               </p>

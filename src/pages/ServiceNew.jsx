@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import {
@@ -68,6 +68,19 @@ export const ServiceNew = () => {
   // Step 1: Photo (Poster)
   const [posterImages, setPosterImages] = useState([])
   const [posterPreviews, setPosterPreviews] = useState([])
+  const posterPreviewsRef = useRef(posterPreviews)
+
+  useEffect(() => {
+    posterPreviewsRef.current = posterPreviews
+  }, [posterPreviews])
+
+  useEffect(() => {
+    return () => {
+      posterPreviewsRef.current.forEach(url => {
+        if (url.startsWith('blob:')) URL.revokeObjectURL(url)
+      })
+    }
+  }, [])
 
   // Step 2: Location
   const [location, setLocation] = useState({
@@ -116,6 +129,12 @@ export const ServiceNew = () => {
     if (step === 1 && posterImages.length < 1) { toast.error('Please upload at least 1 service photo'); return false }
     if (step === 2 && !location.city.trim())   { toast.error('City is required'); return false }
     if (step === 2 && !location.area.trim())   { toast.error('Area is required'); return false }
+    if (step === 3 && !serviceItems.some(i => i.service_name.trim() && i.price)) {
+      toast.error('Add at least one service with a price'); return false
+    }
+    if (step === 4 && !plans.some(p => p.plan_name.trim() && p.price)) {
+      toast.error('Add at least one pricing plan'); return false
+    }
     if (step === 6 && !contact.contact_phone.trim()) { toast.error('Phone number is required'); return false }
     return true
   }
@@ -234,7 +253,11 @@ export const ServiceNew = () => {
                       <button 
                         onClick={() => {
                           setPosterImages(v => v.filter((_, idx) => idx !== i))
-                          setPosterPreviews(v => v.filter((_, idx) => idx !== i))
+                          setPosterPreviews(v => {
+                            const removed = v[i]
+                            if (removed?.startsWith('blob:')) URL.revokeObjectURL(removed)
+                            return v.filter((_, idx) => idx !== i)
+                          })
                         }}
                         className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
                       >

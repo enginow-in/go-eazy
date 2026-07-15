@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import { User, Lock, Save, AlertCircle, CheckCircle2 } from 'lucide-react'
@@ -18,6 +18,15 @@ export const Settings = () => {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [securityLoading, setSecurityLoading] = useState(false)
   const [securityMessage, setSecurityMessage] = useState({ type: '', text: '' })
+  const profileTimerRef = useRef(null)
+  const securityTimerRef = useRef(null)
+
+  useEffect(() => {
+    return () => {
+      clearTimeout(profileTimerRef.current)
+      clearTimeout(securityTimerRef.current)
+    }
+  }, [])
 
   // Populate profile info on load
   useEffect(() => {
@@ -29,6 +38,7 @@ export const Settings = () => {
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault()
+    clearTimeout(profileTimerRef.current)
     setProfileLoading(true)
     setProfileMessage({ type: '', text: '' })
 
@@ -41,7 +51,7 @@ export const Settings = () => {
       if (error) throw error
 
       setProfileMessage({ type: 'success', text: 'Profile updated successfully!' })
-      setTimeout(() => setProfileMessage({ type: '', text: '' }), 4000)
+      profileTimerRef.current = setTimeout(() => setProfileMessage({ type: '', text: '' }), 4000)
     } catch (error) {
       console.error('Error updating profile:', error.message)
       setProfileMessage({ type: 'error', text: 'Failed to update profile. Please try again.' })
@@ -52,6 +62,7 @@ export const Settings = () => {
 
   const handlePasswordUpdate = async (e) => {
     e.preventDefault()
+    clearTimeout(securityTimerRef.current)
     setSecurityLoading(true)
     setSecurityMessage({ type: '', text: '' })
 
@@ -91,7 +102,7 @@ export const Settings = () => {
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
-      setTimeout(() => setSecurityMessage({ type: '', text: '' }), 4000)
+      securityTimerRef.current = setTimeout(() => setSecurityMessage({ type: '', text: '' }), 4000)
       
     } catch (error) {
       console.error('Error updating password:', error.message)
