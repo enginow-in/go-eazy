@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { getOrCreateAnonViewerId } from '../utils/viewerId'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import {
@@ -79,13 +80,17 @@ export const useServices = () => {
 
       // Increment views for verified (publicly visible) listings
       if (data?.verification_status === 'verified') {
-        await supabase.rpc('increment_service_views', { p_service_id: id })
+        const viewerKey = user?.id || getOrCreateAnonViewerId()
+        await supabase.rpc('increment_service_views', {
+          p_service_id: id,
+          p_viewer_key: viewerKey,
+        })
       }
     } catch (err) {
       console.error('fetchServiceById error:', err)
       dispatch(setCurrentService(null))
     }
-  }, [dispatch])
+  }, [dispatch, user?.id])
 
   const fetchServiceGatedData = useCallback(async (id) => {
     if (!user) return null
