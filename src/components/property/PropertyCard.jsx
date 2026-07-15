@@ -12,12 +12,21 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const { user } = useSelector(s => s.auth)
-  const { favorites, toggleFavorite } = useProperties()
-  const [imgLoaded, setImgLoaded] = useState(false)
+  const { toggleFavorite } = useProperties()
+  const [loadedImageSrc, setLoadedImageSrc] = useState(null)
+  const [errorImageSrc, setErrorImageSrc] = useState(null)
 
-  const isFav = favorites.includes(property.id)
+  const isFav = useSelector(s => s.property.favorites.includes(property.id))
   const images = property.images || []
   const mainImage = images[0]
+
+  const imgLoaded = loadedImageSrc === mainImage
+  const imgError = errorImageSrc === mainImage
+
+  const handleImageError = () => {
+    setLoadedImageSrc(mainImage)
+    setErrorImageSrc(mainImage)
+  }
 
   const handleFav = (e) => {
     e.stopPropagation()
@@ -26,12 +35,11 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   }
 
   // Memoize values with deterministic calculation
-  const { rating, numBeds } = useMemo(() => {
+  const { rating } = useMemo(() => {
     return {
       rating: property.rating || '0.0',
-      numBeds: property.bedrooms || 0,
     }
-  }, [property.rating, property.bedrooms])
+  }, [property.rating])
 
   const formatPrice = (p) => {
     if (!p) return '0'
@@ -50,10 +58,12 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           <img 
             src={mainImage} 
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
-            onLoad={() => setImgLoaded(true)}
+            onLoad={() => setLoadedImageSrc(mainImage)}
+            onError={handleImageError}
             loading="lazy"
           />
           {!imgLoaded && <div className="skeleton absolute inset-0" />}
+          {imgError && <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-400"><Home size={20} /></div>}
           {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
           <button
             onClick={handleFav}
@@ -112,7 +122,8 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         onClick={() => navigate(`/property/${property.id}`)}
       >
         <div className="relative aspect-[4/3] overflow-hidden rounded-b-xl">
-          <img src={mainImage} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <img src={mainImage} onLoad={() => setLoadedImageSrc(mainImage)} onError={handleImageError} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          {imgError && <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-400"><Home size={20} /></div>}
           <div className="absolute top-2 right-2 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-lg text-[8px] font-black text-brand-600 uppercase tracking-wider">
              {t(`property.types.${property.type}`) || property.type}
           </div>
@@ -152,10 +163,12 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
             'w-full h-full object-cover group-hover:scale-110 transition-transform duration-700',
             imgLoaded ? 'opacity-100' : 'opacity-0'
           )}
-          onLoad={() => setImgLoaded(true)}
+          onLoad={() => setLoadedImageSrc(mainImage)}
+          onError={handleImageError}
           loading="lazy"
         />
         {!imgLoaded && <div className="skeleton absolute inset-0" />}
+        {imgError && <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-400"><Home size={20} /></div>}
         {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
         <button
           onClick={handleFav}
