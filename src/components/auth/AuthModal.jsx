@@ -5,7 +5,7 @@ import { Mail, Lock, User, Eye, EyeOff, Home, GraduationCap, Utensils } from 'lu
 import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
-import { closeAuthModal } from '../../store/authSlice'
+import { closeAuthModal, setAuthModalTab } from '../../store/authSlice'
 import { useAuth } from '../../hooks/useAuth'
 import toast from 'react-hot-toast'
 
@@ -18,18 +18,15 @@ const ROLE_OPTIONS = [
 export const AuthModal = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const { authModalOpen, authModalTab } = useSelector(s => s.auth)
+  const { authModalOpen, authModalTab: tab } = useSelector(s => s.auth)
   const { signIn, signUp, signInWithGoogle } = useAuth()
 
-  const [tab, setTab] = useState(authModalTab)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [showPass, setShowPass] = useState(false)
   const [selectedRole, setSelectedRole] = useState('user')
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [errors, setErrors] = useState({})
-
-  React.useEffect(() => { setTab(authModalTab) }, [authModalTab])
 
   const validate = () => {
     const e = {}
@@ -42,6 +39,7 @@ export const AuthModal = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (googleLoading) return
     if (!validate()) return
     setLoading(true)
     try {
@@ -79,6 +77,7 @@ export const AuthModal = () => {
   }
 
   const handleGoogle = async () => {
+    if (loading) return
     // Save current path to return back after OAuth redirect
     localStorage.setItem('sb_return_to', window.location.pathname + window.location.search)
     
@@ -98,7 +97,7 @@ export const AuthModal = () => {
         {['login', 'signup'].map(t => (
           <button
             key={t}
-            onClick={() => { setTab(t); setErrors({}) }}
+            onClick={() => { dispatch(setAuthModalTab(t)); setErrors({}) }}
             className={`flex-1 py-2 rounded-lg text-sm font-semibold capitalize transition-all ${
               tab === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
             }`}
@@ -114,6 +113,7 @@ export const AuthModal = () => {
         size="lg"
         className="w-full mb-3"
         loading={googleLoading}
+        disabled={loading}
         onClick={handleGoogle}
         leftIcon={
           <svg width="20" height="20" viewBox="0 0 24 24">
@@ -203,7 +203,7 @@ export const AuthModal = () => {
           </div>
         )}
 
-        <Button type="submit" variant="primary" size="lg" className="w-full shadow-lg shadow-[#CA3433]/20" loading={loading}>
+        <Button type="submit" variant="primary" size="lg" className="w-full shadow-lg shadow-[#CA3433]/20" loading={loading} disabled={googleLoading}>
           {tab === 'login' ? 'Sign In' : 'Create Account'}
         </Button>
       </form>
