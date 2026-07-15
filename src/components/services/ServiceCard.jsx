@@ -45,6 +45,7 @@ const ServiceCardComponent = ({ service, layout = 'grid' }) => {
           {mainImage ? (
             <img 
               src={mainImage} 
+              alt={service.name}
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
               onLoad={() => setImgLoaded(true)}
               loading="lazy"

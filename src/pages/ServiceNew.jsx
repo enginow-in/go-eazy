@@ -230,7 +230,7 @@ export const ServiceNew = () => {
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   {posterPreviews.map((preview, i) => (
                     <div key={i} className="relative aspect-video rounded-xl overflow-hidden group border border-gray-200">
-                      <img src={preview} className="w-full h-full object-cover" />
+                      <img src={preview} alt={`Uploaded photo ${i + 1}`} className="w-full h-full object-cover" />
                       <button 
                         onClick={() => {
                           setPosterImages(v => v.filter((_, idx) => idx !== i))
