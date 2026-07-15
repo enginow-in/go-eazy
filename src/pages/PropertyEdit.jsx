@@ -8,13 +8,23 @@ export const PropertyEdit = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { fetchPropertyById, currentProperty } = useProperties()
-  const [loading, setLoading] = useState(true)
+  const [loadedId, setLoadedId] = useState(null)
 
   useEffect(() => {
-    fetchPropertyById(id).then(() => setLoading(false))
-  }, [id])
+    let active = true
 
-  if (loading) {
+    fetchPropertyById(id).finally(() => {
+      if (active) {
+        setLoadedId(id)
+      }
+    })
+
+    return () => {
+      active = false
+    }
+  }, [id, fetchPropertyById])
+
+  if (loadedId !== id) {
     return (
       <div className="pt-32 pb-20 bg-gray-50 min-h-screen flex items-center justify-center">
         <div className="skeleton w-32 h-32 rounded-full" />
