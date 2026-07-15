@@ -15,6 +15,7 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
   const marker = useRef(null)
   const searchRef = useRef(null)
   const debounceRef = useRef(null)
+  const hasValidCoords = value?.latitude != null && value?.longitude != null
 
   const [gpsLoading, setGpsLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -85,8 +86,8 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v12',
-      center: value?.longitude ? [value.longitude, value.latitude] : DEFAULT_CENTER,
-      zoom: value?.longitude ? 15 : DEFAULT_ZOOM,
+      center: hasValidCoords ? [value.longitude, value.latitude] : DEFAULT_CENTER,
+      zoom: hasValidCoords ? 15 : DEFAULT_ZOOM,
       attributionControl: false,
     })
 
@@ -97,7 +98,7 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
       placeMarkerRef.current(e.lngLat.lng, e.lngLat.lat)
     })
 
-    if (value?.latitude && value?.longitude) {
+    if (hasValidCoords) {
       map.current.on('load', () => {
         placeMarkerRef.current(value.longitude, value.latitude, value.map_address)
       })
