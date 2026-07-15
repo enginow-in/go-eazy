@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import {
@@ -68,6 +68,19 @@ export const ServiceNew = () => {
   // Step 1: Photo (Poster)
   const [posterImages, setPosterImages] = useState([])
   const [posterPreviews, setPosterPreviews] = useState([])
+  const posterPreviewsRef = useRef(posterPreviews)
+
+  useEffect(() => {
+    posterPreviewsRef.current = posterPreviews
+  }, [posterPreviews])
+
+  useEffect(() => {
+    return () => {
+      posterPreviewsRef.current.forEach(url => {
+        if (url.startsWith('blob:')) URL.revokeObjectURL(url)
+      })
+    }
+  }, [])
 
   // Step 2: Location
   const [location, setLocation] = useState({
@@ -240,7 +253,11 @@ export const ServiceNew = () => {
                       <button 
                         onClick={() => {
                           setPosterImages(v => v.filter((_, idx) => idx !== i))
-                          setPosterPreviews(v => v.filter((_, idx) => idx !== i))
+                          setPosterPreviews(v => {
+                            const removed = v[i]
+                            if (removed?.startsWith('blob:')) URL.revokeObjectURL(removed)
+                            return v.filter((_, idx) => idx !== i)
+                          })
                         }}
                         className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
                       >
