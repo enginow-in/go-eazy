@@ -1,5 +1,15 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
+import { Image } from "https://deno.land/x/imagescript@1.2.17/mod.ts"
+
+let fontBytes: Uint8Array | null = null;
+async function getFont() {
+  if (fontBytes) return fontBytes;
+  const res = await fetch('https://fastly.jsdelivr.net/gh/google/fonts@master/ofl/inter/static/Inter-Bold.ttf');
+  if (!res.ok) throw new Error('Failed to load font for watermark');
+  fontBytes = new Uint8Array(await res.arrayBuffer());
+  return fontBytes;
+}
 
 const ALLOWED_ORIGINS = [
   'https://goeazy.in', 'https://www.goeazy.in',
@@ -118,7 +128,75 @@ serve(async (req: Request) => {
       })
     }
 
-    // 4. All checks pass — create the property using the same admin client
+    // 4. All checks pass — optimize and watermark images
+    const watermarkedUrls = [];
+    try {
+      const font = await getFont();
+      for (const imageUrl of property_data.images) {
+        if (!imageUrl.includes('/property-images/')) {
+          watermarkedUrls.push(imageUrl);
+          continue;
+        }
+
+        // Fetch image bytes
+        const imgResp = await fetch(imageUrl);
+        if (!imgResp.ok) throw new Error(`Failed to fetch image ${imageUrl}`);
+        const imgBytes = new Uint8Array(await imgResp.arrayBuffer());
+
+        // Decode using imagescript
+        const img = await Image.decode(imgBytes);
+
+        // Resize down to 1200px max width to compress payload size
+        if (img.width > 1200) {
+          img.resize(1200, Image.RESIZE_AUTO);
+        }
+
+        // Render and draw watermark text (2.5% of width, semi-transparent white)
+        const scale = Math.max(16, Math.round(img.width * 0.025));
+        const textImage = await Image.renderText(font, scale, "GoEazy Verified", 0xffffff80);
+        const padding = 20;
+        img.composite(textImage, img.width - textImage.width - padding, img.height - textImage.height - padding);
+
+        // Encode back to highly-optimized WebP
+        const webpBytes = await img.encodeWEBP(80);
+
+        // Parse relative path to maintain folder hierarchy in bucket
+        const urlObj = new URL(imageUrl);
+        const pathParts = urlObj.pathname.split('/storage/v1/object/public/property-images/');
+        if (pathParts.length < 2) {
+          watermarkedUrls.push(imageUrl);
+          continue;
+        }
+
+        const relativePath = decodeURIComponent(pathParts[1]);
+        const parts = relativePath.split('/');
+        const userId = parts[0];
+        const filename = parts.slice(1).join('/');
+        const baseFilename = filename.substring(0, filename.lastIndexOf('.')) || filename;
+        const targetPath = `${userId}/watermarked_${baseFilename}.webp`;
+
+        // Upload processed WebP image
+        const { error: uploadError } = await supabaseAdmin.storage
+          .from('property-images')
+          .upload(targetPath, webpBytes, {
+            contentType: 'image/webp',
+            upsert: true
+          });
+
+        if (uploadError) {
+          console.error(`Upload error for watermarked image:`, uploadError);
+          watermarkedUrls.push(imageUrl); // fallback to original
+        } else {
+          const { data: { publicUrl } } = supabaseAdmin.storage.from('property-images').getPublicUrl(targetPath);
+          watermarkedUrls.push(publicUrl);
+        }
+      }
+      property_data.images = watermarkedUrls;
+    } catch (wmError: any) {
+      console.error("Watermark processing failed, falling back to original images:", wmError.message);
+    }
+
+    // 5. Create the property listing inside the DB pointing to the processed images
     const { data: property, error: insertError } = await supabaseAdmin
       .from('properties')
       .insert({
