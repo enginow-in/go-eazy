@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, X, Image as ImageIcon, Zap, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react'
 import { Input, Textarea, Select } from '../ui/Input'
@@ -95,6 +95,19 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   const [step, setStep] = useState(1)
   const [images, setImages] = useState([])
   const [previewUrls, setPreviewUrls] = useState(initialData?.images || [])
+  const previewUrlsRef = useRef(previewUrls)
+
+  useEffect(() => {
+    previewUrlsRef.current = previewUrls
+  }, [previewUrls])
+
+  useEffect(() => {
+    return () => {
+      previewUrlsRef.current.forEach(url => {
+        if (url.startsWith('blob:')) URL.revokeObjectURL(url)
+      })
+    }
+  }, [])
 
   const [form, setForm] = useState({
     title:             initialData?.title || '',
@@ -132,7 +145,11 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   }
 
   const removeImage = (index) => {
-    setPreviewUrls(prev => prev.filter((_, i) => i !== index))
+    setPreviewUrls(prev => {
+      const removed = prev[index]
+      if (removed?.startsWith('blob:')) URL.revokeObjectURL(removed)
+      return prev.filter((_, i) => i !== index)
+    })
     if (index >= (initialData?.images?.length || 0)) {
       setImages(prev => prev.filter((_, i) => i !== index - (initialData?.images?.length || 0)))
     }

@@ -15,6 +15,7 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
   const marker = useRef(null)
   const searchRef = useRef(null)
   const debounceRef = useRef(null)
+  const hasValidCoords = value?.latitude != null && value?.longitude != null
 
   const [gpsLoading, setGpsLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -69,6 +70,11 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
     })
   }, [reverseGeocode, onChange])
 
+  const placeMarkerRef = useRef(placeMarker)
+  useEffect(() => {
+    placeMarkerRef.current = placeMarker
+  }, [placeMarker])
+
   // Init map using window.mapboxgl (loaded from CDN in index.html)
   useEffect(() => {
     if (map.current) return
@@ -80,8 +86,8 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v12',
-      center: value?.longitude ? [value.longitude, value.latitude] : DEFAULT_CENTER,
-      zoom: value?.longitude ? 15 : DEFAULT_ZOOM,
+      center: hasValidCoords ? [value.longitude, value.latitude] : DEFAULT_CENTER,
+      zoom: hasValidCoords ? 15 : DEFAULT_ZOOM,
       attributionControl: false,
     })
 
@@ -89,12 +95,12 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
     map.current.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-left')
 
     map.current.on('click', (e) => {
-      placeMarker(e.lngLat.lng, e.lngLat.lat)
+      placeMarkerRef.current(e.lngLat.lng, e.lngLat.lat)
     })
 
-    if (value?.latitude && value?.longitude) {
+    if (hasValidCoords) {
       map.current.on('load', () => {
-        placeMarker(value.longitude, value.latitude, value.map_address)
+        placeMarkerRef.current(value.longitude, value.latitude, value.map_address)
       })
     }
 
@@ -150,6 +156,10 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
     clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => handleSearch(q), 500)
   }
+
+  useEffect(() => {
+    return () => clearTimeout(debounceRef.current)
+  }, [])
 
   const handleSelectResult = (feature) => {
     const [lng, lat] = feature.center
