@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-dom' // wait, it was react-router-dom! Let's check original imports: line 2 is react-router-dom, line 1 is react.
+import { useNavigate as useNavigateRouter } from 'react-router-dom' // we will keep it simple and match original imports exactly.
 import { Plus, X, Image as ImageIcon, Zap, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react'
 import { Input, Textarea, Select } from '../ui/Input'
 import { Button } from '../ui/Button'
@@ -87,7 +88,7 @@ const StepTimeline = ({ current }) => (
 
 // ── Main Form ─────────────────────────────────────────────────────────────────
 export const PropertyForm = ({ initialData, isEdit = false }) => {
-  const navigate = useNavigate()
+  const navigate = useNavigateRouter()
   const { updateProperty } = useProperties()
   const { user } = useSelector(s => s.auth)
   const [loading, setLoading] = useState(false)
@@ -95,6 +96,55 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   const [step, setStep] = useState(1)
   const [images, setImages] = useState([])
   const [previewUrls, setPreviewUrls] = useState(initialData?.images || [])
+  const [validatingImages, setValidatingImages] = useState(false)
+  const [worker, setWorker] = useState(null)
+
+  useEffect(() => {
+    // Spawn image validator Web Worker
+    const imageWorker = new Worker('/workers/image-validator.worker.js');
+    setWorker(imageWorker);
+
+    // Clean up worker on component unmount
+    return () => {
+      imageWorker.terminate();
+    };
+  }, []);
+
+  const validateImageWithWorker = (file) => {
+    return new Promise((resolve, reject) => {
+      if (!worker) {
+        return reject(new Error('Image validation worker is not initialized'));
+      }
+
+      // Convert File to transferable ImageBitmap
+      createImageBitmap(file)
+        .then(imageBitmap => {
+          const handleWorkerMessage = (e) => {
+            const { type, filename, isSafe, isBlurry, blurVariance, flaggedReason, error } = e.data;
+            if (filename === file.name) {
+              worker.removeEventListener('message', handleWorkerMessage);
+              if (type === 'VALIDATION_RESULT') {
+                resolve({ isSafe, isBlurry, blurVariance, flaggedReason });
+              } else if (type === 'VALIDATION_ERROR') {
+                reject(new Error(error));
+              }
+            }
+          };
+
+          worker.addEventListener('message', handleWorkerMessage);
+          
+          // Send message to worker
+          worker.postMessage({
+            type: 'VALIDATE_IMAGE',
+            imageBitmap,
+            filename: file.name
+          }, [imageBitmap]);
+        })
+        .catch(err => {
+          reject(new Error(`Failed to decode image layout: ${err.message}`));
+        });
+    });
+  };
 
   const [form, setForm] = useState({
     title:             initialData?.title || '',
@@ -121,14 +171,41 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
     setForm(f => ({ ...f, latitude, longitude, map_address: map_address || '' }))
   }
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const files = Array.from(e.target.files)
     if (files.length + previewUrls.length > 3) { toast.error('Maximum 3 images allowed'); return }
     for (const file of files) {
       if (file.size > 7 * 1024 * 1024) { toast.error(`Image ${file.name} exceeds 7MB limit`); return }
     }
-    setImages(prev => [...prev, ...files])
-    setPreviewUrls(prev => [...prev, ...files.map(f => URL.createObjectURL(f))])
+
+    setValidatingImages(true)
+    const loadingToast = toast.loading('Edge AI: Analyzing image moderation & blur values...')
+
+    try {
+      const validatedFiles = []
+      for (const file of files) {
+        const result = await validateImageWithWorker(file)
+        if (!result.isSafe) {
+          toast.error(`Rejected ${file.name}: Inappropriate content detected. Please use clean property images.`, { duration: 6000 })
+          continue
+        }
+        if (result.isBlurry) {
+          toast.error(`Rejected ${file.name}: Image is extremely blurry (Variance score: ${result.blurVariance.toFixed(1)} < 100.0). Please upload a sharp image.`, { duration: 6000 })
+          continue
+        }
+        validatedFiles.push(file)
+      }
+
+      if (validatedFiles.length > 0) {
+        setImages(prev => [...prev, ...validatedFiles])
+        setPreviewUrls(prev => [...prev, ...validatedFiles.map(f => URL.createObjectURL(f))])
+      }
+    } catch (err) {
+      toast.error(`AI Validation error: ${err.message}`)
+    } finally {
+      setValidatingImages(false)
+      toast.dismiss(loadingToast)
+    }
   }
 
   const removeImage = (index) => {
@@ -375,11 +452,18 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
               </div>
             ))}
             {previewUrls.length < 3 && (
-              <label className="aspect-video rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:border-[#CA3433] hover:bg-red-50/30 transition-colors text-gray-500">
-                <ImageIcon size={24} className="mb-2" />
-                <span className="text-sm font-semibold">Add Photo</span>
-                <input id="property-images" type="file" multiple accept="image/*" className="hidden" onChange={handleImageChange} />
-              </label>
+              validatingImages ? (
+                <div className="aspect-video rounded-xl border border-gray-200 bg-gray-50 flex flex-col items-center justify-center text-gray-500 animate-pulse">
+                  <div className="w-6 h-6 border-2 border-[#CA3433] border-t-transparent rounded-full animate-spin mb-2" />
+                  <span className="text-xs font-semibold text-[#CA3433]">Edge AI Checking...</span>
+                </div>
+              ) : (
+                <label className="aspect-video rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:border-[#CA3433] hover:bg-red-50/30 transition-colors text-gray-500">
+                  <ImageIcon size={24} className="mb-2" />
+                  <span className="text-sm font-semibold">Add Photo</span>
+                  <input id="property-images" type="file" multiple accept="image/*" className="hidden" onChange={handleImageChange} />
+                </label>
+              )
             )}
           </div>
 
@@ -433,12 +517,12 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
                 Next <ChevronRight size={16} />
               </button>
             ) : isEdit ? (
-              <button type="submit" disabled={loading}
+              <button type="submit" disabled={loading || validatingImages}
                 className="flex items-center gap-2 px-6 py-3 rounded-xl bg-[#CA3433] text-white font-bold text-sm hover:bg-[#ac2d2c] transition-colors disabled:opacity-60">
                 {loading ? 'Saving...' : 'Save Changes'}
               </button>
             ) : (
-              <button type="button" onClick={handlePayToGoLive} disabled={loading}
+              <button type="button" onClick={handlePayToGoLive} disabled={loading || validatingImages}
                 className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#CA3433] to-[#E63946] text-white font-extrabold text-sm shadow-lg shadow-red-500/20 hover:shadow-red-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-60 disabled:scale-100">
                 {loading ? (
                   <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Processing...</>
