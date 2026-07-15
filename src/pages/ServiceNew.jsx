@@ -111,12 +111,33 @@ export const ServiceNew = () => {
   }
   const removeFile = (i) => setDocumentFiles(v => v.filter((_, idx) => idx !== i))
 
+  const hasCompleteServiceItem = serviceItems.some(item => item.service_name.trim() && item.price)
+  const hasIncompleteServiceItem = serviceItems.some(item => Boolean(item.service_name.trim()) !== Boolean(item.price))
+  const hasCompletePlan = plans.some(plan => plan.plan_name.trim() && plan.price)
+  const hasIncompletePlan = plans.some(plan => Boolean(plan.plan_name.trim()) !== Boolean(plan.price))
+
   const validateStep = () => {
     if (step === 0 && !basicInfo.name.trim()) { toast.error('Provider name is required'); return false }
     if (step === 1 && posterImages.length < 1) { toast.error('Please upload at least 1 service photo'); return false }
     if (step === 2 && !location.city.trim())   { toast.error('City is required'); return false }
     if (step === 2 && !location.area.trim())   { toast.error('Area is required'); return false }
+    if (step === 3 && hasIncompleteServiceItem) { toast.error('Complete both the name and price for each service'); return false }
+    if (step === 3 && !hasCompleteServiceItem) { toast.error('Please add at least one service with a price'); return false }
+    if (step === 4 && hasIncompletePlan) { toast.error('Complete both the name and price for each plan'); return false }
+    if (step === 4 && !hasCompletePlan) { toast.error('Please add at least one subscription plan'); return false }
     if (step === 6 && !contact.contact_phone.trim()) { toast.error('Phone number is required'); return false }
+    return true
+  }
+
+  const validateSubmission = () => {
+    if (!hasCompleteServiceItem || hasIncompleteServiceItem) {
+      toast.error('Please complete at least one service with a name and price')
+      return false
+    }
+    if (!hasCompletePlan || hasIncompletePlan) {
+      toast.error('Please complete at least one plan with a name and price')
+      return false
+    }
     return true
   }
 
@@ -128,6 +149,7 @@ export const ServiceNew = () => {
 
   const handleSubmit = async () => {
     if (!validateStep()) return
+    if (!validateSubmission()) return
     if (!user) { toast.error('You must be logged in'); return }
 
     setSubmitting(true)
