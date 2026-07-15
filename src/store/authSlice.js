@@ -28,6 +28,9 @@ const authSlice = createSlice({
       state.authModalOpen = true
       state.authModalTab = action.payload || 'login'
     },
+    setAuthModalTab: (state, action) => {
+      state.authModalTab = action.payload
+    },
     closeAuthModal: (state) => {
       state.authModalOpen = false
     },
@@ -40,5 +43,5 @@ const authSlice = createSlice({
   },
 })
 
-export const { setUser, setProfile, setLoading, openAuthModal, closeAuthModal, logout } = authSlice.actions
+export const { setUser, setProfile, setLoading, openAuthModal, closeAuthModal, setAuthModalTab, logout } = authSlice.actions
 export default authSlice.reducer

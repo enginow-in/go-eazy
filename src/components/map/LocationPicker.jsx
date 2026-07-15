@@ -69,6 +69,11 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
     })
   }, [reverseGeocode, onChange])
 
+  const placeMarkerRef = useRef(placeMarker)
+  useEffect(() => {
+    placeMarkerRef.current = placeMarker
+  }, [placeMarker])
+
   // Init map using window.mapboxgl (loaded from CDN in index.html)
   useEffect(() => {
     if (map.current) return
@@ -89,12 +94,12 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
     map.current.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-left')
 
     map.current.on('click', (e) => {
-      placeMarker(e.lngLat.lng, e.lngLat.lat)
+      placeMarkerRef.current(e.lngLat.lng, e.lngLat.lat)
     })
 
     if (value?.latitude && value?.longitude) {
       map.current.on('load', () => {
-        placeMarker(value.longitude, value.latitude, value.map_address)
+        placeMarkerRef.current(value.longitude, value.latitude, value.map_address)
       })
     }
 
@@ -150,6 +155,10 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
     clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => handleSearch(q), 500)
   }
+
+  useEffect(() => {
+    return () => clearTimeout(debounceRef.current)
+  }, [])
 
   const handleSelectResult = (feature) => {
     const [lng, lat] = feature.center

@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch, useSelector, shallowEqual } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { MOCK_PROPERTIES } from '../utils/constants'
 import {
@@ -26,7 +26,7 @@ export const useProperties = () => {
     favorites, recentlyViewed, filters, 
     loading, hasMore, page, totalCount,
     reviews, reviewsLoading 
-  } = useSelector(s => s.property)
+  } = useSelector(s => s.property, shallowEqual)
   const { user, profile } = useSelector(s => s.auth)
 
   const fetchProperties = useCallback(async (reset = false) => {
