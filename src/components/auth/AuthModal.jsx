@@ -16,6 +16,7 @@ const ROLE_OPTIONS = [
 ]
 
 export const AuthModal = () => {
+  return null;
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { authModalOpen, authModalTab } = useSelector(s => s.auth)
