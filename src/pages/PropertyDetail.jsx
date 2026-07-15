@@ -21,6 +21,7 @@ import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { Skeleton } from '../components/ui/Skeleton'
 import { LocationViewer } from '../components/map/LocationViewer'
+import { logger } from '../utils/logger'
 
 const StarRating = ({ value, onChange, readonly = false }) => (
   <div className="flex gap-1">
@@ -194,7 +195,7 @@ export const PropertyDetail = () => {
       toast.success('Visit Request Sent! Track it in your dashboard.')
       setVisitDate('')
     } catch (err) {
-      console.error(err)
+      logger.error(err)
       toast.error('Failed to book visit.')
     } finally {
       setBookingVisit(false)
@@ -300,7 +301,7 @@ export const PropertyDetail = () => {
       }
       new window.Razorpay(options).open()
     } catch (err) {
-      console.error('Payment initiation error:', err)
+      logger.error('Payment initiation error:', err)
       toast.error('Could not initiate payment')
     } finally {
       setUnlocking(false)

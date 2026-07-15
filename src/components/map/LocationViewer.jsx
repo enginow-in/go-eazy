@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 import { MapPin, ExternalLink } from 'lucide-react'
+import { logger } from '../../utils/logger'
 
 // mapbox-gl is loaded via CDN script in index.html (window.mapboxgl)
 // NOT imported/bundled — prevents "Cannot access X before initialization" TDZ
@@ -12,7 +13,7 @@ export const LocationViewer = ({ latitude, longitude, title = 'Location', addres
   useEffect(() => {
     if (!latitude || !longitude || map.current) return
     const mapboxgl = window.mapboxgl
-    if (!mapboxgl) { console.error('mapbox-gl not loaded from CDN'); return }
+    if (!mapboxgl) { logger.error('mapbox-gl not loaded from CDN'); return }
 
     mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN
 

@@ -9,6 +9,7 @@ import {
   setLoading, setHasMore, setPage, setFilters, setTotalCount, resetFilters,
   setReviews, addReview, removeReview, setReviewsLoading
 } from '../store/propertySlice'
+import { logger } from '../utils/logger'
 
 const PAGE_SIZE = 12
 
@@ -71,7 +72,7 @@ export const useProperties = () => {
       dispatch(setHasMore((data || []).length === PAGE_SIZE))
       dispatch(setPage(reset ? 1 : page + 1))
     } catch (err) {
-      console.error('fetchProperties error:', err)
+      logger.error('fetchProperties error:', err)
       dispatch(setListings([]))
     } finally {
       dispatch(setLoading(false))
@@ -125,7 +126,7 @@ export const useProperties = () => {
         await supabase.from('recently_viewed').upsert({ user_id: user.id, property_id: id, viewed_at: new Date().toISOString() })
       }
     } catch (err) {
-      console.error('Error fetching property:', err)
+      logger.error('Error fetching property:', err)
     } finally {
       dispatch(setLoading(false))
     }
@@ -154,7 +155,7 @@ export const useProperties = () => {
         exact_location: rpcData?.exact_location || directData?.exact_location || null,
       }
     } catch (err) {
-      console.error('Error fetching gated data:', err)
+      logger.error('Error fetching gated data:', err)
       return null
     }
   }, [user])
@@ -171,7 +172,7 @@ export const useProperties = () => {
       if (error) throw error
       dispatch(setReviews(data || []))
     } catch (err) {
-      console.error('fetchReviews error:', err)
+      logger.error('fetchReviews error:', err)
     } finally {
       dispatch(setReviewsLoading(false))
     }

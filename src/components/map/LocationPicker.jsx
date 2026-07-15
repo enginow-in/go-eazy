@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { MapPin, Search, Navigation, X, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { logger } from '../../utils/logger'
 
 // mapbox-gl is loaded via CDN script in index.html (window.mapboxgl)
 // NOT imported/bundled — prevents "Cannot access X before initialization" TDZ
@@ -73,7 +74,7 @@ export const LocationPicker = ({ value, onChange, label = 'Pin Location on Map' 
   useEffect(() => {
     if (map.current) return
     const mapboxgl = window.mapboxgl
-    if (!mapboxgl) { console.error('mapbox-gl not loaded from CDN'); return }
+    if (!mapboxgl) { logger.error('mapbox-gl not loaded from CDN'); return }
 
     mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN
 

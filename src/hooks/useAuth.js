@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { setUser, setProfile, logout, setLoading } from '../store/authSlice'
+import { logger } from '../utils/logger'
 
 export const useAuth = () => {
   const dispatch = useDispatch()
@@ -11,7 +12,7 @@ export const useAuth = () => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
 
-      if (error) console.error('Auth: Session error', error)
+      if (error) logger.error('Auth: Session error', error)
       
       dispatch(setUser(session?.user ?? null))
       if (session?.user) fetchProfile(session.user.id)
@@ -53,7 +54,7 @@ export const useAuth = () => {
         // If the user no longer exists in Supabase (deleted from dashboard),
         // their JWT is orphaned. Force sign them out immediately.
         if (userError || !user) {
-          console.warn('Auth: Ghost session detected — user deleted. Forcing sign-out.')
+          logger.warn('Auth: Ghost session detected — user deleted. Forcing sign-out.')
           await supabase.auth.signOut()
           dispatch(logout())
           return
@@ -81,12 +82,12 @@ export const useAuth = () => {
           // status 403/401 = JWT is now invalid
           const isGhostUser = upsertError.code === '23503' || upsertError.status === 403 || upsertError.status === 401
           if (isGhostUser) {
-            console.warn('Auth: Deleted account confirmed via FK/auth error. Forcing sign-out.')
+            logger.warn('Auth: Deleted account confirmed via FK/auth error. Forcing sign-out.')
             await supabase.auth.signOut()
             dispatch(logout())
             return
           }
-          console.error('Auth: Profile creation failed', upsertError)
+          logger.error('Auth: Profile creation failed', upsertError)
           throw upsertError
         }
         data = newProfile
@@ -95,19 +96,19 @@ export const useAuth = () => {
         // 403/401 on profile fetch = stale/invalid token (user deleted)
         const isAuthError = error.status === 403 || error.status === 401
         if (isAuthError) {
-          console.warn('Auth: Invalid token on profile fetch. Forcing sign-out.')
+          logger.warn('Auth: Invalid token on profile fetch. Forcing sign-out.')
           await supabase.auth.signOut()
           dispatch(logout())
           return
         }
-        console.error('Auth: Profile fetch error', error)
+        logger.error('Auth: Profile fetch error', error)
         throw error
       }
 
 
       dispatch(setProfile(data))
     } catch (err) {
-      console.error('Auth: fetchProfile catch block', err)
+      logger.error('Auth: fetchProfile catch block', err)
       dispatch(setLoading(false))
     }
   }

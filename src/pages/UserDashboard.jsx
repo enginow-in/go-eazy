@@ -7,6 +7,7 @@ import { PropertyCard } from '../components/property/PropertyCard'
 import { supabase } from '../lib/supabase'
 import { MOCK_PROPERTIES } from '../utils/constants'
 import { Skeleton } from '../components/ui/Skeleton'
+import { logger } from '../utils/logger'
 
 export const UserDashboard = () => {
   const { user, profile } = useAuth()
@@ -39,7 +40,7 @@ export const UserDashboard = () => {
       if (!notifRes.error) setNotifications(notifRes.data || [])
       if (!visitRes.error) setMyVisits(visitRes.data || [])
     } catch (err) {
-      console.error(err)
+      logger.error(err)
     } finally {
       setLoadingData(false)
     }
@@ -50,7 +51,7 @@ export const UserDashboard = () => {
       await supabase.from('notifications').update({ is_read: true }).eq('user_id', user.id).eq('is_read', false)
       setNotifications(prev => prev.map(n => ({...n, is_read: true})))
     } catch (err) {
-      console.error(err)
+      logger.error(err)
     }
   }
   
@@ -89,7 +90,7 @@ export const UserDashboard = () => {
         setRecentProps([])
       }
     } catch (err) {
-      console.error('[UserDashboard] Load error:', err)
+      logger.error('[UserDashboard] Load error:', err)
       // Fallback
       setFavProps(MOCK_PROPERTIES.filter(p => favorites.includes(p.id)))
       setRecentProps(recentlyViewed.map(id => MOCK_PROPERTIES.find(p => p.id === id)).filter(Boolean))

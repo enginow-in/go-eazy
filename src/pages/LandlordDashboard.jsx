@@ -10,6 +10,7 @@ import { formatPriceShort, cn } from '../utils/helpers'
 import toast from 'react-hot-toast'
 import { Skeleton } from '../components/ui/Skeleton'
 import { supabase } from '../lib/supabase'
+import { logger } from '../utils/logger'
 
 export const LandlordDashboard = () => {
   const { user, profile } = useAuth()
@@ -35,7 +36,7 @@ export const LandlordDashboard = () => {
       const data = await getLandlordProperties()
       setProperties(data)
     } catch (err) {
-      console.error('Failed to load properties:', err)
+      logger.error('Failed to load properties:', err)
       toast.error('Failed to load listings')
     } finally {
       setLoading(false)
@@ -50,7 +51,7 @@ export const LandlordDashboard = () => {
       setProperties(prev => prev.filter(p => p.id !== id))
       toast.success('Property deleted permanently', { id: toastId })
     } catch (err) {
-      console.error('Delete failed:', err)
+      logger.error('Delete failed:', err)
       toast.error(err.message || 'Failed to delete property', { id: toastId })
     }
   }
@@ -71,7 +72,7 @@ export const LandlordDashboard = () => {
       if (error) throw error
       setSiteVisits(data || [])
     } catch (err) {
-      console.error('Failed to load visits:', err)
+      logger.error('Failed to load visits:', err)
     } finally {
       setLoadingVisits(false)
     }
@@ -95,7 +96,7 @@ export const LandlordDashboard = () => {
       toast.success(`Visit ${action} successfully`)
       setSiteVisits(prev => prev.filter(v => v.id !== visitId))
     } catch (err) {
-      console.error(err)
+      logger.error(err)
       toast.error('Failed to update visit status')
     } finally {
       setActioningVisitId(null)
