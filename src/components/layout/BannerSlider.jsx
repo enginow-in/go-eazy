@@ -25,7 +25,7 @@ export const BannerSlider = () => {
             <Skeleton className="w-full aspect-[21/9] sm:aspect-[21/7] rounded-none" />
           </div>
         )}
-        
+
         <Swiper
           modules={[Autoplay, Pagination]}
           spaceBetween={0}
@@ -38,18 +38,24 @@ export const BannerSlider = () => {
             // Preload the first image manually to ensure isLoaded triggers correctly
             const img = new Image();
             img.src = banners[0];
+
+            // Handle successful load
             img.onload = () => setIsLoaded(true);
+
+            // Handle load failure
+            img.onerror = () => setIsLoaded(true);
           }}
         >
           {banners.map((src, index) => (
             <SwiperSlide key={index}>
               <div className="w-full flex items-center justify-center">
-                <img 
-                  src={src} 
-                  alt={`GoEazy Banner ${index + 1}`} 
+                <img
+                  src={src}
+                  alt={`GoEazy Banner ${index + 1}`}
                   className="w-full h-auto block transition-opacity duration-500"
-                  loading={index === 0 ? "eager" : "lazy"}
+                  loading={index === 0 ? 'eager' : 'lazy'}
                   onLoad={index === 0 ? () => setIsLoaded(true) : undefined}
+                  onError={index === 0 ? () => setIsLoaded(true) : undefined}
                 />
               </div>
             </SwiperSlide>
