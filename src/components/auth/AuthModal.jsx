@@ -32,7 +32,11 @@ export const AuthModal = () => {
     const e = {}
     if (tab === 'signup' && !form.name.trim()) e.name = 'Name is required'
     if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) e.email = 'Valid email required'
-    if (form.password.length < 8) e.password = 'Min 8 characters'
+    if (tab === 'signup') {
+      if (form.password.length < 8) e.password = 'Min 8 characters'
+    } else if (!form.password) {
+      e.password = 'Password is required'
+    }
     setErrors(e)
     return !Object.keys(e).length
   }
