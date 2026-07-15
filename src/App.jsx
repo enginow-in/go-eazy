@@ -1,6 +1,6 @@
 // GoEazy App - Vercel Build Refresh
 import React, { Suspense, lazy } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { Layout } from './components/layout/Layout'
 import { Home } from './pages/Home'
 import { Search } from './pages/Search'
@@ -13,6 +13,7 @@ import { OnboardingQuiz } from './components/common/OnboardingQuiz'
 import { useSelector } from 'react-redux'
 import { useAuth } from './hooks/useAuth'
 import ScrollToTop from './components/common/ScrollToTop'
+import { ErrorBoundary } from './components/common/ErrorBoundary'
 
 // Heavy pages: lazy-loaded into separate chunks to prevent
 // "Cannot access X before initialization" TDZ errors from
@@ -40,6 +41,12 @@ const PageSpinner = () => (
   </div>
 )
 
+const RouteErrorBoundary = ({ children }) => {
+  const location = useLocation()
+
+  return <ErrorBoundary resetKey={location.pathname}>{children}</ErrorBoundary>
+}
+
 function App() {
   useAuth() 
   const { loading } = useSelector(s => s.auth)
@@ -59,8 +66,9 @@ function App() {
       <OnboardingQuiz />
       <RoleSelectionModal />
       <Layout>
-        <Suspense fallback={<PageSpinner />}>
-          <Routes>
+        <RouteErrorBoundary>
+          <Suspense fallback={<PageSpinner />}>
+            <Routes>
           <Route path="/" element={<Navigate to="/search" replace />} />
           <Route path="/search" element={<Search />} />
           <Route path="/property/:id" element={<PropertyDetail />} />
@@ -132,8 +140,9 @@ function App() {
           } />
 
           <Route path="*" element={<NotFound />} />
-        </Routes>
-        </Suspense>
+            </Routes>
+          </Suspense>
+        </RouteErrorBoundary>
       </Layout>
     </BrowserRouter>
   )
