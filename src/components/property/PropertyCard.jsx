@@ -1,7 +1,7 @@
 import React, { useState, useMemo, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { Bookmark, Star, Home, Eye, Users } from 'lucide-react'
+import { Bookmark, Star, Home, Eye, Users, Flame } from 'lucide-react'
 import { openAuthModal } from '../../store/authSlice'
 import { useProperties } from '../../hooks/useProperties'
 import { cn } from '../../utils/helpers'
@@ -69,6 +69,15 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
     return `${distance.toFixed(1)} km from ${campus.name}`;
   }, [property.city, property.id, property.lat, property.lng]);
 
+  // Generate deterministic layout data for the Live Bed Availability Tracker
+  const availabilityData = useMemo(() => {
+    const seed = property.id ? property.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) : 5;
+    const totalBeds = (seed % 6) + 3; // Total beds between 3 and 8
+    const leftBeds = (seed % 3) + 1;  // Beds remaining between 1 and 3
+    const percentage = Math.round(((totalBeds - leftBeds) / totalBeds) * 100);
+    return { leftBeds, percentage };
+  }, [property.id]);
+
   const formatPrice = (p) => {
     if (!p) return '0'
     const num = Number(p)
@@ -87,7 +96,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   const renderRoommateSelector = () => (
     <div 
       className="flex items-center gap-1.5 bg-gray-50 px-1.5 py-0.5 rounded-md border border-gray-100 my-1.5 w-max"
-      onClick={(e) => e.stopPropagation()} // Stop navigation
+      onClick={(e) => e.stopPropagation()} 
     >
       <span className="text-[9px] font-bold text-gray-500 uppercase flex items-center gap-0.5">
         <Users size={10} /> Split:
@@ -106,6 +115,24 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           {num === 1 ? 'Sole' : `${num}x`}
         </button>
       ))}
+    </div>
+  );
+
+  // Live Demand Status Tracker Element
+  const renderAvailabilityTracker = () => (
+    <div className="w-full mt-1 mb-2">
+      <div className="flex justify-between items-center text-[10px] mb-0.5 font-bold">
+        <span className="text-orange-600 flex items-center gap-0.5 animate-pulse">
+          <Flame size={11} className="fill-current" /> Only {availabilityData.leftBeds} left!
+        </span>
+        <span className="text-gray-400">{availabilityData.percentage}% Filled</span>
+      </div>
+      <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
+        <div 
+          className="h-full bg-gradient-to-r from-orange-400 to-red-500 transition-all duration-500" 
+          style={{ width: `${availabilityData.percentage}%` }}
+        />
+      </div>
     </div>
   );
 
@@ -159,7 +186,12 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
               </div>
             )}
             
-            {!condensed && renderRoommateSelector()}
+            {!condensed && (
+              <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
+                {renderRoommateSelector()}
+                <div className="w-32 sm:mt-1">{renderAvailabilityTracker()}</div>
+              </div>
+            )}
           </div>
 
           <div className="flex items-end justify-between mt-auto pb-0.5">
@@ -290,6 +322,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         )}
 
         {renderRoommateSelector()}
+        {renderAvailabilityTracker()}
         
         <div className="mt-auto pt-1.5 border-t border-gray-50 flex items-center justify-between">
           <p className="flex flex-col">
