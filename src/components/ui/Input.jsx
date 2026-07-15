@@ -46,7 +46,7 @@ export const Input = forwardRef(({
           </div>
         )}
       </div>
-      {error && <p className="text-xs text-[#CA3433] font-medium">{error}</p>}
+      <p className="text-xs text-[#CA3433] font-medium min-h-[16px]">{error || '\u00A0'}</p>
     </div>
   )
 })

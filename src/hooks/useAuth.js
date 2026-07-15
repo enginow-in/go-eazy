@@ -8,10 +8,13 @@ export const useAuth = () => {
   const { user, profile, role, loading, authModalOpen, authModalTab } = useSelector(s => s.auth)
 
   useEffect(() => {
+    let initialSessionHandled = false
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
 
       if (error) console.error('Auth: Session error', error)
+      initialSessionHandled = true
       
       dispatch(setUser(session?.user ?? null))
       if (session?.user) fetchProfile(session.user.id)
@@ -20,7 +23,9 @@ export const useAuth = () => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-
+      // getSession handles the initial load; avoid a duplicate profile fetch from
+      // Supabase's INITIAL_SESSION event.
+      if (event === 'INITIAL_SESSION' && !initialSessionHandled) return
       
       dispatch(setUser(session?.user ?? null))
       if (session?.user) {
