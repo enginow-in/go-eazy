@@ -544,6 +544,21 @@ export const PropertyDetail = () => {
                               : t('property.sections.callNow')}
                           </span>
                         </a>
+                        {gatedData?.contact_phone && (
+                          <a
+                            href={`https://wa.me/${(gatedData.contact_phone).replace(/\D/g, '').length === 10 ? '91' : ''}${(gatedData.contact_phone).replace(/\D/g, '')}?text=${encodeURIComponent(
+                              `Hi! I'm interested in your property "${p.title}" listed on GoEazy. Is it still available?`
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center gap-3 w-full px-5 py-3.5 rounded-full bg-[#25D366] text-white font-bold hover:bg-[#20ba5a] transition-colors shadow-sm text-[15px]"
+                          >
+                            <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.517 2.266 2.27 3.507 5.289 3.505 8.492-.005 6.66-5.341 11.997-11.953 11.997-2.005-.001-3.973-.5-5.739-1.446L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.42 9.864-9.864.003-2.637-1.017-5.114-2.873-6.972C16.598 1.892 14.12 .87 11.48.872c-5.437 0-9.863 4.42-9.867 9.864-.001 1.624.496 3.208 1.44 4.794L2.062 21.6l6.23-1.633zM16.142 13.11c-.254-.127-1.503-.742-1.737-.826-.233-.086-.404-.128-.574.127-.17.255-.658.827-.807.997-.15.17-.298.19-.552.063-.254-.127-1.073-.396-2.044-1.263-.756-.674-1.266-1.507-1.415-1.761-.15-.255-.016-.393.111-.519.115-.113.254-.297.382-.445.127-.15.17-.255.255-.425.085-.17.042-.319-.021-.446-.064-.127-.574-1.38-.786-1.89-.206-.497-.413-.429-.574-.429-.15 0-.319-.009-.488-.009-.17 0-.446.064-.679.297-.234.234-.892.871-.892 2.122 0 1.25.909 2.457 1.036 2.628.127.17 1.79 2.73 4.335 3.827.606.262 1.08.419 1.45.537.609.193 1.163.165 1.6.1.488-.073 1.503-.615 1.715-1.21.213-.595.213-1.104.149-1.21-.064-.106-.234-.149-.488-.276z"/>
+                            </svg>
+                            <span>WhatsApp Chat</span>
+                          </a>
+                        )}
                         <a href={`mailto:${gatedData?.contact_email || ''}`} className="flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-full bg-white border border-gray-200 text-gray-900 font-bold hover:bg-gray-50 transition-colors shadow-sm text-[15px]">
                           <Mail size={18} /> {t('property.sections.sendEmail')}
                         </a>
