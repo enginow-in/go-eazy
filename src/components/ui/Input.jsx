@@ -1,6 +1,14 @@
 import React, { forwardRef, useId } from 'react'
 import { cn } from '../../utils/helpers'
 
+// ── Shared Helper Icon ────────────────────────────────────────────────────────
+const DownArrowIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 pointer-events-none">
+    <path d="m6 9 6 6 6-6"/>
+  </svg>
+)
+
+// ── Input Component ───────────────────────────────────────────────────────────
 export const Input = forwardRef(({
   label,
   error,
@@ -14,13 +22,13 @@ export const Input = forwardRef(({
   const id = props.id || generatedId
 
   return (
-    <div className={cn('flex flex-col gap-1.5', wrapperClassName)}>
+    <div className={cn('flex flex-col gap-1.5 w-full', wrapperClassName)}>
       {label && (
         <label htmlFor={id} className="text-sm font-semibold text-gray-700">{label}</label>
       )}
-      <div className="relative">
+      <div className="relative flex items-center">
         {leftIcon && (
-          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none flex items-center justify-center">
             {leftIcon}
           </div>
         )}
@@ -41,65 +49,76 @@ export const Input = forwardRef(({
           {...props}
         />
         {rightIcon && (
-          <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400">
+          <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 flex items-center justify-center">
             {rightIcon}
           </div>
         )}
       </div>
-      {error && <p className="text-xs text-[#CA3433] font-medium">{error}</p>}
+      {error && <p className="text-xs text-[#CA3433] font-medium animate-in fade-in duration-150">{error}</p>}
     </div>
   )
 })
 Input.displayName = 'Input'
 
-export const Textarea = forwardRef(({ label, error, className = '', ...props }, ref) => {
+// ── Textarea Component ────────────────────────────────────────────────────────
+export const Textarea = forwardRef(({ label, error, className = '', wrapperClassName = '', ...props }, ref) => {
   const generatedId = useId()
   const id = props.id || generatedId
   
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className={cn('flex flex-col gap-1.5 w-full', wrapperClassName)}>
       {label && <label htmlFor={id} className="text-sm font-semibold text-gray-700">{label}</label>}
       <textarea
         ref={ref}
         id={id}
-      className={cn(
-        'w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900',
-        'placeholder:text-gray-400 outline-none resize-none',
-        'transition-all duration-200',
-        'border-gray-200 focus:border-brand-400 focus:ring-3 focus:ring-brand-100',
-        error && 'border-red-400',
-        className
-      )}
-      {...props}
-    />
-    {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
-  </div>
-)})
+        className={cn(
+          'w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900',
+          'placeholder:text-gray-400 outline-none resize-none',
+          'transition-all duration-200',
+          'border-gray-200 focus:border-[#CA3433] focus:ring-4 focus:ring-[#CA3433]/10',
+          'disabled:bg-gray-50 disabled:cursor-not-allowed',
+          error && 'border-[#CA3433] focus:border-[#CA3433] focus:ring-[#CA3433]/10',
+          className
+        )}
+        {...props}
+      />
+      {error && <p className="text-xs text-[#CA3433] font-medium animate-in fade-in duration-150">{error}</p>}
+    </div>
+  )
+})
 Textarea.displayName = 'Textarea'
 
-export const Select = forwardRef(({ label, error, children, className = '', ...props }, ref) => {
+// ── Select Component ──────────────────────────────────────────────────────────
+export const Select = forwardRef(({ label, error, children, className = '', wrapperClassName = '', ...props }, ref) => {
   const generatedId = useId()
   const id = props.id || generatedId
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className={cn('flex flex-col gap-1.5 w-full', wrapperClassName)}>
       {label && <label htmlFor={id} className="text-sm font-semibold text-gray-700">{label}</label>}
-      <select
-        ref={ref}
-        id={id}
-      className={cn(
-        'w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900',
-        'outline-none appearance-none cursor-pointer',
-        'transition-all duration-200',
-        'border-gray-200 focus:border-brand-400 focus:ring-3 focus:ring-brand-100',
-        error && 'border-red-400',
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </select>
-    {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
-  </div>
-)})
+      <div className="relative flex items-center">
+        <select
+          ref={ref}
+          id={id}
+          className={cn(
+            'w-full rounded-xl border bg-white pl-4 pr-10 py-3 text-sm text-gray-900',
+            'outline-none appearance-none cursor-pointer',
+            'transition-all duration-200',
+            'border-gray-200 focus:border-[#CA3433] focus:ring-4 focus:ring-[#CA3433]/10',
+            'disabled:bg-gray-50 disabled:cursor-not-allowed',
+            error && 'border-[#CA3433] focus:border-[#CA3433] focus:ring-[#CA3433]/10',
+            className
+          )}
+          {...props}
+        >
+          {children}
+        </select>
+        <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none flex items-center justify-center">
+          <DownArrowIcon />
+        </div>
+      </div>
+      {error && <p className="text-xs text-[#CA3433] font-medium animate-in fade-in duration-150">{error}</p>}
+    </div>
+  )
+})
 Select.displayName = 'Select'
