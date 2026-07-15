@@ -1,7 +1,9 @@
 import React, { useState, useMemo, memo } from 'react'
+import { motion } from "framer-motion"
+import toast from "react-hot-toast"
 import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { Bookmark, Star, Home, Eye } from 'lucide-react'
+import { Bookmark, Star, Eye } from 'lucide-react'
 import { openAuthModal } from '../../store/authSlice'
 import { useProperties } from '../../hooks/useProperties'
 import { cn } from '../../utils/helpers'
@@ -19,10 +21,29 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   const images = property.images || []
   const mainImage = images[0]
 
-  const handleFav = (e) => {
+  const handleFav = async (e) => {
     e.stopPropagation()
-    if (!user) { dispatch(openAuthModal('signup')); return }
-    toggleFavorite(property.id)
+
+    if (!user) {
+      dispatch(openAuthModal("signup"))
+      return
+    }
+
+    try {
+      await toggleFavorite(property.id)
+
+      if (isFav) {
+        toast("Bookmark removed", {
+          
+        })
+      } else {
+        toast.success("Property saved", {
+          
+        })
+      }
+    } catch {
+      toast.error("Something went wrong")
+    }
   }
 
   // Memoize values with deterministic calculation
@@ -55,15 +76,42 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           />
           {!imgLoaded && <div className="skeleton absolute inset-0" />}
           {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
-          <button
-            onClick={handleFav}
-            className={cn(
-              "absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center z-10 transition-all",
-              isFav ? "bg-brand-500 text-white shadow-lg" : "bg-white/80 backdrop-blur-sm text-gray-600 hover:bg-white"
-            )}
+          <motion.button
+          aria-label={isFav ? "Remove bookmark" : "Save property"}
+          onClick={handleFav}
+          whileHover={{ scale: 1.15 }}
+          whileTap={{ scale: 0.85 }}
+          animate={
+            isFav
+              ? {
+                  scale: [1, 1.35, 1],
+                  rotate: [0, -10, 10, 0],
+                }
+              : {}
+          }
+          transition={{ duration: 0.35 }}
+          className={cn(
+            "absolute top-2 right-2 w-10 h-10 rounded-full flex items-center justify-center z-10 shadow-lg backdrop-blur-md",
+            isFav
+              ? "bg-[#CA3433] text-white"
+              : "bg-white/90 text-gray-600 hover:bg-white"
+          )}
+        >
+          <motion.div
+            animate={
+              isFav
+                ? {
+                    scale: [1, 1.4, 1],
+                  }
+                : {}
+            }
           >
-            <Bookmark size={14} fill={isFav ? "currentColor" : "none"} />
-          </button>
+            <Bookmark
+              size={18}
+              fill={isFav ? "currentColor" : "none"}
+            />
+          </motion.div>
+        </motion.button>
         </div>
 
         <div className="flex-1 py-3 flex flex-col justify-between min-w-0 pr-4">
@@ -157,16 +205,42 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         />
         {!imgLoaded && <div className="skeleton absolute inset-0" />}
         {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
-        <button
-          onClick={handleFav}
-          className={cn(
-            'absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center z-10',
-            'transition-all duration-200 shadow-sm transition-opacity',
-            isFav ? 'bg-brand-500 text-white' : 'bg-white/90 backdrop-blur-sm text-gray-600'
-          )}
+        <motion.button
+        aria-label={isFav ? "Remove bookmark" : "Save property"}
+        onClick={handleFav}
+        whileHover={{ scale: 1.15 }}
+        whileTap={{ scale: 0.85 }}
+        animate={
+          isFav
+            ? {
+                scale: [1, 1.35, 1],
+                rotate: [0, -10, 10, 0],
+              }
+            : {}
+        }
+        transition={{ duration: 0.35 }}
+        className={cn(
+          "absolute top-2 right-2 w-10 h-10 rounded-full flex items-center justify-center z-10 shadow-lg backdrop-blur-md",
+          isFav
+            ? "bg-[#CA3433] text-white"
+            : "bg-white/90 text-gray-600 hover:bg-white"
+        )}
+      >
+        <motion.div
+          animate={
+            isFav
+              ? {
+                  scale: [1, 1.4, 1],
+                }
+              : {}
+          }
         >
-          <Bookmark size={14} fill={isFav ? 'currentColor' : 'none'} />
-        </button>
+          <Bookmark
+            size={18}
+            fill={isFav ? "currentColor" : "none"}
+          />
+        </motion.div>
+      </motion.button>
       </div>
 
       <div className="px-3 py-2 flex-1 flex flex-col">
