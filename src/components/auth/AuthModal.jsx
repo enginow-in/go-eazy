@@ -29,7 +29,10 @@ export const AuthModal = () => {
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [errors, setErrors] = useState({})
 
-  React.useEffect(() => { setTab(authModalTab) }, [authModalTab])
+  React.useEffect(() => {
+    setTab(authModalTab)
+    setErrors({})
+  }, [authModalTab])
 
   const validate = () => {
     const e = {}
@@ -42,6 +45,7 @@ export const AuthModal = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (googleLoading) return
     if (!validate()) return
     setLoading(true)
     try {
@@ -79,6 +83,7 @@ export const AuthModal = () => {
   }
 
   const handleGoogle = async () => {
+    if (loading) return
     // Save current path to return back after OAuth redirect
     localStorage.setItem('sb_return_to', window.location.pathname + window.location.search)
     
@@ -114,6 +119,7 @@ export const AuthModal = () => {
         size="lg"
         className="w-full mb-3"
         loading={googleLoading}
+        disabled={loading}
         onClick={handleGoogle}
         leftIcon={
           <svg width="20" height="20" viewBox="0 0 24 24">
@@ -203,7 +209,7 @@ export const AuthModal = () => {
           </div>
         )}
 
-        <Button type="submit" variant="primary" size="lg" className="w-full shadow-lg shadow-[#CA3433]/20" loading={loading}>
+        <Button type="submit" variant="primary" size="lg" className="w-full shadow-lg shadow-[#CA3433]/20" loading={loading} disabled={googleLoading}>
           {tab === 'login' ? 'Sign In' : 'Create Account'}
         </Button>
       </form>
