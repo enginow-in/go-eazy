@@ -14,16 +14,24 @@ export const CityChips = () => {
   }
 
   return (
-    <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
+    <div
+      className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide"
+      style={{ scrollbarWidth: 'none' }}
+    >
       {CITIES.map((city, i) => (
         <button
           key={city.name}
+          type="button"
           onClick={() => handleCity(city.name)}
-          className="flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-full text-sm font-medium text-gray-700 hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700 transition-all shadow-sm hover:shadow-md"
+          aria-label={`Search properties in ${city.name}`}
+          title={`Search properties in ${city.name}`}
+          className="flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-full text-sm font-medium text-gray-700 hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700 transition-all shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2"
           style={{ animationDelay: `${i * 60}ms` }}
         >
-          <span className="text-base">{city.emoji}</span>
-          {city.name}
+          <span className="text-base" aria-hidden="true">
+            {city.emoji}
+          </span>
+          <span>{city.name}</span>
         </button>
       ))}
     </div>
