@@ -4,9 +4,21 @@ import { X } from 'lucide-react'
 
 export const Modal = ({ open, onClose, children, title, size = 'md', className = '' }) => {
   useEffect(() => {
-    if (open) document.body.style.overflow = 'hidden'
-    else document.body.style.overflow = ''
-    return () => { document.body.style.overflow = '' }
+    if (open) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      // Only release overflow if no other open modals exist in DOM
+      const activeModals = document.querySelectorAll('[data-modal-open="true"]')
+      if (activeModals.length === 0) {
+        document.body.style.overflow = ''
+      }
+    }
+    return () => {
+      const activeModals = document.querySelectorAll('[data-modal-open="true"]')
+      if (activeModals.length <= 1) {
+        document.body.style.overflow = ''
+      }
+    }
   }, [open])
 
   if (!open) return null
@@ -23,17 +35,18 @@ export const Modal = ({ open, onClose, children, title, size = 'md', className =
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={onClose}
+      data-modal-open="true"
     >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
-      {/* Modal */}
+      {/* Modal Container */}
       <div
         className={cn(
           'relative w-full bg-white rounded-xl shadow-2xl',
           'max-h-[90vh] overflow-y-auto',
           'animate-fadeInUp',
-          sizes[size],
+          sizes[size] || sizes.md, // Safe fallback dictionary guard
           className
         )}
         onClick={e => e.stopPropagation()}
