@@ -1,7 +1,7 @@
 import React, { useState, useMemo, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { Bookmark, Star, Home, Eye } from 'lucide-react'
+import { Bookmark, Star, Home, Eye, Users } from 'lucide-react'
 import { openAuthModal } from '../../store/authSlice'
 import { useProperties } from '../../hooks/useProperties'
 import { cn } from '../../utils/helpers'
@@ -33,6 +33,9 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   const { user } = useSelector(s => s.auth)
   const { favorites, toggleFavorite } = useProperties()
   const [imgLoaded, setImgLoaded] = useState(false)
+  
+  // Track the number of people sharing the room (1 means no split)
+  const [sharingCount, setSharingCount] = useState(1)
 
   const isFav = favorites.includes(property.id)
   const images = property.images || []
@@ -72,7 +75,41 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
     return num.toLocaleString('en-IN')
   }
 
-  // List Layout (Matches Image 2)
+  // Calculates price per person reactively
+  const displayPriceText = useMemo(() => {
+    const basePrice = Number(property.price || 0);
+    if (sharingCount === 1) return `₹${formatPrice(basePrice)}`;
+    const splitPrice = Math.round(basePrice / sharingCount);
+    return `₹${formatPrice(splitPrice)} / head`;
+  }, [property.price, sharingCount]);
+
+  // Roommate Selection Toggle Element
+  const renderRoommateSelector = () => (
+    <div 
+      className="flex items-center gap-1.5 bg-gray-50 px-1.5 py-0.5 rounded-md border border-gray-100 my-1.5 w-max"
+      onClick={(e) => e.stopPropagation()} // Stop navigation
+    >
+      <span className="text-[9px] font-bold text-gray-500 uppercase flex items-center gap-0.5">
+        <Users size={10} /> Split:
+      </span>
+      {[1, 2, 3].map((num) => (
+        <button
+          key={num}
+          onClick={() => setSharingCount(num)}
+          className={cn(
+            "text-[10px] font-extrabold px-1.5 py-0.5 rounded transition-all",
+            sharingCount === num 
+              ? "bg-[#CA3433] text-white shadow-sm" 
+              : "text-gray-600 hover:bg-gray-200"
+          )}
+        >
+          {num === 1 ? 'Sole' : `${num}x`}
+        </button>
+      ))}
+    </div>
+  );
+
+  // List Layout
   if (layout === 'list') {
     return (
       <div 
@@ -114,7 +151,6 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
               {property.title}
             </h3>
             
-            {/* Distance Indicator Badge */}
             {proximityText && (
               <div className="mt-1 flex items-center">
                 <span className="inline-flex items-center rounded-md bg-red-50 px-2 py-0.5 text-[10px] font-medium text-[#CA3433] ring-1 ring-inset ring-red-600/10">
@@ -122,15 +158,19 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
                 </span>
               </div>
             )}
+            
+            {!condensed && renderRoommateSelector()}
           </div>
 
           <div className="flex items-end justify-between mt-auto pb-0.5">
             <div className="flex flex-col">
-              <span className="text-[9px] font-bold text-gray-400 uppercase leading-none mb-0.5">{t('property.labels.from')}</span>
+              <span className="text-[9px] font-bold text-gray-400 uppercase leading-none mb-0.5">
+                {sharingCount > 1 ? 'Each Pays' : t('property.labels.from')}
+              </span>
               <span className={cn(
                 "font-black text-gray-900 leading-none",
                 condensed ? "text-base" : "text-base sm:text-lg"
-              )}>₹{formatPrice(property.price)}</span>
+              )}>{displayPriceText}</span>
             </div>
             
             <div className={cn(
@@ -166,7 +206,6 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
             condensed ? "text-[11px]" : "text-[13px]"
           )}>{property.title}</h3>
 
-          {/* Distance Indicator Badge */}
           {proximityText && (
             <div className="mb-1.5 flex items-center">
               <span className="inline-flex items-center rounded-md bg-red-50 px-1.5 py-0.5 text-[9px] font-medium text-[#CA3433] ring-1 ring-inset ring-red-600/10">
@@ -176,7 +215,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           )}
 
           <div className="flex items-center justify-between text-[10px] text-gray-500 font-bold">
-             <span className={cn("text-gray-900", condensed ? "text-[11px]" : "text-[13px]")}>₹{formatPrice(property.price)}</span>
+             <span className={cn("text-gray-900", condensed ? "text-[11px]" : "text-[13px]")}>{displayPriceText}</span>
              <div className="flex items-center gap-0.5 text-gray-900">
                <Star size={9} className="text-orange-400" fill="currentColor" />
                <span className={condensed ? "text-[9px]" : "text-[10px]"}>{rating}</span>
@@ -242,37 +281,40 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           {property.title}
         </h3>
         
-        {/* Distance Indicator Badge */}
         {proximityText && (
-          <div className="mb-2 flex items-center">
+          <div className="mb-1 flex items-center">
             <span className="inline-flex items-center rounded-md bg-red-50 px-2 py-0.5 text-[10px] font-medium text-[#CA3433] ring-1 ring-inset ring-red-600/10">
               📍 {proximityText}
             </span>
           </div>
         )}
+
+        {renderRoommateSelector()}
         
         <div className="mt-auto pt-1.5 border-t border-gray-50 flex items-center justify-between">
           <p className="flex flex-col">
-            <span className="text-[8px] font-bold text-gray-400 uppercase leading-none">{t('property.labels.from')}</span>
+            <span className="text-[8px] font-bold text-gray-400 uppercase leading-none">
+              {sharingCount > 1 ? 'Each Pays' : t('property.labels.from')}
+            </span>
             <span className={cn(
               "font-black text-gray-900 leading-tight",
               condensed ? "text-sm" : "text-base"
-            )}>₹{formatPrice(property.price)}</span>
+            )}>{displayPriceText}</span>
           </p>
-         <a 
-  href={`https://api.whatsapp.com/send?phone=919999999999&text=${encodeURIComponent(
-    `Hello! I am highly interested in the "${property.title}" listed on GoEazy for ₹${formatPrice(property.price)}/month. Is it still available for booking?`
-  )}`}
-  target="_blank"
-  rel="noopener noreferrer"
-  onClick={(e) => e.stopPropagation()} // Prevents navigating to details page
-  className="text-emerald-600 hover:text-emerald-700 transition-colors p-1 hover:bg-emerald-50 rounded-lg"
-  title="Inquire on WhatsApp"
->
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397 0 11.93 0c3.165.001 6.14 1.233 8.377 3.474 2.237 2.24 3.466 5.216 3.466 8.385 0 6.585-5.337 11.933-11.87 11.933-2.01 0-3.99-.51-5.747-1.48L0 24zm6.59-4.846c1.657.983 3.284 1.503 4.675 1.503 5.432 0 9.854-4.38 9.856-9.764 0-2.608-1.015-5.06-2.859-6.908C16.435 2.137 13.99 1.113 11.93 1.113c-5.437 0-9.859 4.38-9.86 9.764 0 1.5.4 2.964 1.16 4.246L2.21 19.83l4.437-1.154z"/>
-  </svg>
-</a>
+          <a 
+            href={`https://api.whatsapp.com/send?phone=919999999999&text=${encodeURIComponent(
+              `Hello! I am highly interested in the "${property.title}" listed on GoEazy. For ${sharingCount} person(s), my calculated share would be around ${displayPriceText}/month. Is it still available for booking?`
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="text-emerald-600 hover:text-emerald-700 transition-colors p-1 hover:bg-emerald-50 rounded-lg"
+            title="Inquire on WhatsApp"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397 0 11.93 0c3.165.001 6.14 1.233 8.377 3.474 2.237 2.24 3.466 5.216 3.466 8.385 0 6.585-5.337 11.933-11.87 11.933-2.01 0-3.99-.51-5.747-1.48L0 24zm6.59-4.846c1.657.983 3.284 1.503 4.675 1.503 5.432 0 9.854-4.38 9.856-9.764 0-2.608-1.015-5.06-2.859-6.908C16.435 2.137 13.99 1.113 11.93 1.113c-5.437 0-9.859 4.38-9.86 9.764 0 1.5.4 2.964 1.16 4.246L2.21 19.83l4.437-1.154z"/>
+            </svg>
+          </a>
         </div>
       </div>
     </div>
