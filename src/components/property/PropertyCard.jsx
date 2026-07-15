@@ -49,6 +49,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         <div className="relative w-32 h-32 sm:w-40 sm:h-40 flex-shrink-0 overflow-hidden bg-gray-50 rounded-r-2xl shadow-sm">
           <img 
             src={mainImage} 
+            alt={property.title}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
             onLoad={() => setImgLoaded(true)}
             loading="lazy"
@@ -88,7 +89,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
               <span className={cn(
                 "font-black text-gray-900 leading-none",
                 condensed ? "text-base" : "text-base sm:text-lg"
-              )}>₹{formatPrice(property.price)}</span>
+              )}>â‚¹{formatPrice(property.price)}</span>
             </div>
             
             <div className={cn(
@@ -124,7 +125,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
             condensed ? "text-[11px]" : "text-[13px]"
           )}>{property.title}</h3>
           <div className="flex items-center justify-between text-[10px] text-gray-500 font-bold">
-             <span className={cn("text-gray-900", condensed ? "text-[11px]" : "text-[13px]")}>₹{formatPrice(property.price)}</span>
+             <span className={cn("text-gray-900", condensed ? "text-[11px]" : "text-[13px]")}>â‚¹{formatPrice(property.price)}</span>
              <div className="flex items-center gap-0.5 text-gray-900">
                <Star size={9} className="text-orange-400" fill="currentColor" />
                <span className={condensed ? "text-[9px]" : "text-[10px]"}>{rating}</span>
@@ -197,7 +198,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
             <span className={cn(
               "font-black text-gray-900 leading-tight",
               condensed ? "text-sm" : "text-base"
-            )}>₹{formatPrice(property.price)}</span>
+            )}>â‚¹{formatPrice(property.price)}</span>
           </p>
           <button className="text-[#CA3433] hover:text-brand-800 transition-colors">
             <Eye size={condensed ? 14 : 18} />
