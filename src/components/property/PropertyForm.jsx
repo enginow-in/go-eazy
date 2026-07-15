@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, X, Image as ImageIcon, Zap, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react'
+import { Plus, X, Image as ImageIcon, Zap, Sparkles, Loader2, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react'
 import { Input, Textarea, Select } from '../ui/Input'
 import { Button } from '../ui/Button'
 import { PROPERTY_TYPES, AMENITIES } from '../../utils/constants'
@@ -95,6 +95,7 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   const [step, setStep] = useState(1)
   const [images, setImages] = useState([])
   const [previewUrls, setPreviewUrls] = useState(initialData?.images || [])
+  const [generatingDescription, setGeneratingDescription] = useState(false)
 
   const [form, setForm] = useState({
     title:             initialData?.title || '',
@@ -116,6 +117,46 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   })
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }))
+
+  const generateDescription = async () => {
+    if (generatingDescription) return
+    if (!form.title.trim()) {
+      toast.error('Add a property title first')
+      return
+    }
+    if (form.description.trim()) {
+      toast.error('Clear the current description before generating a new one')
+      return
+    }
+
+    setGeneratingDescription(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) throw new Error('Your session expired. Please sign in again.')
+
+      const { data, error } = await supabase.functions.invoke('generate-property-description', {
+        body: {
+          title: form.title.trim(),
+          city: form.city.trim(),
+          area: form.area.trim(),
+          type: form.type,
+          price: form.price,
+          amenities: form.amenities,
+          nearby_landmarks: form.nearby_landmarks.trim(),
+        },
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      if (error) throw error
+      if (!data?.description) throw new Error('The AI service returned no description')
+      set('description', data.description)
+      toast.success('Description generated. Review it before saving.')
+    } catch (error) {
+      console.error('Property description generation failed:', error)
+      toast.error(error.message || 'Could not generate a description. Try again.')
+    } finally {
+      setGeneratingDescription(false)
+    }
+  }
 
   const handleLocationChange = ({ latitude, longitude, map_address }) => {
     setForm(f => ({ ...f, latitude, longitude, map_address: map_address || '' }))
@@ -267,6 +308,17 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
           </div>
           <Textarea id="property-description" label="Description" placeholder="Tell renters what makes this place special..."
             rows={4} value={form.description} onChange={e => set('description', e.target.value)} />
+          <div className="flex justify-end -mt-2">
+            <button
+              type="button"
+              onClick={generateDescription}
+              disabled={generatingDescription || !form.title.trim() || Boolean(form.description.trim())}
+              className="inline-flex items-center gap-2 rounded-lg border border-[#CA3433]/20 px-3 py-2 text-xs font-bold text-[#CA3433] transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {generatingDescription ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+              {generatingDescription ? 'Generating...' : 'Generate with AI'}
+            </button>
+          </div>
         </div>
       )
 
