@@ -259,9 +259,20 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
               condensed ? "text-sm" : "text-base"
             )}>₹{formatPrice(property.price)}</span>
           </p>
-          <button className="text-[#CA3433] hover:text-brand-800 transition-colors">
-            <Eye size={condensed ? 14 : 18} />
-          </button>
+         <a 
+  href={`https://api.whatsapp.com/send?phone=919999999999&text=${encodeURIComponent(
+    `Hello! I am highly interested in the "${property.title}" listed on GoEazy for ₹${formatPrice(property.price)}/month. Is it still available for booking?`
+  )}`}
+  target="_blank"
+  rel="noopener noreferrer"
+  onClick={(e) => e.stopPropagation()} // Prevents navigating to details page
+  className="text-emerald-600 hover:text-emerald-700 transition-colors p-1 hover:bg-emerald-50 rounded-lg"
+  title="Inquire on WhatsApp"
+>
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397 0 11.93 0c3.165.001 6.14 1.233 8.377 3.474 2.237 2.24 3.466 5.216 3.466 8.385 0 6.585-5.337 11.933-11.87 11.933-2.01 0-3.99-.51-5.747-1.48L0 24zm6.59-4.846c1.657.983 3.284 1.503 4.675 1.503 5.432 0 9.854-4.38 9.856-9.764 0-2.608-1.015-5.06-2.859-6.908C16.435 2.137 13.99 1.113 11.93 1.113c-5.437 0-9.859 4.38-9.86 9.764 0 1.5.4 2.964 1.16 4.246L2.21 19.83l4.437-1.154z"/>
+  </svg>
+</a>
         </div>
       </div>
     </div>
