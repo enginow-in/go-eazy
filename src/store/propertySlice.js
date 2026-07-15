@@ -6,6 +6,7 @@ const propertySlice = createSlice({
     listings: [],
     featured: [],
     currentProperty: null,
+    comparisonList: [],
     favorites: [],
     recentlyViewed: [],
     filters: {
@@ -47,6 +48,17 @@ const propertySlice = createSlice({
       const idx = state.favorites.indexOf(id)
       if (idx >= 0) state.favorites.splice(idx, 1)
       else state.favorites.push(id)
+    },
+    addToCompare: (state, action) => {
+      if (state.comparisonList.length < 3 && !state.comparisonList.some(property => property.id === action.payload.id)) {
+        state.comparisonList.push(action.payload)
+      }
+    },
+    removeFromCompare: (state, action) => {
+      state.comparisonList = state.comparisonList.filter(property => property.id !== action.payload)
+    },
+    clearComparison: (state) => {
+      state.comparisonList = []
     },
     setRecentlyViewed: (state, action) => {
       state.recentlyViewed = action.payload
@@ -94,6 +106,7 @@ const propertySlice = createSlice({
 export const {
   setListings, appendListings, setFeatured, setCurrentProperty,
   setFavorites, toggleFavorite, setRecentlyViewed, addRecentlyViewed,
+  addToCompare, removeFromCompare, clearComparison,
   setFilters, resetFilters, setLoading, setHasMore, setPage, setTotalCount,
   setReviews, addReview, removeReview, setReviewsLoading
 } = propertySlice.actions

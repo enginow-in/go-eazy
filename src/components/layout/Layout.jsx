@@ -6,6 +6,7 @@ import { AuthModal } from '../auth/AuthModal'
 import { AuthGateModal } from '../auth/AuthGateModal'
 import { Toaster } from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
+import { CompareActionBar } from '../property/CompareActionBar'
 
 export const Layout = ({ children }) => {
   const location = useLocation()
@@ -38,6 +39,7 @@ export const Layout = ({ children }) => {
       </AnimatePresence>
       {location.pathname === '/search' && <Footer />}
       <AuthModal />
+      <CompareActionBar />
     </>
   )
 }

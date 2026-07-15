@@ -13,6 +13,7 @@ import { OnboardingQuiz } from './components/common/OnboardingQuiz'
 import { useSelector } from 'react-redux'
 import { useAuth } from './hooks/useAuth'
 import ScrollToTop from './components/common/ScrollToTop'
+import { PropertyCompare } from './pages/PropertyCompare'
 
 // Heavy pages: lazy-loaded into separate chunks to prevent
 // "Cannot access X before initialization" TDZ errors from
@@ -64,6 +65,7 @@ function App() {
           <Route path="/" element={<Navigate to="/search" replace />} />
           <Route path="/search" element={<Search />} />
           <Route path="/property/:id" element={<PropertyDetail />} />
+          <Route path="/compare" element={<PropertyCompare />} />
           
           {/* Legal Routes */}
           <Route path="/privacy" element={<PrivacyPolicy />} />

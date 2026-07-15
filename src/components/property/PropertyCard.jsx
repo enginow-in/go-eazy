@@ -1,8 +1,9 @@
 import React, { useState, useMemo, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { Bookmark, Star, Home, Eye } from 'lucide-react'
+import { Bookmark, Star, Home, Eye, GitCompareArrows } from 'lucide-react'
 import { openAuthModal } from '../../store/authSlice'
+import { addToCompare, removeFromCompare } from '../../store/propertySlice'
 import { useProperties } from '../../hooks/useProperties'
 import { cn } from '../../utils/helpers'
 import { useTranslation } from 'react-i18next'
@@ -12,10 +13,12 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const { user } = useSelector(s => s.auth)
+  const comparisonList = useSelector(s => s.property?.comparisonList || [])
   const { favorites, toggleFavorite } = useProperties()
   const [imgLoaded, setImgLoaded] = useState(false)
 
   const isFav = favorites.includes(property.id)
+  const isCompared = comparisonList.some(item => item.id === property.id)
   const images = property.images || []
   const mainImage = images[0]
 
@@ -23,6 +26,17 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
     e.stopPropagation()
     if (!user) { dispatch(openAuthModal('signup')); return }
     toggleFavorite(property.id)
+  }
+
+  const handleCompare = (e) => {
+    e.stopPropagation()
+    if (isCompared) {
+      dispatch(removeFromCompare(property.id))
+    } else if (comparisonList.length >= 3) {
+      return
+    } else {
+      dispatch(addToCompare(property))
+    }
   }
 
   // Memoize values with deterministic calculation
@@ -63,6 +77,16 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
             )}
           >
             <Bookmark size={14} fill={isFav ? "currentColor" : "none"} />
+          </button>
+          <button
+            onClick={handleCompare}
+            aria-label={isCompared ? 'Remove from comparison' : 'Add to comparison'}
+            className={cn(
+              "absolute bottom-2 right-2 w-8 h-8 rounded-full flex items-center justify-center z-10 transition-all",
+              isCompared ? "bg-[#CA3433] text-white" : "bg-white/90 backdrop-blur-sm text-gray-600 hover:bg-white"
+            )}
+          >
+            <GitCompareArrows size={14} />
           </button>
         </div>
 
@@ -157,7 +181,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         />
         {!imgLoaded && <div className="skeleton absolute inset-0" />}
         {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
-        <button
+          <button
           onClick={handleFav}
           className={cn(
             'absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center z-10',
@@ -201,6 +225,16 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           </p>
           <button className="text-[#CA3433] hover:text-brand-800 transition-colors">
             <Eye size={condensed ? 14 : 18} />
+          </button>
+          <button
+            onClick={handleCompare}
+            aria-label={isCompared ? 'Remove from comparison' : 'Add to comparison'}
+            className={cn(
+              'absolute bottom-2 right-2 w-8 h-8 rounded-full flex items-center justify-center z-10 shadow-sm',
+              isCompared ? 'bg-[#CA3433] text-white' : 'bg-white/90 text-gray-600'
+            )}
+          >
+            <GitCompareArrows size={14} />
           </button>
         </div>
       </div>
