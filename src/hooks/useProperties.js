@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { MOCK_PROPERTIES } from '../utils/constants'
@@ -21,6 +21,7 @@ const PUBLIC_PROFILE_FIELDS = 'full_name, avatar_url, bio'
 
 export const useProperties = () => {
   const dispatch = useDispatch()
+  const propertyFetchRequest = useRef(0)
   const { 
     listings, featured, currentProperty, 
     favorites, recentlyViewed, filters, 
@@ -110,6 +111,8 @@ export const useProperties = () => {
   }, [])
 
   const fetchPropertyById = useCallback(async (id) => {
+    const requestId = ++propertyFetchRequest.current
+    dispatch(setCurrentProperty(null))
     dispatch(setLoading(true))
     try {
       const { data, error } = await supabase
@@ -118,16 +121,21 @@ export const useProperties = () => {
         .eq('id', id)
         .maybeSingle()
       if (error) throw error
+      if (requestId !== propertyFetchRequest.current) return null
       dispatch(setCurrentProperty(data))
       
       if (user && data) {
         dispatch(addRecentlyViewed(id))
         await supabase.from('recently_viewed').upsert({ user_id: user.id, property_id: id, viewed_at: new Date().toISOString() })
       }
+      return data
     } catch (err) {
       console.error('Error fetching property:', err)
+      return null
     } finally {
-      dispatch(setLoading(false))
+      if (requestId === propertyFetchRequest.current) {
+        dispatch(setLoading(false))
+      }
     }
   }, [user, dispatch])
 
