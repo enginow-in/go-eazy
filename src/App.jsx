@@ -42,7 +42,7 @@ const PageSpinner = () => (
 
 function App() {
   useAuth() 
-  const { loading } = useSelector(s => s.auth)
+  const { loading } = useSelector(state => state.auth || {})
 
   if (loading) {
     return (
@@ -58,8 +58,8 @@ function App() {
       <AppInitializer />
       <OnboardingQuiz />
       <RoleSelectionModal />
-      <Layout>
-        <Suspense fallback={<PageSpinner />}>
+      <Suspense fallback={<PageSpinner />}>
+        <Layout>
           <Routes>
           <Route path="/" element={<Navigate to="/search" replace />} />
           <Route path="/search" element={<Search />} />
@@ -133,8 +133,8 @@ function App() {
 
           <Route path="*" element={<NotFound />} />
         </Routes>
-        </Suspense>
-      </Layout>
+        </Layout>
+      </Suspense>
     </BrowserRouter>
   )
 }
