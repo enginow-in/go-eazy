@@ -232,7 +232,7 @@ export const Navbar = () => {
         <>
           <BannerSlider />
 
-          <div className="w-full border-t border-b border-gray-100 bg-white flex relative mt-2">
+          <div className="w-full border-t border-b border-gray-100 bg-white flex flex-wrap relative mt-2">
             {/* Scroll Indicator Gradient */}
             <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none md:hidden" />
             
@@ -313,6 +313,85 @@ export const Navbar = () => {
                   </>
                 )}
               </div>
+          </div>
+
+          {/* Tablet City Selector */}
+        <div className="hidden md:flex lg:hidden w-full border-t border-gray-100 bg-white px-4 py-3 justify-start">
+            <div className="flex items-center gap-3 cursor-pointer relative" onClick={() => setCityMenuOpen(!cityMenuOpen)}>
+              <div className="relative w-10 h-10 rounded-full border border-[#CA3433] overflow-hidden bg-gray-50">
+                  <img
+                    src="/1.webp"
+                    alt="City"
+                    className="w-full h-full object-cover"
+                  />  
+              </div>
+
+          <div className="flex flex-col">
+            <span className="font-semibold text-gray-900">
+              {selectedCity}
+            </span>
+            <span className="text-xs text-gray-500">
+              Uttarakhand
+            </span>
+          </div>
+
+            <ChevronDown
+              size={16}
+              className={`transition-transform ${
+                cityMenuOpen ? "rotate-180" : ""
+              }`}
+            />
+
+              {cityMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setCityMenuOpen(false)
+                    }}
+                  />
+
+                  <div
+                    className="absolute top-full mt-3 left-0 w-52 bg-white rounded-xl shadow-xl border border-gray-100 z-50 py-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onClick={() => {
+                        setSelectedCity("All Cities")
+                        updateFilters({ city: "" })
+                        setCityMenuOpen(false)
+                      }}
+                      className={`w-full text-left px-5 py-2 ${
+                        selectedCity === "All Cities"
+                          ? "bg-[#fff5f5] text-[#CA3433]"
+                          : "hover:bg-gray-50"
+                      }`}
+                    >
+                      All Cities
+                    </button>
+
+                    {CITIES.map((city) => (
+                      <button
+                        key={city}
+                        onClick={() => {
+                          setSelectedCity(city)
+                          updateFilters({ city })
+                          setCityMenuOpen(false)
+                        }}
+                        className={`w-full text-left px-5 py-2 ${
+                          selectedCity === city
+                            ? "bg-[#fff5f5] text-[#CA3433]"
+                            : "hover:bg-gray-50"
+                        }`}
+                      >
+                        {city}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
           
           {/* Mobile Search Bar (Out of menu, below banner/categories) */}
