@@ -7,6 +7,7 @@ import {
   setServiceFilters, setServiceLoading,
   setReviewsLoading, setServiceHasMore, setServicePage,
 } from '../store/serviceSlice'
+import { logger } from '../utils/logger'
 
 const PAGE_SIZE = 12
 
@@ -55,7 +56,7 @@ export const useServices = () => {
       dispatch(setServiceHasMore((data || []).length === PAGE_SIZE))
       dispatch(setServicePage(reset ? 1 : page + 1))
     } catch (err) {
-      console.error('fetchServices error:', err)
+      logger.error('fetchServices error:', err)
       dispatch(setServices([]))
     } finally {
       dispatch(setServiceLoading(false))
@@ -82,7 +83,7 @@ export const useServices = () => {
         await supabase.rpc('increment_service_views', { p_service_id: id })
       }
     } catch (err) {
-      console.error('fetchServiceById error:', err)
+      logger.error('fetchServiceById error:', err)
       dispatch(setCurrentService(null))
     }
   }, [dispatch])
@@ -95,7 +96,7 @@ export const useServices = () => {
       if (error) throw error
       return data?.[0] || null
     } catch (err) {
-      console.error('Error fetching service gated data:', err)
+      logger.error('Error fetching service gated data:', err)
       return null
     }
   }, [user])
@@ -113,7 +114,7 @@ export const useServices = () => {
       if (error) throw error
       dispatch(setReviews(data || []))
     } catch (err) {
-      console.error('fetchReviews error:', err)
+      logger.error('fetchReviews error:', err)
     } finally {
       dispatch(setReviewsLoading(false))
     }
@@ -174,7 +175,7 @@ export const useServices = () => {
             .getPublicUrl(path)
           imageUrls.push(publicUrl)
         } else {
-          console.error('Poster upload error:', uploadError)
+          logger.error('Poster upload error:', uploadError)
         }
       }
     }
@@ -219,7 +220,7 @@ export const useServices = () => {
       const { error: itemsError } = await supabase
         .from('service_listings')
         .insert(itemsToInsert)
-      if (itemsError) console.error('Items insert error:', itemsError)
+      if (itemsError) logger.error('Items insert error:', itemsError)
     }
 
     // Insert plans
@@ -231,7 +232,7 @@ export const useServices = () => {
       const { error: plansError } = await supabase
         .from('service_plans')
         .insert(plansToInsert)
-      if (plansError) console.error('Plans insert error:', plansError)
+      if (plansError) logger.error('Plans insert error:', plansError)
     }
 
     return provider

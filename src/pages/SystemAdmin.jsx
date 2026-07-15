@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase'
 import { Modal } from '../components/ui/Modal'
 import { Button } from '../components/ui/Button'
 import toast from 'react-hot-toast'
+import { logger } from '../utils/logger'
 
 export const SystemAdmin = () => {
   const { user, role, loading, signInWithGoogle, signOut } = useAuth()
@@ -45,7 +46,7 @@ export const SystemAdmin = () => {
         services: sRes.count || 0
       })
     } catch (e) {
-      console.error('Error loading admin stats:', e)
+      logger.error('Error loading admin stats:', e)
     } finally {
       setLoadingStats(false)
     }
@@ -56,7 +57,7 @@ export const SystemAdmin = () => {
       const data = await getAdminPendingServices()
       setProviders(data)
     } catch (e) {
-      console.error('Failed to load pending services', e)
+      logger.error('Failed to load pending services', e)
     } finally {
       setLoadingProviders(false)
     }

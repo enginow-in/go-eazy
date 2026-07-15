@@ -9,6 +9,7 @@ import { PROPERTY_TYPES, CITIES } from '../../utils/constants'
 import { Button } from '../ui/Button'
 import { useAuth } from '../../hooks/useAuth'
 import toast from 'react-hot-toast'
+import { logger } from '../../utils/logger'
 
 const QUIZ_STEPS = [
   {
@@ -100,7 +101,7 @@ export const OnboardingQuiz = () => {
       window.dispatchEvent(new Event('goeazy_recommendations_updated'))
       toast.success('Preferences saved! Here are your matches. 🎯')
     } catch (err) {
-      console.error(err)
+      logger.error(err)
       toast.error('Failed to save preferences. Please try again.')
     } finally {
       setSaving(false)

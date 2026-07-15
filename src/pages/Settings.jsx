@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import { User, Lock, Save, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { logger } from '../utils/logger'
 
 export const Settings = () => {
   const { user, profile } = useAuth()
@@ -43,7 +44,7 @@ export const Settings = () => {
       setProfileMessage({ type: 'success', text: 'Profile updated successfully!' })
       setTimeout(() => setProfileMessage({ type: '', text: '' }), 4000)
     } catch (error) {
-      console.error('Error updating profile:', error.message)
+      logger.error('Error updating profile:', error.message)
       setProfileMessage({ type: 'error', text: 'Failed to update profile. Please try again.' })
     } finally {
       setProfileLoading(false)
@@ -94,7 +95,7 @@ export const Settings = () => {
       setTimeout(() => setSecurityMessage({ type: '', text: '' }), 4000)
       
     } catch (error) {
-      console.error('Error updating password:', error.message)
+      logger.error('Error updating password:', error.message)
       setSecurityMessage({ type: 'error', text: error.message || 'Failed to update password' })
     } finally {
       setSecurityLoading(false)

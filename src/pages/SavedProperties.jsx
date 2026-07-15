@@ -7,6 +7,7 @@ import { PropertyCard } from '../components/property/PropertyCard'
 import { supabase } from '../lib/supabase'
 import { MOCK_PROPERTIES } from '../utils/constants'
 import { Skeleton } from '../components/ui/Skeleton'
+import { logger } from '../utils/logger'
 
 export const SavedProperties = () => {
   const navigate = useNavigate()
@@ -46,7 +47,7 @@ export const SavedProperties = () => {
         setFavProps([])
       }
     } catch (err) {
-      console.error('Error loading saved properties:', err)
+      logger.error('Error loading saved properties:', err)
       setFavProps(MOCK_PROPERTIES.filter(p => favorites.includes(p.id)))
     } finally {
       setLoading(false)
