@@ -1,3 +1,4 @@
+import React from 'react'
 import { cn } from '../../utils/helpers'
 import { Home, Building, Tent, MapPin } from 'lucide-react'
 
@@ -15,7 +16,7 @@ export const Badge = ({ children, variant = 'default', className = '' }) => {
   return (
     <span className={cn(
       'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold',
-      variants[variant], className
+      variants[variant] || variants.default, className
     )}>
       {children}
     </span>
@@ -23,12 +24,22 @@ export const Badge = ({ children, variant = 'default', className = '' }) => {
 }
 
 export const TypeBadge = ({ type, variant: customVariant }) => {
+  // Normalize lookup key to protect against case-sensitivity issues from database values
+  const normalizedType = type ? type.charAt(0).toUpperCase() + type.slice(1).toLowerCase() : ''
+
   const map = {
     Room:   { variant: 'brand',   icon: <Home size={12} /> },
     Flat:   { variant: 'success', icon: <Building size={12} /> },
     Hostel: { variant: 'warning', icon: <Tent size={12} /> },
-    PG:     { variant: 'purple',  icon: <Building size={12} /> },
+    Pg:     { variant: 'purple',  icon: <Building size={12} /> },
   }
-  const { variant = 'default', icon = <MapPin size={12} /> } = map[type] || {}
-  return <Badge variant={customVariant || variant}>{icon} {type}</Badge>
+
+  const { variant = 'default', icon = <MapPin size={12} /> } = map[normalizedType] || {}
+
+  return (
+    <Badge variant={customVariant || variant}>
+      {icon} 
+      <span>{normalizedType || type || 'Property'}</span>
+    </Badge>
+  )
 }
