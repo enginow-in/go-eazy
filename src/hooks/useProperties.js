@@ -14,7 +14,8 @@ const PAGE_SIZE = 12
 
 const PUBLIC_PROPERTY_FIELDS = `
   id, landlord_id, type, title, description, price, city, area, pincode, 
-  amenities, images, availability, views, created_at
+  amenities, images, availability, views, created_at,
+  property_verifications(status, trust_score, checks, scoring_version)
 `
 
 const PUBLIC_PROFILE_FIELDS = 'full_name, avatar_url, bio'
@@ -222,6 +223,8 @@ export const useProperties = () => {
     }
     const { data, error } = await supabase.from('properties').insert({ ...propertyData, landlord_id: user.id, images: imageUrls, views: 0 }).select().maybeSingle()
     if (error) throw error
+    const { error: verificationError } = await supabase.rpc('calculate_property_trust_score', { p_property_id: data.id })
+    if (verificationError) console.warn('Property verification queued failed:', verificationError.message)
     return data
   }
 
@@ -239,6 +242,8 @@ export const useProperties = () => {
     }
     const { data, error } = await supabase.from('properties').update({ ...updates, images: imageUrls }).eq('id', id).eq('landlord_id', user.id).select().maybeSingle()
     if (error) throw error
+    const { error: verificationError } = await supabase.rpc('calculate_property_trust_score', { p_property_id: id })
+    if (verificationError) console.warn('Property verification refresh failed:', verificationError.message)
     return data
   }
 

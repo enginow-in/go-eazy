@@ -1,7 +1,7 @@
 import React, { useState, useMemo, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { Bookmark, Star, Home, Eye } from 'lucide-react'
+import { Bookmark, Star, Home, Eye, ShieldCheck } from 'lucide-react'
 import { openAuthModal } from '../../store/authSlice'
 import { useProperties } from '../../hooks/useProperties'
 import { cn } from '../../utils/helpers'
@@ -19,6 +19,10 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   const isFav = useSelector(s => s.property.favorites.includes(property.id))
   const images = property.images || []
   const mainImage = images[0]
+  const verification = Array.isArray(property.property_verifications)
+    ? property.property_verifications[0]
+    : property.property_verifications
+  const isVerified = verification?.status === 'approved'
 
   const imgLoaded = loadedImageSrc === mainImage
   const imgError = errorImageSrc === mainImage
@@ -64,6 +68,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           />
           {!imgLoaded && <div className="skeleton absolute inset-0" />}
           {imgError && <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-400"><Home size={20} /></div>}
+          {isVerified && <span className="absolute bottom-2 left-2 z-20 inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-1 text-[10px] font-bold text-white"><ShieldCheck size={12} /> Verified</span>}
           {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
           <button
             onClick={handleFav}
@@ -124,6 +129,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         <div className="relative aspect-[4/3] overflow-hidden rounded-b-xl">
           <img src={mainImage} onLoad={() => setLoadedImageSrc(mainImage)} onError={handleImageError} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           {imgError && <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-400"><Home size={20} /></div>}
+          {isVerified && <span className="absolute bottom-2 left-2 z-20 inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-1 text-[10px] font-bold text-white"><ShieldCheck size={12} /> Verified</span>}
           <div className="absolute top-2 right-2 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-lg text-[8px] font-black text-brand-600 uppercase tracking-wider">
              {t(`property.types.${property.type}`) || property.type}
           </div>
@@ -169,6 +175,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         />
         {!imgLoaded && <div className="skeleton absolute inset-0" />}
         {imgError && <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-400"><Home size={20} /></div>}
+        {isVerified && <span className="absolute bottom-2 left-2 z-20 inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-1 text-[10px] font-bold text-white"><ShieldCheck size={12} /> Verified · {verification.trust_score}</span>}
         {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
         <button
           onClick={handleFav}

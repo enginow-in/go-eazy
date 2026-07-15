@@ -21,6 +21,9 @@ export const SystemAdmin = () => {
   const [loadingProviders, setLoadingProviders] = useState(true)
   const [selectedDoc, setSelectedDoc] = useState(null)
   const [showApprovals, setShowApprovals] = useState(false)
+  const [propertyVerifications, setPropertyVerifications] = useState([])
+  const [loadingPropertyVerifications, setLoadingPropertyVerifications] = useState(true)
+  const [showPropertyVerification, setShowPropertyVerification] = useState(false)
 
 
   useEffect(() => {
@@ -28,6 +31,7 @@ export const SystemAdmin = () => {
     if (user && role === 'admin') {
       loadStats()
       loadProviders()
+      loadPropertyVerifications()
     }
   }, [user, role])
 
@@ -59,6 +63,39 @@ export const SystemAdmin = () => {
       console.error('Failed to load pending services', e)
     } finally {
       setLoadingProviders(false)
+    }
+  }
+
+  const loadPropertyVerifications = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('property_verifications')
+        .select('property_id, status, trust_score, checks, scoring_version, created_at, updated_at, properties(id, title, city, area, price, images, landlord_id, profiles!properties_landlord_id_fkey(full_name, email))')
+        .eq('status', 'pending')
+        .order('updated_at', { ascending: true })
+      if (error) throw error
+      setPropertyVerifications(data || [])
+    } catch (error) {
+      console.error('Failed to load property verifications', error)
+    } finally {
+      setLoadingPropertyVerifications(false)
+    }
+  }
+
+  const handlePropertyReview = async (propertyId, status) => {
+    const toastId = toast.loading(`Marking property as ${status}...`)
+    try {
+      const { error } = await supabase.rpc('review_property_verification', {
+        p_property_id: propertyId,
+        p_status: status,
+        p_reviewer_notes: status === 'rejected' ? 'Please review the listing details and resubmit.' : null,
+      })
+      if (error) throw error
+      setPropertyVerifications(prev => prev.filter(item => item.property_id !== propertyId))
+      toast.success(`Property ${status}`, { id: toastId })
+    } catch (error) {
+      console.error('Property review failed', error)
+      toast.error('Failed to update property verification', { id: toastId })
     }
   }
 
@@ -175,7 +212,7 @@ export const SystemAdmin = () => {
       <main className="max-w-6xl mx-auto p-6 lg:p-10 space-y-10">
         
         {/* Welcome & Stats Section (Hidden when managing list) */}
-        {!showApprovals && (
+        {!showApprovals && !showPropertyVerification && (
           <>
             <div>
               <h1 className="text-3xl font-extrabold font-display">System Overview</h1>
@@ -224,6 +261,78 @@ export const SystemAdmin = () => {
             </div>
           </>
         )}
+
+        <div>
+          {!showPropertyVerification ? (
+            <div
+              className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
+              onClick={() => setShowPropertyVerification(true)}
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shrink-0">
+                  <ShieldCheck size={28} />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold font-display text-gray-900">Property Verification</h2>
+                  <p className="text-gray-500 text-sm mt-0.5">
+                    {loadingPropertyVerifications ? 'Loading pending properties...' : `${propertyVerifications.length} properties awaiting review`}
+                  </p>
+                </div>
+              </div>
+              <Button variant="primary" className="shrink-0 bg-gray-900 hover:bg-black group-hover:bg-emerald-600 transition-colors border-none">
+                Open Queue <span className="ml-1 opacity-50 group-hover:opacity-100">→</span>
+              </Button>
+            </div>
+          ) : (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+              <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-4">
+                <h2 className="text-2xl font-bold font-display text-gray-900">Property Verification <span className="text-emerald-600 text-lg ml-2">({propertyVerifications.length})</span></h2>
+                <button onClick={() => setShowPropertyVerification(false)} className="text-sm font-bold text-gray-500 hover:text-gray-900 px-4 py-2 rounded-xl hover:bg-gray-100 flex items-center gap-1.5">
+                  <XCircle size={16} /> Close
+                </button>
+              </div>
+              {loadingPropertyVerifications ? (
+                <div className="h-40 bg-white border border-gray-100 shadow-sm animate-pulse rounded-2xl" />
+              ) : propertyVerifications.length === 0 ? (
+                <div className="bg-white rounded-2xl p-12 text-center border border-dashed border-gray-300">
+                  <ShieldCheck className="mx-auto text-gray-300 mb-3" size={40} />
+                  <p className="text-gray-500 font-medium">All caught up! No properties awaiting verification.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {propertyVerifications.map(item => {
+                    const property = item.properties
+                    const checks = item.checks || {}
+                    return (
+                      <div key={item.property_id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col md:flex-row gap-5">
+                        <div className="w-full md:w-40 h-28 rounded-xl overflow-hidden bg-gray-100 shrink-0">
+                          {property?.images?.[0] ? <img src={property.images[0]} alt="" className="w-full h-full object-cover" /> : <Building className="m-auto mt-10 text-gray-300" size={24} />}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex flex-wrap justify-between gap-2">
+                            <div>
+                              <h3 className="font-bold text-lg text-gray-900">{property?.title || 'Untitled property'}</h3>
+                              <p className="text-sm text-gray-500">{property?.area}, {property?.city} · {property?.profiles?.full_name || 'Unknown owner'}</p>
+                            </div>
+                            <span className="h-fit rounded-full bg-emerald-50 px-3 py-1 text-sm font-bold text-emerald-700">Score {item.trust_score}/100</span>
+                          </div>
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            {Object.entries(checks).map(([key, value]) => <span key={key} className={`rounded-full px-2 py-1 text-[10px] font-bold ${value ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{key.replace('_', ' ')}: {value ? 'pass' : 'review'}</span>)}
+                          </div>
+                          <div className="flex gap-2 mt-4">
+                            <Button onClick={() => handlePropertyReview(item.property_id, 'approved')} className="bg-emerald-600 hover:bg-emerald-700">Approve</Button>
+                            <Button onClick={() => handlePropertyReview(item.property_id, 'rejected')} variant="secondary" className="text-red-600">Reject</Button>
+                            <Button onClick={() => supabase.rpc('calculate_property_trust_score', { p_property_id: item.property_id }).then(loadPropertyVerifications)} variant="secondary">Recheck</Button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* ── APPROVAL WORKFLOW ── */}
         <div>
