@@ -116,6 +116,12 @@ export const ServiceNew = () => {
     if (step === 1 && posterImages.length < 1) { toast.error('Please upload at least 1 service photo'); return false }
     if (step === 2 && !location.city.trim())   { toast.error('City is required'); return false }
     if (step === 2 && !location.area.trim())   { toast.error('Area is required'); return false }
+    if (step === 3 && !serviceItems.some(i => i.service_name.trim() && i.price)) {
+      toast.error('Add at least one service with a price'); return false
+    }
+    if (step === 4 && !plans.some(p => p.plan_name.trim() && p.price)) {
+      toast.error('Add at least one pricing plan'); return false
+    }
     if (step === 6 && !contact.contact_phone.trim()) { toast.error('Phone number is required'); return false }
     return true
   }

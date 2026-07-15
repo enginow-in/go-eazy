@@ -93,7 +93,21 @@ export const LocationViewer = ({ latitude, longitude, title = 'Location', addres
       map.current?.remove()
       map.current = null
     }
-  }, [latitude, longitude, title])
+  }, [latitude, longitude]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const source = map.current?.getSource('location-point')
+    if (!source) return
+
+    source.setData({
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [longitude, latitude] },
+        properties: { title },
+      }],
+    })
+  }, [title, latitude, longitude])
 
   if (!latitude || !longitude) return null
 
