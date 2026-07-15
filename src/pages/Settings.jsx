@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { User, Lock, Save, AlertCircle, CheckCircle2 } from 'lucide-react'
 
 export const Settings = () => {
-  const { user, profile } = useAuth()
+  const { user, profile, updateProfile } = useAuth()
   
   // Profile State
   const [fullName, setFullName] = useState('')
@@ -33,12 +33,7 @@ export const Settings = () => {
     setProfileMessage({ type: '', text: '' })
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ full_name: fullName, phone: phone })
-        .eq('id', user.id)
-
-      if (error) throw error
+      await updateProfile({ full_name: fullName, phone: phone })
 
       setProfileMessage({ type: 'success', text: 'Profile updated successfully!' })
       setTimeout(() => setProfileMessage({ type: '', text: '' }), 4000)
