@@ -236,7 +236,14 @@ export const useServices = () => {
       const { error: itemsError } = await supabase
         .from('service_listings')
         .insert(itemsToInsert)
-      if (itemsError) console.error('Items insert error:', itemsError)
+      if (itemsError) {
+        await supabase
+          .from('service_providers')
+          .delete()
+          .eq('id', provider.id)
+      
+        throw itemsError
+      }
     }
 
     // Insert plans
@@ -248,7 +255,14 @@ export const useServices = () => {
       const { error: plansError } = await supabase
         .from('service_plans')
         .insert(plansToInsert)
-      if (plansError) console.error('Plans insert error:', plansError)
+      if (plansError) {
+        await supabase
+          .from('service_providers')
+          .delete()
+          .eq('id', provider.id)
+      
+        throw plansError
+      }
     }
 
     return provider
