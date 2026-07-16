@@ -10,6 +10,7 @@ import { formatPriceShort, cn } from '../utils/helpers'
 import toast from 'react-hot-toast'
 import { Skeleton } from '../components/ui/Skeleton'
 import { supabase } from '../lib/supabase'
+import { Modal } from '../components/ui/Modal'
 
 export const LandlordDashboard = () => {
   const { user, profile } = useAuth()
@@ -22,6 +23,8 @@ export const LandlordDashboard = () => {
   const [siteVisits, setSiteVisits] = useState([])
   const [loadingVisits, setLoadingVisits] = useState(true)
   const [actioningVisitId, setActioningVisitId] = useState(null)
+  const [deleteTarget, setDeleteTarget] = useState(null) // { id, title }
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -42,16 +45,20 @@ export const LandlordDashboard = () => {
     }
   }
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this listing?')) return
+  const handleDelete = async () => {
+    if (!deleteTarget) return
     const toastId = toast.loading('Deleting property...')
+    setIsDeleting(true)
     try {
-      await deleteProperty(id)
-      setProperties(prev => prev.filter(p => p.id !== id))
+      await deleteProperty(deleteTarget.id)
+      setProperties(prev => prev.filter(p => p.id !== deleteTarget.id))
       toast.success('Property deleted permanently', { id: toastId })
+      setDeleteTarget(null)
     } catch (err) {
       console.error('Delete failed:', err)
       toast.error(err.message || 'Failed to delete property', { id: toastId })
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -281,7 +288,7 @@ export const LandlordDashboard = () => {
                       <Edit size={14} /> Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(p.id)}
+                      onClick={() => setDeleteTarget({ id: p.id, title: p.title })}
                       className="text-red-500 hover:text-red-700 transition-colors flex items-center gap-1.5 text-xs font-bold"
                     >
                       <Trash2 size={14} /> Delete
@@ -359,7 +366,7 @@ export const LandlordDashboard = () => {
                         <Edit size={16} /> <span className="hidden sm:inline">Edit</span>
                       </button>
                       <button
-                        onClick={(e) => { e.stopPropagation(); handleDelete(p.id) }}
+                        onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: p.id, title: p.title }) }}
                         className="text-red-500 hover:text-red-700 transition-colors"
                         title="Delete"
                       >
@@ -376,6 +383,40 @@ export const LandlordDashboard = () => {
         {/* View All CTA below cards when in preview mode */}
 
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        open={!!deleteTarget}
+        onClose={() => { if (!isDeleting) setDeleteTarget(null) }}
+        title="Delete Listing"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600 text-sm leading-relaxed">
+            Are you sure you want to permanently delete{' '}
+            <span className="font-semibold text-gray-900">"{deleteTarget?.title}"</span>?
+            This action cannot be undone.
+          </p>
+          <div className="flex gap-3 pt-2">
+            <Button
+              variant="secondary"
+              className="flex-1"
+              onClick={() => setDeleteTarget(null)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              className="flex-1"
+              onClick={handleDelete}
+              loading={isDeleting}
+            >
+              Delete
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }
