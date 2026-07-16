@@ -19,6 +19,7 @@ const PUBLIC_PROPERTY_FIELDS = `
 
 const PUBLIC_PROFILE_FIELDS = 'full_name, avatar_url, bio'
 
+
 export const useProperties = () => {
   const dispatch = useDispatch()
   const { 
@@ -212,6 +213,7 @@ export const useProperties = () => {
 
   const createProperty = async (propertyData, images) => {
     const imageUrls = []
+    const uploadedPaths = []
     for (const img of images) {
       const ext = img.name.split('.').pop()
       const path = `properties/${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`
@@ -219,10 +221,30 @@ export const useProperties = () => {
       if (uploadError) throw new Error(`Image upload failed: ${uploadError.message}`)
       const { data: { publicUrl } } = supabase.storage.from('property-images').getPublicUrl(path)
       imageUrls.push(publicUrl)
+      uploadedPaths.push(path)
     }
-    const { data, error } = await supabase.from('properties').insert({ ...propertyData, landlord_id: user.id, images: imageUrls, views: 0 }).select().maybeSingle()
-    if (error) throw error
-    return data
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .insert({
+          ...propertyData,
+          landlord_id: user.id,
+          images: imageUrls,
+          views: 0,
+        })
+        .select()
+        .maybeSingle()
+    
+      if (error) throw error
+    
+      return data
+    }catch (error) {
+      await supabase.storage
+        .from('property-images')
+        .remove(uploadedPaths)
+    
+      throw error
+    }    
   }
 
   const updateProperty = async (id, updates, newImages) => {
