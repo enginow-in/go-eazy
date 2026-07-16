@@ -36,6 +36,8 @@ export const Layout = ({ children }) => {
           {children}
         </motion.main>
       </AnimatePresence>
+      {/* Footer is intentionally shown only on /search — it is the app's main landing page.
+          Detail pages, dashboards, and the admin panel are full-screen and don't need a footer. */}
       {location.pathname === '/search' && <Footer />}
       <AuthModal />
     </>
