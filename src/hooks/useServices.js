@@ -157,6 +157,23 @@ export const useServices = () => {
 
   // ── Create Service Provider Listing ────────────────────────────────
   const createService = async (providerData, serviceItems, plans, documentFiles, posterImages) => {
+     const validItems = serviceItems.filter(
+      item =>
+        item.service_name.trim() &&
+        item.price &&
+        Number(item.price) > 0
+    )
+
+    const validPlans = plans.filter(
+      plan =>
+        plan.plan_name.trim() &&
+        plan.price &&
+        Number(plan.price) > 0
+    )
+
+  if (validItems.length === 0) {
+    throw new Error("Please add at least one service.")
+  }
     if (!user) throw new Error('Not authenticated')
 
     // 1. Upload Poster Images
@@ -211,31 +228,47 @@ export const useServices = () => {
     if (providerError) throw providerError
 
     // Insert service items (price rows)
-    if (serviceItems?.length) {
-      const itemsToInsert = serviceItems.map(item => ({
+    if (validItems?.length) {
+      const itemsToInsert = validItems.map(item => ({
         ...item,
         service_provider_id: provider.id,
       }))
       const { error: itemsError } = await supabase
         .from('service_listings')
         .insert(itemsToInsert)
-      if (itemsError) console.error('Items insert error:', itemsError)
+      if (itemsError) {
+        await supabase
+          .from('service_providers')
+          .delete()
+          .eq('id', provider.id)
+      
+        throw itemsError
+      }
     }
 
     // Insert plans
-    if (plans?.length) {
-      const plansToInsert = plans.map(plan => ({
+    if (validPlans?.length) {
+      const plansToInsert = validPlans.map(plan => ({
         ...plan,
         service_provider_id: provider.id,
       }))
       const { error: plansError } = await supabase
         .from('service_plans')
         .insert(plansToInsert)
-      if (plansError) console.error('Plans insert error:', plansError)
+      if (plansError) {
+        await supabase
+          .from('service_providers')
+          .delete()
+          .eq('id', provider.id)
+      
+        throw plansError
+      }
     }
 
     return provider
   }
+
+
 
   // ── Update Service Listing ──────────────────────────────────────────
   const updateService = async (id, updates) => {
