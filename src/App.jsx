@@ -1,6 +1,6 @@
 // GoEazy App - Vercel Build Refresh
 import React, { Suspense, lazy } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Layout } from './components/layout/Layout'
 import { Home } from './pages/Home'
 import { Search } from './pages/Search'
@@ -61,7 +61,7 @@ function App() {
       <Layout>
         <Suspense fallback={<PageSpinner />}>
           <Routes>
-          <Route path="/" element={<Navigate to="/search" replace />} />
+          <Route path="/" element={<Home />} />
           <Route path="/search" element={<Search />} />
           <Route path="/property/:id" element={<PropertyDetail />} />
           
