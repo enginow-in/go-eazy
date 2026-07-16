@@ -254,7 +254,7 @@ export const useProperties = () => {
       const { data, error } = await supabase.from('favorites').select('property_id').eq('user_id', user.id)
       if (error) throw error
       dispatch(setFavorites(data?.map(f => f.property_id) || []))
-    } catch { /* silent */ }
+    } catch { /* Silently ignore — favorites are non-critical; UI degrades gracefully without them */ }
   }, [user, dispatch])
 
   const toggleFavorite = async (propertyId) => {
@@ -268,6 +268,8 @@ export const useProperties = () => {
         await supabase.from('favorites').insert({ user_id: user.id, property_id: propertyId })
       }
     } catch (err) {
+      // Network/DB failure — revert the optimistic toggle to keep UI consistent
+      console.error('toggleFavorite error, reverting:', err)
       dispatch(toggleFav(propertyId))
     }
   }
@@ -278,7 +280,7 @@ export const useProperties = () => {
       const seventyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString()
       const { data } = await supabase.from('recently_viewed').select('property_id').eq('user_id', user.id).gte('viewed_at', seventyTwoHoursAgo).order('viewed_at', { ascending: false }).limit(20)
       dispatch(setRecentlyViewed(data?.map(r => r.property_id) || []))
-    } catch {}
+    } catch { /* Silently ignore — recently viewed list is non-critical; app works without it */ }
   }, [user, dispatch])
 
   const getLandlordProperties = async () => {
