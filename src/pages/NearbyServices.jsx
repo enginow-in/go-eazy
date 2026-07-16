@@ -47,13 +47,16 @@ export const NearbyServices = () => {
     { value: 'views:desc',       label: t('nearby.sort.popular') },
   ], [t])
 
-  // Read ?category= from URL
+  // Read ?category= from URL and clear it when the param is removed
   useEffect(() => {
     const cat = searchParams.get('category')
-    if (cat && ['tiffin', 'laundry', 'cleaning'].includes(cat) && filters.category !== cat) {
-      updateFilters({ category: cat })
+    if (cat && ['tiffin', 'laundry', 'cleaning'].includes(cat)) {
+      if (filters.category !== cat) updateFilters({ category: cat })
+    } else {
+      // Param was removed — clear the category filter so results reset
+      if (filters.category) updateFilters({ category: '' })
     }
-  }, [searchParams])
+  }, [searchParams, filters.category, updateFilters])
 
   // Fetch whenever filters change
   useEffect(() => {
