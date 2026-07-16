@@ -3,6 +3,7 @@ import { Home as HomeIcon, Building, Tent } from 'lucide-react'
 import { Hero } from '../components/home/Hero'
 import { HeroCarousel } from '../components/home/HeroCarousel'
 import { FeaturedSection, PropertySection } from '../components/home/PropertySection'
+import { RecentlyViewedProperties } from '../components/property/RecentlyViewedProperties'
 
 export const Home = () => {
   return (
@@ -16,6 +17,7 @@ export const Home = () => {
         <PropertySection title="Premium Rooms" type="Room" icon={<HomeIcon className="text-brand-500" />} />
         <PropertySection title="Spacious Flats" type="Flat" icon={<Building className="text-brand-500" />} />
         <PropertySection title="Affordable PGs" type="PG" icon={<Tent className="text-brand-500" />} />
+        <RecentlyViewedProperties />
       </div>
     </div>
   )

@@ -120,9 +120,11 @@ export const useProperties = () => {
       if (error) throw error
       dispatch(setCurrentProperty(data))
       
-      if (user && data) {
+      if (data) {
         dispatch(addRecentlyViewed(id))
-        await supabase.from('recently_viewed').upsert({ user_id: user.id, property_id: id, viewed_at: new Date().toISOString() })
+        if (user) {
+          await supabase.from('recently_viewed').upsert({ user_id: user.id, property_id: id, viewed_at: new Date().toISOString() })
+        }
       }
     } catch (err) {
       console.error('Error fetching property:', err)
@@ -325,6 +327,21 @@ export const useProperties = () => {
     return filtered.sort(() => 0.5 - Math.random()).slice(0, 8)
   }, [listings, profile])
 
+  const fetchPropertiesByIds = useCallback(async (ids) => {
+    if (!ids || ids.length === 0) return []
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .select(`${PUBLIC_PROPERTY_FIELDS}`)
+        .in('id', ids)
+      if (error) throw error
+      return ids.map(id => data?.find(p => p.id === id)).filter(Boolean)
+    } catch (err) {
+      console.error('Error fetching properties by ids:', err)
+      return MOCK_PROPERTIES.filter(p => ids.includes(p.id))
+    }
+  }, [])
+
   return {
     listings, featured, currentProperty, favorites, recentlyViewed, filters,
     loading, hasMore, page, totalCount,
@@ -336,6 +353,7 @@ export const useProperties = () => {
     getRecommendedProperties,
     fetchGatedData,
     reviews, reviewsLoading,
-    fetchReviews, submitReview, deleteReview
+    fetchReviews, submitReview, deleteReview,
+    fetchPropertiesByIds
   }
 }
