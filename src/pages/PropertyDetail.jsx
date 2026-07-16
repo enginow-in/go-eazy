@@ -1,9 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { 
-  MapPin, Heart, Share2, Phone, Mail, ArrowLeft, 
-  CheckCircle2, ChevronDown, ChevronUp, Lock, EyeOff, X, 
-  Star, Trash2, Sparkles, Calendar 
+import {
+  MapPin, Heart, Share2, Phone, Mail, ArrowLeft, CheckCircle2, ChevronDown, ChevronUp, Lock, EyeOff, X, Star, Trash2, Sparkles, Calendar, Bot
 } from 'lucide-react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay, Pagination, Navigation } from 'swiper/modules'
@@ -21,6 +19,7 @@ import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { Skeleton } from '../components/ui/Skeleton'
 import { LocationViewer } from '../components/map/LocationViewer'
+import { Loader2 } from "lucide-react";
 
 const StarRating = ({ value, onChange, readonly = false }) => (
   <div className="flex gap-1">
@@ -70,7 +69,12 @@ export const PropertyDetail = () => {
   const [unlocking, setUnlocking] = useState(false)
   const [isGalleryOpen, setIsGalleryOpen] = useState(false)
   const [initialSlideIndex, setInitialSlideIndex] = useState(0)
-  
+  const [showAIInsights, setShowAIInsights] = useState(false)
+  const [aiQuestion, setAiQuestion] = useState('')
+  const [aiResponse, setAiResponse] = useState('')
+  const [loadingAI, setLoadingAI] = useState(false)
+  const [feedback, setFeedback] = useState(null)
+
   // State for gallery navigation elements
   const [galleryPrevEl, setGalleryPrevEl] = useState(null)
   const [galleryNextEl, setGalleryNextEl] = useState(null)
@@ -165,6 +169,58 @@ export const PropertyDetail = () => {
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href)
     toast.success(t('property.sections.linkCopied'))
+  }
+
+  const handleAskAI = async () => {
+    if (!aiQuestion.trim()) {
+      toast.error("Please enter a question")
+      return
+    }
+
+    setLoadingAI(true)
+    setAiResponse("")
+    setFeedback(null)
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-property-insights`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token || ""}`,
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            property: {
+              title: p.title,
+              price: p.price,
+              city: p.city,
+              area: p.area,
+              type: p.type,
+              description: p.description,
+              amenities: p.amenities,
+            },
+            question: aiQuestion,
+          }),
+        }
+      )
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to get AI response")
+      }
+
+      setAiResponse(result.answer)
+    } catch (error) {
+      console.error(error)
+      toast.error(error.message)
+    } finally {
+      setLoadingAI(false)
+    }
   }
 
   const submitSiteVisit = async () => {
@@ -447,6 +503,148 @@ export const PropertyDetail = () => {
               )}
             </div>
 
+            {/* AI Property Insights */}
+            <div className="bg-white rounded-lg sm:rounded-xl p-6 sm:p-8 shadow-[0_2px_12px_rgb(0,0,0,0.03)] border border-gray-100/50">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                    <Bot size={24} className="text-white" />
+                  </div>
+
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      AI Property Insights
+                    </h2>
+
+                    <p className="text-sm text-gray-500">
+                      Get AI-powered insights about this property.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setShowAIInsights(!showAIInsights)}
+                  className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-5 py-3 rounded-xl font-semibold hover:scale-105 transition"
+                >
+                  <Sparkles size={18} />
+                  Ask AI
+                </button>
+
+              </div>
+
+              {showAIInsights && (
+                <div className="space-y-5">
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Ask AI about this property
+                    </label>
+
+                    <textarea
+                      rows={3}
+                      value={aiQuestion}
+                      onChange={(e) => setAiQuestion(e.target.value)}
+                      placeholder="Example: Is this property suitable for a family of four?"
+                      className="w-full rounded-xl border border-gray-300 p-4 focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      "Summarize this property",
+                      "Is this good for a family?",
+                      "Pros and Cons",
+                      "Is this a good investment?",
+                      "Nearby advantages"
+                    ].map((question) => (
+                      <button
+                        key={question}
+                        onClick={() => setAiQuestion(question)}
+                        className="px-4 py-2 rounded-full border border-gray-200 hover:bg-gray-100 transition"
+                      >
+                        {question}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={handleAskAI}
+                    disabled={loadingAI}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 disabled:opacity-60"
+                  >
+                    {loadingAI ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="animate-spin" size={18} />
+                        <span>Generating...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <Sparkles size={18} />
+                        Generate AI Answer
+                      </>
+                    )}
+                  </button>
+
+                  {aiResponse && (
+                    <div className="rounded-xl bg-gray-50 border border-gray-200 p-5 space-y-5">
+
+                      <div>
+                        <h3 className="font-bold text-lg mb-2 flex items-center gap-2">
+                          ✨ AI Response
+                        </h3>
+
+                        <p className="text-gray-700 whitespace-pre-line leading-7">
+                          {aiResponse}
+                        </p>
+                      </div>
+
+                      <div className="border-t pt-4 flex items-center justify-between flex-wrap gap-4">
+
+                        <p className="text-sm text-gray-600">
+                          Was this answer helpful?
+                        </p>
+
+                        <div className="flex gap-3">
+
+                          <button
+                            onClick={() => {
+                              setFeedback("yes")
+                              toast.success("Thanks for your feedback!")
+                            }}
+                            className={`px-4 py-2 rounded-lg transition ${
+                              feedback === "yes"
+                                ? "bg-green-600 text-white"
+                                : "bg-white border hover:bg-green-50"
+                            }`}
+                          >
+                            👍 Yes
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setFeedback("no")
+                              toast.success("Thanks! We'll use your feedback to improve.")
+                            }}
+                            className={`px-4 py-2 rounded-lg transition ${
+                              feedback === "no"
+                                ? "bg-red-600 text-white"
+                                : "bg-white border hover:bg-red-50"
+                            }`}
+                          >
+                            👎 No
+                          </button>
+
+                        </div>
+
+                      </div>
+
+                    </div>
+                  )}
+
+                </div>
+              )}
+            </div>
             {/* Location on Map */}
             {gatedData?.latitude && gatedData?.longitude ? (
               <LocationViewer
