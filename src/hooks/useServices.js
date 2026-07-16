@@ -137,7 +137,12 @@ export const useServices = () => {
       .select('*, profiles!service_reviews_reviewer_id_fkey(full_name, avatar_url)')
       .maybeSingle()
 
-    if (error) throw error
+    if (error) {
+      if (error.code === '42501' || error.message?.toLowerCase().includes('row-level security')) {
+        throw new Error("Unlock this provider's contact details before leaving a review")
+      }
+      throw error
+    }
     dispatch(addReview(data))
     return data
   }
