@@ -13,6 +13,7 @@ import { AMENITY_ICONS, cn } from '../utils/helpers'
 import { Skeleton } from '../components/ui/Skeleton'
 import { useAuth } from '../hooks/useAuth'
 import { RecommendedSection } from '../components/property/RecommendedSection'
+import { RecentlyViewedProperties } from '../components/property/RecentlyViewedProperties'
 
 export const Search = () => {
   const { t } = useTranslation()
@@ -316,6 +317,9 @@ export const Search = () => {
             </Button>
           </div>
         )}
+        <div className="mt-16 border-t border-gray-100 pt-12">
+          <RecentlyViewedProperties />
+        </div>
       </div>
     </div>
   )
