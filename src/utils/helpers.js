@@ -1,4 +1,3 @@
-import React from 'react'
 import { Wifi, Snowflake, Utensils, Box, WashingMachine, Dumbbell, ShieldCheck, Video, Zap, Droplets } from 'lucide-react'
 
 export const formatPrice = (price) => {
