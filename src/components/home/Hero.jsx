@@ -1,22 +1,34 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { Search, TrendingUp, Shield, Star } from 'lucide-react'
 import { setFilters } from '../../store/propertySlice'
 import { Button } from '../ui/Button'
 import { CITIES } from '../../utils/constants'
 import { useTranslation } from 'react-i18next'
+import { cn } from '../../utils/helpers'
 
 export const Hero = () => {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const [searchVal, setSearchVal] = React.useState('')
+  
+  // Safely inherit existing global filter metrics to prevent payload drops
+  const currentFilters = useSelector((state) => state.properties?.filters || {})
+
+  const triggerSearchPipeline = (cityName) => {
+    dispatch(setFilters({
+      ...currentFilters,
+      city: cityName
+    }))
+    navigate('/search')
+  }
 
   const handleSearch = (e) => {
     e.preventDefault()
-    dispatch(setFilters({ city: searchVal }))
-    navigate('/search')
+    if (!searchVal.trim()) return
+    triggerSearchPipeline(searchVal.trim())
   }
 
   const stats = [
@@ -29,14 +41,14 @@ export const Hero = () => {
     <section className="hero-gradient pt-32 pb-12">
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 text-center">
         {/* Badge */}
-        <div className="inline-flex items-center gap-2 bg-brand-100 text-brand-700 rounded-full px-4 py-1.5 text-sm font-semibold mb-6 animate-fadeInUp">
-          <span className="w-2 h-2 bg-brand-500 rounded-full animate-pulse" />
+        <div className="inline-flex items-center gap-2 bg-red-50 text-[#CA3433] rounded-full px-4 py-1.5 text-sm font-semibold mb-6 animate-fadeInUp border border-red-100">
+          <span className="w-2 h-2 bg-[#CA3433] rounded-full animate-pulse" />
           {t('hero.trusted')}
         </div>
 
         {/* Logo / Heading */}
         <h1 className="font-display font-bold text-5xl md:text-7xl text-gray-900 mb-4 animate-fadeInUp" style={{ animationDelay: '100ms' }}>
-          {t('hero.titlePrefix')}<span className="text-brand-500">{t('hero.titleSuffix')}</span>
+          {t('hero.titlePrefix')}<span className="text-[#CA3433]">{t('hero.titleSuffix')}</span>
         </h1>
         <p className="text-xl md:text-2xl text-gray-500 font-light mb-3 animate-fadeInUp" style={{ animationDelay: '150ms' }}>
           {t('hero.subtitle')}
@@ -56,7 +68,7 @@ export const Hero = () => {
               id="hero-search"
               name="hero-search"
               placeholder={t('hero.searchPlaceholder')}
-              className="w-full pl-11 pr-4 py-4 rounded-xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-100 text-gray-900 text-sm transition-all"
+              className="w-full pl-11 pr-4 py-4 rounded-xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:border-[#CA3433] focus:ring-4 focus:ring-[#CA3433]/10 text-gray-900 text-sm transition-all"
             />
           </div>
           <Button type="submit" variant="primary" size="lg" className="px-7 rounded-xl shadow-md">
@@ -69,8 +81,8 @@ export const Hero = () => {
           {CITIES.slice(0, 8).map(city => (
             <button
               key={city.name}
-              onClick={() => { dispatch(setFilters({ city: city.name })); navigate('/search') }}
-              className="flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-200 rounded-full text-sm font-medium text-gray-600 hover:border-brand-400 hover:text-brand-700 hover:bg-brand-50 transition-all shadow-sm hover:shadow-md"
+              onClick={() => triggerSearchPipeline(city.name)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-200 rounded-full text-sm font-medium text-gray-600 hover:border-red-200 hover:text-[#CA3433] hover:bg-red-50/30 transition-all shadow-sm hover:shadow-md outline-none focus-visible:ring-2 focus-visible:ring-[#CA3433]/20"
             >
               {city.name}
             </button>
@@ -81,8 +93,8 @@ export const Hero = () => {
         <div className="flex flex-wrap justify-center gap-8 animate-fadeInUp" style={{ animationDelay: '350ms' }}>
           {stats.map((stat) => (
             <div key={stat.label} className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center">
-                <stat.icon size={18} className="text-brand-500" />
+              <div className="w-10 h-10 rounded-xl bg-red-50/50 flex items-center justify-center border border-red-50">
+                <stat.icon size={18} className="text-[#CA3433]" />
               </div>
               <div className="text-left">
                 <div className="font-bold text-lg text-gray-900">{stat.value}</div>
