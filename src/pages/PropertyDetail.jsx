@@ -21,6 +21,7 @@ import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { Skeleton } from '../components/ui/Skeleton'
 import { LocationViewer } from '../components/map/LocationViewer'
+import { VirtualTourViewer } from '../components/property/VirtualTourViewer'
 
 const StarRating = ({ value, onChange, readonly = false }) => (
   <div className="flex gap-1">
@@ -308,6 +309,7 @@ export const PropertyDetail = () => {
   }
 
   const images = p.images || []
+  const panoramaUrls = p.panorama_urls || []
   const otherImages = images.slice(1, 5)
 
   const renderSlider = (prefix) => (
@@ -425,6 +427,13 @@ export const PropertyDetail = () => {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {panoramaUrls.length > 0 && (
+              <div className="bg-white rounded-lg sm:rounded-xl p-6 sm:p-8 shadow-[0_2px_12px_rgb(0,0,0,0.03)] border border-gray-100/50">
+                <div className="mb-5"><h2 className="text-2xl font-bold text-gray-900 tracking-tight font-display">Virtual tour</h2><p className="mt-1 text-sm text-gray-500">Drag to look around this property in 360°.</p></div>
+                <VirtualTourViewer panorama={panoramaUrls[0]} />
               </div>
             )}
 

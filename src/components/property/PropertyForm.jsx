@@ -95,6 +95,8 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   const [step, setStep] = useState(1)
   const [images, setImages] = useState([])
   const [previewUrls, setPreviewUrls] = useState(initialData?.images || [])
+  const [panoramaFiles, setPanoramaFiles] = useState([])
+  const [panoramaPreviews, setPanoramaPreviews] = useState(initialData?.panorama_urls || [])
 
   const [form, setForm] = useState({
     title:             initialData?.title || '',
@@ -113,6 +115,7 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
     latitude:          initialData?.latitude || null,
     longitude:         initialData?.longitude || null,
     map_address:       initialData?.map_address || '',
+    panorama_urls:     initialData?.panorama_urls || [],
   })
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }))
@@ -129,6 +132,40 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
     }
     setImages(prev => [...prev, ...files])
     setPreviewUrls(prev => [...prev, ...files.map(f => URL.createObjectURL(f))])
+  }
+
+  const handlePanoramaChange = (e) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length + panoramaPreviews.length > 2) { toast.error('Maximum 2 panorama images allowed'); return }
+    for (const file of files) {
+      if (file.size > 20 * 1024 * 1024) { toast.error(`Panorama ${file.name} exceeds 20MB limit`); return }
+    }
+    setPanoramaFiles(prev => [...prev, ...files])
+    setPanoramaPreviews(prev => [...prev, ...files.map(file => URL.createObjectURL(file))])
+  }
+
+  const removePanorama = (index) => {
+    setPanoramaPreviews(prev => {
+      const removed = prev[index]
+      if (removed?.startsWith('blob:')) URL.revokeObjectURL(removed)
+      return prev.filter((_, i) => i !== index)
+    })
+    if (index >= (initialData?.panorama_urls?.length || 0)) {
+      setPanoramaFiles(prev => prev.filter((_, i) => i !== index - (initialData?.panorama_urls?.length || 0)))
+    }
+  }
+
+  const uploadPanoramas = async (session) => {
+    const uploadedUrls = panoramaPreviews.filter(url => !url.startsWith('blob:'))
+    for (const file of panoramaFiles) {
+      const ext = file.name.split('.').pop()
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 11)}.${ext}`
+      const { data, error } = await supabase.storage.from('property-images').upload(`${session.user.id}/panoramas/${fileName}`, file, { upsert: false })
+      if (error) throw new Error('Panorama upload failed: ' + error.message)
+      const { data: { publicUrl } } = supabase.storage.from('property-images').getPublicUrl(data.path)
+      uploadedUrls.push(publicUrl)
+    }
+    return uploadedUrls
   }
 
   const removeImage = (index) => {
@@ -168,7 +205,10 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
     if (!validateForm()) return
     setLoading(true)
     try {
-      await updateProperty(initialData.id, { ...form, images: previewUrls.filter(u => !u.startsWith('blob:')) }, images)
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Your session expired. Please sign in again.')
+      const panoramaUrls = await uploadPanoramas(session)
+      await updateProperty(initialData.id, { ...form, images: previewUrls.filter(u => !u.startsWith('blob:')), panorama_urls: panoramaUrls }, images)
       toast.success('Property updated successfully!')
       navigate('/landlord')
     } catch (err) {
@@ -195,6 +235,7 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
         const { data: { publicUrl } } = supabase.storage.from('property-images').getPublicUrl(uploadData.path)
         uploadedUrls.push(publicUrl)
       }
+      const panoramaUrls = await uploadPanoramas(session)
 
       const loadRazorpay = () => new Promise(resolve => {
         if (window.Razorpay) return resolve(true)
@@ -228,7 +269,7 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
             const verifyResp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-listing-payment`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s2?.access_token}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
-              body: JSON.stringify({ ...response, property_data: { ...form, images: uploadedUrls } })
+              body: JSON.stringify({ ...response, property_data: { ...form, images: uploadedUrls, panorama_urls: panoramaUrls } })
             })
             if (!verifyResp.ok) { const e = await verifyResp.json().catch(() => ({})); throw new Error(e.error || 'Payment verification failed') }
             setShowSuccess(true)
@@ -381,6 +422,19 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
                 <input id="property-images" type="file" multiple accept="image/*" className="hidden" onChange={handleImageChange} />
               </label>
             )}
+          </div>
+
+          <div className="rounded-2xl border border-indigo-100 bg-indigo-50/50 p-5">
+            <div className="mb-3 flex items-start justify-between gap-4">
+              <div>
+                <h4 className="font-bold text-gray-900">360° virtual tour (optional)</h4>
+                <p className="text-xs text-gray-500">Upload up to two equirectangular panorama images (20MB each).</p>
+              </div>
+              {panoramaPreviews.length < 2 && <label className="cursor-pointer rounded-xl bg-white px-3 py-2 text-xs font-bold text-indigo-700 shadow-sm hover:bg-indigo-50">
+                Add panorama<input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handlePanoramaChange} />
+              </label>}
+            </div>
+            {panoramaPreviews.length > 0 && <div className="grid grid-cols-2 gap-3">{panoramaPreviews.map((url, index) => <div key={url} className="relative overflow-hidden rounded-xl"><img src={url} alt={`Panorama ${index + 1}`} className="h-24 w-full object-cover" /><button type="button" onClick={() => removePanorama(index)} className="absolute right-1 top-1 rounded-full bg-black/70 px-2 py-1 text-xs text-white">Remove</button></div>)}</div>}
           </div>
 
           {/* Availability toggle */}
