@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Sparkles } from 'lucide-react'
 import { useProperties } from '../../hooks/useProperties'
 import { useAuth } from '../../hooks/useAuth'
@@ -9,6 +9,26 @@ export const RecommendedSection = ({ viewMode = 'grid' }) => {
   const { getRecommendedProperties, loading } = useProperties()
   const { profile } = useAuth()
   const onboardingData = profile?.onboarding_data
+  const [recommendationVersion, setRecommendationVersion] = useState(0)
+  const [dismissed, setDismissed] = useState(false)
+
+  useEffect(() => {
+    const handleReset = () => {
+      setDismissed(true)
+      setRecommendationVersion(version => version + 1)
+    }
+    const handleUpdated = () => {
+      setDismissed(false)
+      setRecommendationVersion(version => version + 1)
+    }
+
+    window.addEventListener('goeazy_quiz_reset', handleReset)
+    window.addEventListener('goeazy_recommendations_updated', handleUpdated)
+    return () => {
+      window.removeEventListener('goeazy_quiz_reset', handleReset)
+      window.removeEventListener('goeazy_recommendations_updated', handleUpdated)
+    }
+  }, [])
 
   // getRecommendedProperties() randomizes its sort order on every call, so it
   // must only be invoked when its actual inputs (listings/profile) change —
@@ -16,8 +36,11 @@ export const RecommendedSection = ({ viewMode = 'grid' }) => {
   // us that for free, since getRecommendedProperties is itself memoized on
   // [listings, profile]. No effect or ref is needed to "lock" the result.
   const recommendations = useMemo(
-    () => (loading ? [] : getRecommendedProperties()),
-    [loading, getRecommendedProperties]
+    () => {
+      void recommendationVersion
+      return loading ? [] : getRecommendedProperties()
+    },
+    [loading, getRecommendedProperties, recommendationVersion]
   )
 
   // Hide immediately when the user resets, without waiting for a new quiz
@@ -25,7 +48,6 @@ export const RecommendedSection = ({ viewMode = 'grid' }) => {
   // for adjusting state during render in response to a prop change, rather
   // than doing it in an effect: https://react.dev/learn/you-might-not-need-an-effect
   const [prevOnboardingData, setPrevOnboardingData] = useState(onboardingData)
-  const [dismissed, setDismissed] = useState(false)
   if (prevOnboardingData !== onboardingData) {
     setPrevOnboardingData(onboardingData)
     setDismissed(false)
