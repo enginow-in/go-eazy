@@ -36,6 +36,45 @@ async function verifySignature(orderId: string, paymentId: string, signature: st
   return timingSafeEqual(hashHex, signature)
 }
 
+const ALLOWED_PROPERTY_TYPES = ['Room', 'Flat', 'Hostel', 'PG']
+
+function validatePropertyData(data: unknown): { valid: boolean; error?: string; clean?: Record<string, unknown> } {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return { valid: false, error: 'Invalid property data' }
+
+  const input = data as Record<string, unknown>
+  const text = (value: unknown, max: number) => typeof value === 'string' ? value.trim().slice(0, max) : null
+  const title = text(input.title, 200)
+  const city = text(input.city, 100)
+  const area = text(input.area, 100)
+  const type = text(input.type, 30)
+  const price = Number(input.price)
+
+  if (!title) return { valid: false, error: 'Title is required' }
+  if (!city) return { valid: false, error: 'City is required' }
+  if (!area) return { valid: false, error: 'Area is required' }
+  if (!type || !ALLOWED_PROPERTY_TYPES.includes(type)) return { valid: false, error: 'Invalid property type' }
+  if (!Number.isFinite(price) || price <= 0 || price > 10_000_000) return { valid: false, error: 'Invalid price' }
+
+  const arrayOfStrings = (value: unknown, max: number) => Array.isArray(value)
+    ? value.filter(item => typeof item === 'string').map(item => item.trim()).filter(Boolean).slice(0, max)
+    : []
+
+  return {
+    valid: true,
+    clean: {
+      title, description: text(input.description, 5000), price, city, area,
+      pincode: text(input.pincode, 10), type,
+      amenities: arrayOfStrings(input.amenities, 30), images: arrayOfStrings(input.images, 10),
+      nearby_landmarks: text(input.nearby_landmarks, 500),
+      contact_phone: text(input.contact_phone, 20), contact_email: text(input.contact_email, 200),
+      exact_location: text(input.exact_location, 500),
+      latitude: typeof input.latitude === 'number' ? input.latitude : null,
+      longitude: typeof input.longitude === 'number' ? input.longitude : null,
+      map_address: text(input.map_address, 500), availability: input.availability !== false,
+    },
+  }
+}
+
 serve(async (req: Request) => {
   const corsHeaders = getCorsHeaders(req)
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
@@ -119,10 +158,17 @@ serve(async (req: Request) => {
     }
 
     // 4. All checks pass — create the property using the same admin client
+    const validation = validatePropertyData(property_data)
+    if (!validation.valid) {
+      return new Response(JSON.stringify({ error: validation.error }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400,
+      })
+    }
+
     const { data: property, error: insertError } = await supabaseAdmin
       .from('properties')
       .insert({
-        ...property_data,
+        ...validation.clean,
         landlord_id: user.id,
       })
       .select()
