@@ -1,30 +1,62 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Sparkles } from 'lucide-react'
 import { useProperties } from '../../hooks/useProperties'
+import { useAuth } from '../../hooks/useAuth'
 import { PropertyCard } from './PropertyCard'
 import { cn } from '../../utils/helpers'
 
 export const RecommendedSection = ({ viewMode = 'grid' }) => {
   const { getRecommendedProperties, loading } = useProperties()
-  const [recommendations, setRecommendations] = useState([])
-  const isLocked = useRef(false)
+  const { profile } = useAuth()
+  const onboardingData = profile?.onboarding_data
+  const [recommendationVersion, setRecommendationVersion] = useState(0)
+  const [dismissed, setDismissed] = useState(false)
 
-  // Lock recommendations once — prevents re-shuffle flicker on every re-render
   useEffect(() => {
-    if (!loading && !isLocked.current) {
-      const recs = getRecommendedProperties()
-      if (recs.length > 0) {
-        setRecommendations(recs)
-        isLocked.current = true
-      }
+    const handleReset = () => {
+      setDismissed(true)
+      setRecommendationVersion(version => version + 1)
     }
-  }, [loading, getRecommendedProperties])
+    const handleUpdated = () => {
+      setDismissed(false)
+      setRecommendationVersion(version => version + 1)
+    }
 
-  if (!recommendations.length) return null
+    window.addEventListener('goeazy_quiz_reset', handleReset)
+    window.addEventListener('goeazy_recommendations_updated', handleUpdated)
+    return () => {
+      window.removeEventListener('goeazy_quiz_reset', handleReset)
+      window.removeEventListener('goeazy_recommendations_updated', handleUpdated)
+    }
+  }, [])
+
+  // getRecommendedProperties() randomizes its sort order on every call, so it
+  // must only be invoked when its actual inputs (listings/profile) change —
+  // not on unrelated re-renders like a viewMode toggle. useMemo already gives
+  // us that for free, since getRecommendedProperties is itself memoized on
+  // [listings, profile]. No effect or ref is needed to "lock" the result.
+  const recommendations = useMemo(
+    () => {
+      void recommendationVersion
+      return loading ? [] : getRecommendedProperties()
+    },
+    [loading, getRecommendedProperties, recommendationVersion]
+  )
+
+  // Hide immediately when the user resets, without waiting for a new quiz
+  // submission to change onboardingData. This is React's documented pattern
+  // for adjusting state during render in response to a prop change, rather
+  // than doing it in an effect: https://react.dev/learn/you-might-not-need-an-effect
+  const [prevOnboardingData, setPrevOnboardingData] = useState(onboardingData)
+  if (prevOnboardingData !== onboardingData) {
+    setPrevOnboardingData(onboardingData)
+    setDismissed(false)
+  }
+
+  if (dismissed || !recommendations.length) return null
 
   const handleResetQuiz = () => {
-    isLocked.current = false
-    setRecommendations([])
+    setDismissed(true)
     window.dispatchEvent(new Event('goeazy_quiz_reset'))
   }
 
