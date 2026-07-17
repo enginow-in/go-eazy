@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Home, Eye, Edit, Trash2, ArrowRight, ArrowLeft, List as ListIcon, Calendar, Check, X } from 'lucide-react'
+import { Plus, Home, Eye, Edit, Trash2, ArrowRight, ArrowLeft, Calendar, Check, X, Sparkles } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useProperties } from '../hooks/useProperties'
 import { Button } from '../components/ui/Button'
 import { Badge, TypeBadge } from '../components/ui/Badge'
 import { PropertyCard } from '../components/property/PropertyCard'
-import { formatPriceShort, cn } from '../utils/helpers'
+import { formatPriceShort } from '../utils/helpers'
 import toast from 'react-hot-toast'
 import { Skeleton } from '../components/ui/Skeleton'
 import { supabase } from '../lib/supabase'
@@ -22,13 +22,34 @@ export const LandlordDashboard = () => {
   const [siteVisits, setSiteVisits] = useState([])
   const [loadingVisits, setLoadingVisits] = useState(true)
   const [actioningVisitId, setActioningVisitId] = useState(null)
+  
+  // Premium Listings Integration States
+  const [premiumStatus, setPremiumStatus] = useState(false)
+  const [isPromoting, setIsPromoting] = useState<string | null>(null)
 
   useEffect(() => {
     if (user) {
       loadProperties()
       loadSiteVisits()
+      checkPremiumStatus()
     }
   }, [user])
+
+  const checkPremiumStatus = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('premium_status')
+        .eq('id', user.id)
+        .single()
+      
+      if (!error && data) {
+        setPremiumStatus(data.premium_status || false)
+      }
+    } catch (err) {
+      console.error('Failed to verify premium status:', err)
+    }
+  }
 
   const loadProperties = async () => {
     try {
@@ -102,6 +123,32 @@ export const LandlordDashboard = () => {
     }
   }
 
+  // Triggering the serverless Razorpay Order creation from the UI
+  const handlePromoteListing = async (propertyId: string, title: string) => {
+    setIsPromoting(propertyId)
+    const toastId = toast.loading('Preparing promotion gateway...')
+    try {
+      // Calls the Edge function we wrote for July 14
+      const { data, error } = await supabase.functions.invoke('create-listing-order', {
+        body: { propertyId, title, amount: 500 } // ₹500 promotion pricing
+      })
+
+      if (error) throw error
+
+      if (data?.orderId) {
+        toast.success('Promotion initialized! Proceeding with transaction.', { id: toastId })
+        // Razorpay checkout handling code goes here
+      } else {
+        throw new Error('Invalid order generation response.')
+      }
+    } catch (err: any) {
+      console.error(err)
+      toast.error(err.message || 'Payment gateway offline. Please try again.', { id: toastId })
+    } finally {
+      setIsPromoting(null)
+    }
+  }
+
   const totalListings = properties.length
   const totalViews = properties.reduce((sum, p) => sum + (p.views || 0), 0)
 
@@ -135,8 +182,13 @@ export const LandlordDashboard = () => {
                )}
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 font-display">
+              <h1 className="text-2xl font-bold text-gray-900 font-display flex items-center gap-2">
                 {profile ? `Welcome, ${profile?.full_name?.split(' ')[0] || 'Landlord'}!` : <Skeleton className="h-8 w-40" />}
+                {premiumStatus && (
+                  <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white text-[10px] px-2 py-0.5 rounded-full font-extrabold flex items-center gap-1 shadow-sm">
+                    <Sparkles size={10} /> PRO
+                  </span>
+                )}
               </h1>
               <p className="text-gray-500">Manage your properties and track views.</p>
             </div>
@@ -268,25 +320,32 @@ export const LandlordDashboard = () => {
         ) : !showAll ? (
           /* ── PREVIEW: standard PropertyCards in responsive grid ── */
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6">
-            {previewProperties.map(p => (
-              <div key={p.id} className="relative">
+            {previewProperties.map((p: any) => (
+              <div key={p.id} className="relative bg-white rounded-2xl border border-gray-100 p-2 shadow-sm hover:shadow-md transition-shadow">
                 <PropertyCard property={p} layout="grid" />
                 {/* Management Action Bar */}
-                <div className="mt-2 flex items-center justify-between px-1">
+                <div className="mt-3 pt-2 border-t border-gray-100 flex items-center justify-between px-1">
                   <div className="flex items-center gap-3">
                     <button 
                       onClick={() => navigate(`/landlord/properties/${p.id}/edit`)}
-                      className="text-blue-500 hover:text-blue-700 transition-colors flex items-center gap-1.5 text-xs font-bold"
+                      className="text-blue-500 hover:text-blue-700 transition-colors flex items-center gap-1 text-xs font-bold"
                     >
-                      <Edit size={14} /> Edit
+                      <Edit size={13} /> Edit
                     </button>
                     <button
                       onClick={() => handleDelete(p.id)}
-                      className="text-red-500 hover:text-red-700 transition-colors flex items-center gap-1.5 text-xs font-bold"
+                      className="text-red-500 hover:text-red-700 transition-colors flex items-center gap-1 text-xs font-bold"
                     >
-                      <Trash2 size={14} /> Delete
+                      <Trash2 size={13} /> Delete
                     </button>
                   </div>
+                  <button
+                    onClick={() => handlePromoteListing(p.id, p.title)}
+                    disabled={isPromoting === p.id}
+                    className="flex items-center gap-1 text-[11px] font-extrabold text-amber-500 hover:text-amber-600 transition-colors uppercase disabled:opacity-50"
+                  >
+                    <Sparkles size={12} /> Promote
+                  </button>
                 </div>
               </div>
             ))}
@@ -295,7 +354,7 @@ export const LandlordDashboard = () => {
         ) : (
           /* ── VIEW ALL: Full list view with management controls ── */
           <div className="grid grid-cols-1 gap-4">
-            {displayProperties.map(p => (
+            {displayProperties.map((p: any) => (
               <div 
                 key={p.id} 
                 className="group bg-white rounded-2xl border border-gray-100 flex gap-4 cursor-pointer shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
@@ -359,6 +418,14 @@ export const LandlordDashboard = () => {
                         <Edit size={16} /> <span className="hidden sm:inline">Edit</span>
                       </button>
                       <button
+                        onClick={(e) => { e.stopPropagation(); handlePromoteListing(p.id, p.title) }}
+                        disabled={isPromoting === p.id}
+                        className="text-amber-500 hover:text-amber-600 transition-colors text-xs font-bold flex items-center gap-1.5 disabled:opacity-50"
+                        title="Promote Listing"
+                      >
+                        <Sparkles size={16} /> <span className="hidden sm:inline">Promote</span>
+                      </button>
+                      <button
                         onClick={(e) => { e.stopPropagation(); handleDelete(p.id) }}
                         className="text-red-500 hover:text-red-700 transition-colors"
                         title="Delete"
@@ -372,8 +439,6 @@ export const LandlordDashboard = () => {
             ))}
           </div>
         )}
-
-        {/* View All CTA below cards when in preview mode */}
 
       </div>
     </div>

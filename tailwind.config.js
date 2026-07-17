@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -41,8 +42,29 @@ export default {
           '0%, 100%': { transform: 'translateY(0px)' },
           '50%': { transform: 'translateY(-8px)' },
         }
-      }
+      },
+      // Mobile-first grid: 2-column dense layout (matching Instagram/Airbnb on mobile)
+      // 96px per card = ~2 cards per 375px viewport with 12px gaps
+      gridTemplateColumns: {
+        // Mobile: 2-column dense grid
+        'dense-mobile': 'repeat(2, minmax(88px, 1fr))',
+        // Tablet: 3-column
+        'dense-tablet': 'repeat(3, minmax(120px, 1fr))',
+        // Desktop: 4-column
+        'dense-desktop': 'repeat(4, minmax(160px, 1fr))',
+      },
+      spacing: {
+        // Optimized for 2-column mobile layouts
+        'card-gap': '0.75rem',  // Gap between cards (12px)
+        'card-mobile': '88px',  // Card width on mobile (2-column @ 375px)
+      },
     },
   },
+  // Safelist for Mapbox GL CSS classes (prevents purging of dynamic map styles)
+  safelist: [
+    {
+      pattern: /^mapboxgl-/,
+    },
+  ],
   plugins: [],
 }
