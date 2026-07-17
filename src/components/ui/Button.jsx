@@ -11,11 +11,18 @@ const variants = {
 }
 
 const sizes = {
-  sm:  'px-3 py-1.5 text-sm rounded-lg',
-  md:  'px-5 py-2.5 text-sm rounded-xl',
-  lg:  'px-7 py-3.5 text-base rounded-xl',
-  xl:  'px-8 py-4 text-lg rounded-2xl',
+  sm:  'px-3 py-1.5 text-sm rounded-lg gap-1.5',
+  md:  'px-5 py-2.5 text-sm rounded-xl gap-2',
+  lg:  'px-7 py-3.5 text-base rounded-xl gap-2',
+  xl:  'px-8 py-4 text-lg rounded-2xl gap-2.5',
   icon:'p-2 rounded-xl',
+}
+
+const iconSizes = {
+  sm: 14,
+  md: 16,
+  lg: 18,
+  xl: 20,
 }
 
 export const Button = ({
@@ -29,10 +36,12 @@ export const Button = ({
   rightIcon,
   ...props
 }) => {
+  const iconSize = iconSizes[size] || 16
+
   return (
     <button
       className={cn(
-        'inline-flex items-center justify-center gap-2 font-semibold',
+        'inline-flex items-center justify-center font-semibold',
         'transition-all duration-200 cursor-pointer',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2',
         'disabled:opacity-50 disabled:cursor-not-allowed',
@@ -48,9 +57,9 @@ export const Button = ({
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
         </svg>
-      ) : leftIcon}
+      ) : leftIcon ? React.cloneElement(leftIcon, { size: iconSize }) : null}
       {children}
-      {!loading && rightIcon}
+      {!loading && rightIcon ? React.cloneElement(rightIcon, { size: iconSize }) : null}
     </button>
   )
 }
