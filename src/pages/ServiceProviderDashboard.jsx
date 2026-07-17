@@ -10,6 +10,7 @@ import { Button } from '../components/ui/Button'
 import { Skeleton } from '../components/ui/Skeleton'
 import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
+import { ConfirmModal } from '../components/ui/ConfirmModal'
 
 const CATEGORY_CONFIG = {
   tiffin:   { label: 'Tiffin',   emoji: '🍱', color: 'bg-amber-100 text-amber-700' },
@@ -39,6 +40,7 @@ export const ServiceProviderDashboard = () => {
 
   const [myServices, setMyServices] = useState([])
   const [loading, setLoading] = useState(true)
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null })
 
   const loadMyServices = async () => {
     setLoading(true)
@@ -55,7 +57,12 @@ export const ServiceProviderDashboard = () => {
   useEffect(() => { loadMyServices() }, [])
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this listing?')) return
+    setDeleteConfirm({ open: true, id })
+  }
+
+  const confirmDelete = async () => {
+    const id = deleteConfirm.id
+    setDeleteConfirm({ open: false, id: null })
     try {
       await deleteService(id)
       setMyServices(v => v.filter(s => s.id !== id))
@@ -142,6 +149,14 @@ export const ServiceProviderDashboard = () => {
 
   return (
     <div className="pt-6 pb-20 min-h-screen bg-gray-50/50">
+      <ConfirmModal
+        open={deleteConfirm.open}
+        title="Delete Service"
+        message="Are you sure you want to delete this listing? This action cannot be undone."
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirm({ open: false, id: null })}
+        danger
+      />
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Back Button */}

@@ -10,6 +10,7 @@ import { formatPriceShort, cn } from '../utils/helpers'
 import toast from 'react-hot-toast'
 import { Skeleton } from '../components/ui/Skeleton'
 import { supabase } from '../lib/supabase'
+import { ConfirmModal } from '../components/ui/ConfirmModal'
 
 export const LandlordDashboard = () => {
   const { user, profile } = useAuth()
@@ -22,6 +23,7 @@ export const LandlordDashboard = () => {
   const [siteVisits, setSiteVisits] = useState([])
   const [loadingVisits, setLoadingVisits] = useState(true)
   const [actioningVisitId, setActioningVisitId] = useState(null)
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null })
 
   useEffect(() => {
     if (user) {
@@ -43,7 +45,12 @@ export const LandlordDashboard = () => {
   }
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this listing?')) return
+    setDeleteConfirm({ open: true, id })
+  }
+
+  const confirmDelete = async () => {
+    const id = deleteConfirm.id
+    setDeleteConfirm({ open: false, id: null })
     const toastId = toast.loading('Deleting property...')
     try {
       await deleteProperty(id)
@@ -111,6 +118,14 @@ export const LandlordDashboard = () => {
 
   return (
     <div className="pt-12 lg:pt-0 pb-20 bg-gray-50 min-h-screen">
+      <ConfirmModal
+        open={deleteConfirm.open}
+        title="Delete Property"
+        message="Are you sure you want to delete this listing? This action cannot be undone."
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirm({ open: false, id: null })}
+        danger
+      />
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Top Actions */}
