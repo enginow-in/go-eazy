@@ -10,9 +10,7 @@ export const useAuth = () => {
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
-
       if (error) console.error('Auth: Session error', error)
-      
       dispatch(setUser(session?.user ?? null))
       if (session?.user) fetchProfile(session.user.id)
       else dispatch(setLoading(false))
@@ -20,8 +18,6 @@ export const useAuth = () => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-
-      
       dispatch(setUser(session?.user ?? null))
       if (session?.user) {
         fetchProfile(session.user.id)
@@ -32,7 +28,36 @@ export const useAuth = () => {
       }
     })
 
-    return () => subscription.unsubscribe()
+    // ── 🟢 FIXED: IDLE TIMEOUT SECURITY FEATURE ──
+    let timeoutId;
+    const IDLE_TIME_LIMIT = 15 * 60 * 1000; // 15 Minutes in milliseconds
+
+    const resetIdleTimer = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          console.warn("Auth: Session expired due to inactivity. Logging out.");
+          await supabase.auth.signOut();
+          dispatch(logout());
+        }
+      }, IDLE_TIME_LIMIT);
+    };
+
+    // Set up activity event listeners
+    const activityEvents = ['mousemove', 'keydown', 'click', 'touchstart'];
+    activityEvents.forEach(event => window.addEventListener(event, resetIdleTimer));
+    
+    // Initialize primary timer invocation
+    resetIdleTimer();
+    // ── END OF IDLE TIMEOUT LOGIC ──
+
+    return () => {
+      subscription.unsubscribe()
+      // ──  CLEANUP ROUTINE ──
+      if (timeoutId) clearTimeout(timeoutId);
+      activityEvents.forEach(event => window.removeEventListener(event, resetIdleTimer));
+    }
   }, [])
 
   const fetchProfile = async (userId) => {
