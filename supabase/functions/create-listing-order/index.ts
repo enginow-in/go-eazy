@@ -35,7 +35,16 @@ serve(async (req: Request) => {
   }
 
   try {
-    // 1. Authenticate user
+    // 1. Extract parameters from payload
+    const { propertyId, title } = await req.json()
+    if (!propertyId) {
+      return new Response(JSON.stringify({ error: 'Missing required propertyId parameter' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      })
+    }
+
+    // 2. Authenticate user via ES256 JWT
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -65,7 +74,28 @@ serve(async (req: Request) => {
 
     const user = authData.user
 
-    // 2. Check secrets
+    // 3. Verify property ownership before creating payment ledger entry
+    const { data: property, error: propError } = await supabaseAdmin
+      .from('properties')
+      .select('id, user_id')
+      .eq('id', propertyId)
+      .single()
+
+    if (propError || !property) {
+      return new Response(JSON.stringify({ error: 'Property record not found' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 404,
+      })
+    }
+
+    if (property.user_id !== user.id) {
+      return new Response(JSON.stringify({ error: 'Forbidden: You do not own this listing record' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 403,
+      })
+    }
+
+    // 4. Check Razorpay credentials configuration status
     const key_id = Deno.env.get('RAZORPAY_KEY_ID')
     const key_secret = Deno.env.get('RAZORPAY_KEY_SECRET')
     if (!key_id || !key_secret) {
@@ -75,7 +105,8 @@ serve(async (req: Request) => {
       })
     }
 
-    // 3. Create Razorpay Order for ₹199
+    // 5. Create Razorpay Order for ₹500
+    // CRITICAL: Amount is strictly configured server-side for security purposes
     const auth = btoa(`${key_id}:${key_secret}`)
     const resp = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
@@ -84,11 +115,13 @@ serve(async (req: Request) => {
         'Authorization': `Basic ${auth}`
       },
       body: JSON.stringify({
-        amount: 19900,        // ₹199.00 in paise — hardcoded server-side
+        amount: 50000,        // ₹500.00 in paise (server-side immutable fallback context)
         currency: 'INR',
-        receipt: `listing_${user.id.substring(0, 8)}_${Date.now()}`,
+        receipt: `listing_${propertyId.substring(0, 8)}_${Date.now()}`,
         notes: {
           user_id: user.id,
+          property_id: propertyId,
+          property_title: title || 'Premium Upgrade',
           purpose: 'property_listing'
         }
       })
@@ -105,7 +138,8 @@ serve(async (req: Request) => {
 
     const order = await resp.json()
 
-    return new Response(JSON.stringify(order), {
+    // Map order.id directly to orderId format expected by File 14
+    return new Response(JSON.stringify({ orderId: order.id }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })

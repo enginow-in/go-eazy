@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Home, Eye, Edit, Trash2, ArrowRight, ArrowLeft, List as ListIcon, Calendar, Check, X } from 'lucide-react'
+import { Plus, Home, Eye, Edit, Trash2, ArrowRight, ArrowLeft, Calendar, Check, X, Rocket } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useProperties } from '../hooks/useProperties'
+import { useRazorpay } from '../hooks/useRazorpay'
 import { Button } from '../components/ui/Button'
 import { Badge, TypeBadge } from '../components/ui/Badge'
 import { PropertyCard } from '../components/property/PropertyCard'
-import { formatPriceShort, cn } from '../utils/helpers'
+import { formatPriceShort } from '../utils/helpers'
 import toast from 'react-hot-toast'
 import { Skeleton } from '../components/ui/Skeleton'
 import { supabase } from '../lib/supabase'
@@ -14,6 +15,7 @@ import { supabase } from '../lib/supabase'
 export const LandlordDashboard = () => {
   const { user, profile } = useAuth()
   const { getLandlordProperties, deleteProperty } = useProperties()
+  const { processPayment, isProcessing } = useRazorpay()
   const navigate = useNavigate()
   
   const [properties, setProperties] = useState([])
@@ -22,6 +24,7 @@ export const LandlordDashboard = () => {
   const [siteVisits, setSiteVisits] = useState([])
   const [loadingVisits, setLoadingVisits] = useState(true)
   const [actioningVisitId, setActioningVisitId] = useState(null)
+  const [promotingPropertyId, setPromotingPropertyId] = useState(null)
 
   useEffect(() => {
     if (user) {
@@ -102,10 +105,49 @@ export const LandlordDashboard = () => {
     }
   }
 
+  const handlePromoteListing = async (property) => {
+    setPromotingPropertyId(property.id)
+    const toastId = toast.loading('Initializing premium checkout...')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        toast.error('Authentication expired. Please log in again.', { id: toastId })
+        return
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-listing-order`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            propertyId: property.id,
+            title: property.title,
+            amount: 500
+          }),
+        }
+      )
+
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Order initialization failed')
+
+      toast.dismiss(toastId)
+      await processPayment(data.orderId, property.title, 500)
+
+    } catch (err) {
+      console.error('Promotion failed:', err)
+      toast.error(err.message || 'Could not process premium request', { id: toastId })
+    } finally {
+      setPromotingPropertyId(null)
+    }
+  }
+
   const totalListings = properties.length
   const totalViews = properties.reduce((sum, p) => sum + (p.views || 0), 0)
 
-  // First 2 for preview, all for "view all" mode
   const previewProperties = properties.slice(0, 2)
   const displayProperties = showAll ? properties : previewProperties
 
@@ -266,14 +308,14 @@ export const LandlordDashboard = () => {
           </div>
 
         ) : !showAll ? (
-          /* ── PREVIEW: standard PropertyCards in responsive grid ── */
+          /* ── PREVIEW: Grid View ── */
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6">
             {previewProperties.map(p => (
               <div key={p.id} className="relative">
                 <PropertyCard property={p} layout="grid" />
                 {/* Management Action Bar */}
                 <div className="mt-2 flex items-center justify-between px-1">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
                     <button 
                       onClick={() => navigate(`/landlord/properties/${p.id}/edit`)}
                       className="text-blue-500 hover:text-blue-700 transition-colors flex items-center gap-1.5 text-xs font-bold"
@@ -286,6 +328,13 @@ export const LandlordDashboard = () => {
                     >
                       <Trash2 size={14} /> Delete
                     </button>
+                    <button
+                      disabled={isProcessing || promotingPropertyId === p.id}
+                      onClick={() => handlePromoteListing(p)}
+                      className="text-[#CA3433] disabled:text-gray-400 hover:text-red-700 transition-colors flex items-center gap-1.5 text-xs font-bold"
+                    >
+                      <Rocket size={14} /> {promotingPropertyId === p.id ? 'Loading...' : 'Promote'}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -293,14 +342,14 @@ export const LandlordDashboard = () => {
           </div>
 
         ) : (
-          /* ── VIEW ALL: Full list view with management controls ── */
+          /* ── VIEW ALL: List View ── */
           <div className="grid grid-cols-1 gap-4">
             {displayProperties.map(p => (
               <div 
                 key={p.id} 
                 className="group bg-white rounded-2xl border border-gray-100 flex gap-4 cursor-pointer shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
               >
-                {/* Image Section - Auto-fitting Height */}
+                {/* Image Section */}
                 <div className="relative w-32 sm:w-40 self-stretch flex-shrink-0 overflow-hidden bg-gray-50 rounded-r-2xl shadow-sm">
                   <img 
                     src={p.images?.[0] || ''} 
@@ -343,7 +392,7 @@ export const LandlordDashboard = () => {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4">
                       <button 
                         onClick={(e) => { e.stopPropagation(); navigate(`/property/${p.id}`) }}
                         className="text-gray-500 hover:text-gray-900 transition-colors text-xs font-bold flex items-center gap-1.5"
@@ -359,6 +408,14 @@ export const LandlordDashboard = () => {
                         <Edit size={16} /> <span className="hidden sm:inline">Edit</span>
                       </button>
                       <button
+                        disabled={isProcessing || promotingPropertyId === p.id}
+                        onClick={(e) => { e.stopPropagation(); handlePromoteListing(p) }}
+                        className="text-[#CA3433] disabled:text-gray-400 hover:text-red-700 transition-colors text-xs font-bold flex items-center gap-1.5"
+                        title="Promote"
+                      >
+                        <Rocket size={16} /> <span className="hidden sm:inline">{promotingPropertyId === p.id ? 'Loading...' : 'Promote'}</span>
+                      </button>
+                      <button
                         onClick={(e) => { e.stopPropagation(); handleDelete(p.id) }}
                         className="text-red-500 hover:text-red-700 transition-colors"
                         title="Delete"
@@ -372,8 +429,6 @@ export const LandlordDashboard = () => {
             ))}
           </div>
         )}
-
-        {/* View All CTA below cards when in preview mode */}
 
       </div>
     </div>
