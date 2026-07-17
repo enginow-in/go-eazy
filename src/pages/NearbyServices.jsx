@@ -52,6 +52,8 @@ export const NearbyServices = () => {
     const cat = searchParams.get('category')
     if (cat && ['tiffin', 'laundry', 'cleaning'].includes(cat) && filters.category !== cat) {
       updateFilters({ category: cat })
+    } else if (!cat && filters.category) {
+      updateFilters({ category: '' })
     }
   }, [searchParams])
 
