@@ -128,8 +128,12 @@ export const ServiceDetail = () => {
   }
 
   const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href)
-    toast.success(t('property.sections.linkCopied'))
+    if (navigator.share) {
+      navigator.share({ title: service.title, url: window.location.href }).catch(console.error)
+    } else {
+      navigator.clipboard.writeText(window.location.href)
+      toast.success(t('property.sections.linkCopied') || 'Link copied!')
+    }
   }
 
   const handleSubmitReview = async () => {

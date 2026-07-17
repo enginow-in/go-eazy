@@ -112,7 +112,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         onClick={() => navigate(`/property/${property.id}`)}
       >
         <div className="relative aspect-[4/3] overflow-hidden rounded-b-xl">
-          <img src={mainImage} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <img src={mainImage} alt={property?.title || 'Property image'} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           <div className="absolute top-2 right-2 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-lg text-[8px] font-black text-brand-600 uppercase tracking-wider">
              {t(`property.types.${property.type}`) || property.type}
           </div>

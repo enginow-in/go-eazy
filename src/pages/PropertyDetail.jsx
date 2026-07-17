@@ -163,8 +163,12 @@ export const PropertyDetail = () => {
   }
 
   const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href)
-    toast.success(t('property.sections.linkCopied'))
+    if (navigator.share) {
+      navigator.share({ title: p.title, url: window.location.href }).catch(console.error)
+    } else {
+      navigator.clipboard.writeText(window.location.href)
+      toast.success(t('property.sections.linkCopied') || 'Link copied!')
+    }
   }
 
   const submitSiteVisit = async () => {
@@ -721,7 +725,7 @@ export const PropertyDetail = () => {
             >
               {images.map((img, i) => (
                 <SwiperSlide key={i} className="flex items-center justify-center">
-                  <img src={img} className="max-w-full max-h-full object-contain" alt="" />
+                  <img src={img} className="max-w-full max-h-full object-contain" alt={`Gallery view ${i + 1}`} />
                 </SwiperSlide>
               ))}
               <button ref={setGalleryPrevEl} className="absolute left-6 top-1/2 -translate-y-1/2 z-50 p-4 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white">
