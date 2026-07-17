@@ -2,6 +2,7 @@
 import React, { Suspense, lazy } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Layout } from './components/layout/Layout'
+import { AIChat } from './components/AIChat'
 import { Home } from './pages/Home'
 import { Search } from './pages/Search'
 import { NotFound } from './pages/NotFound'
@@ -59,6 +60,7 @@ function App() {
       <OnboardingQuiz />
       <RoleSelectionModal />
       <Layout>
+        <AIChat />
         <Suspense fallback={<PageSpinner />}>
           <Routes>
           <Route path="/" element={<Navigate to="/search" replace />} />
