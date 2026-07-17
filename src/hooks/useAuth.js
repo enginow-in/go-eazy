@@ -106,6 +106,8 @@ export const useAuth = () => {
 
 
       dispatch(setProfile(data))
+      dispatch(setLoading(false))
+      
     } catch (err) {
       console.error('Auth: fetchProfile catch block', err)
       dispatch(setLoading(false))
