@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { Skeleton } from '../ui/Skeleton'
 import { CITIES } from '../../utils/constants'
 import { BannerSlider } from './BannerSlider'
+import { useDebounce } from '../../hooks/useDebounce'
 
 export const Navbar = () => {
   const dispatch = useDispatch()
@@ -31,19 +32,18 @@ export const Navbar = () => {
   // filling the service provider contact form).
   const userTypedInNavSearch = React.useRef(false)
   
+  const debouncedSearchQuery = useDebounce(searchQuery, 400)
+  
   // Debounce effect for search — only navigate if user actually typed here
   React.useEffect(() => {
     if (!userTypedInNavSearch.current) return
-    const timer = setTimeout(() => {
-      if (searchQuery !== (filters.query || '')) {
-        updateFilters({ query: searchQuery })
-        if (!location.pathname.startsWith('/search') && searchQuery.length > 0) {
-          navigate('/search')
-        }
+    if (debouncedSearchQuery !== (filters.query || '')) {
+      updateFilters({ query: debouncedSearchQuery })
+      if (!location.pathname.startsWith('/search') && debouncedSearchQuery.length > 0) {
+        navigate('/search')
       }
-    }, 400) // 400ms debounce
-    return () => clearTimeout(timer)
-  }, [searchQuery, updateFilters, navigate, location.pathname, filters.query])
+    }
+  }, [debouncedSearchQuery, updateFilters, navigate, location.pathname, filters.query])
 
   const languages = [
     { code: 'en', label: 'English', short: 'EN' },
