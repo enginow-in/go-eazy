@@ -8,48 +8,65 @@ export const HeroCarousel = () => {
   const navigate = useNavigate()
 
   useEffect(() => {
+    // Ensure loop executes safely matching constant arrays presence
+    const slidesCount = CAROUSEL_SLIDES?.length || 0
+    if (slidesCount <= 1) return
+
     const timer = setInterval(() => {
-      setCurrent(c => (c + 1) % CAROUSEL_SLIDES.length)
+      setCurrent(c => (c + 1) % slidesCount)
     }, 5000)
+    
     return () => clearInterval(timer)
   }, [])
 
-  const slide = CAROUSEL_SLIDES[current]
+  // Guard lookup parameters directly using fallback indicators
+  const slide = (CAROUSEL_SLIDES && CAROUSEL_SLIDES[current]) || {}
+  const totalSlides = CAROUSEL_SLIDES?.length || 0
+
+  if (totalSlides === 0) return null
 
   return (
-    <div className="relative w-full overflow-hidden rounded-3xl" style={{ height: '420px' }}>
-      {CAROUSEL_SLIDES.map((s, i) => (
-        <div
-          key={s.id}
-          className={`absolute inset-0 transition-opacity duration-700 ${i === current ? 'opacity-100' : 'opacity-0'}`}
-        >
-          <img
-            src={s.image}
-            alt={s.title}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
-        </div>
-      ))}
+    <div className="relative w-full overflow-hidden rounded-3xl bg-gray-900" style={{ height: '420px' }}>
+      {CAROUSEL_SLIDES.map((s, i) => {
+        const isActive = i === current
+        
+        return (
+          <div
+            key={s.id || i}
+            className={`absolute inset-0 transition-opacity duration-700 select-none ${
+              isActive ? 'opacity-100 z-0' : 'opacity-0 pointer-events-none'
+            }`}
+          >
+            <img
+              src={s.image}
+              alt={s.title || 'Property Slide'}
+              className="w-full h-full object-cover"
+              // Preload early indexes while tracking active view states cleanly
+              loading={i === 0 ? 'eager' : 'lazy'}
+              decoding="async"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+          </div>
+        )
+      })}
 
       {/* Content */}
-      <div className="relative z-10 h-full flex items-center px-10 md:px-16">
-        <div className="max-w-lg animate-fadeInUp">
+      <div className="relative z-10 h-full flex items-center px-10 md:px-16 pointer-events-none">
+        <div className="max-w-lg animate-fadeInUp pointer-events-auto">
           <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-full px-4 py-1.5 mb-4">
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
             <span className="text-white text-xs font-semibold">Live Listings Available</span>
           </div>
           <h2 className="font-display font-bold text-3xl md:text-4xl text-white mb-3 leading-tight">
-            {slide.title}
+            {slide.title || 'Find Your Ideal Home'}
           </h2>
-          <p className="text-white/80 text-base mb-6">{slide.subtitle}</p>
+          <p className="text-white/80 text-base mb-6">{slide.subtitle || 'Explore properties across Uttarakhand.'}</p>
           <button
             onClick={() => navigate('/search')}
-            className="bg-white text-gray-900 font-bold px-6 py-3 rounded-xl hover:shadow-lg hover:scale-105 transition-all"
+            className="bg-white text-gray-900 font-bold px-6 py-3 rounded-xl hover:shadow-lg hover:scale-105 transition-all outline-none focus-visible:ring-4 focus-visible:ring-white/30"
           >
             <span className="flex items-center gap-2">
-              {slide.cta} <ArrowRight size={18} />
+              {slide.cta || 'Browse Now'} <ArrowRight size={18} />
             </span>
           </button>
         </div>
@@ -57,14 +74,16 @@ export const HeroCarousel = () => {
 
       {/* Controls */}
       <button
-        onClick={() => setCurrent(c => (c - 1 + CAROUSEL_SLIDES.length) % CAROUSEL_SLIDES.length)}
-        className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 shadow-lg flex items-center justify-center hover:bg-white transition-all z-10"
+        onClick={() => setCurrent(c => (c - 1 + totalSlides) % totalSlides)}
+        className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 shadow-lg flex items-center justify-center hover:bg-white transition-all z-10 outline-none focus-visible:ring-4 focus-visible:ring-[#CA3433]/40"
+        aria-label="Previous Slide"
       >
         <ChevronLeft size={20} className="text-gray-700" />
       </button>
       <button
-        onClick={() => setCurrent(c => (c + 1) % CAROUSEL_SLIDES.length)}
-        className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 shadow-lg flex items-center justify-center hover:bg-white transition-all z-10"
+        onClick={() => setCurrent(c => (c + 1) % totalSlides)}
+        className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 shadow-lg flex items-center justify-center hover:bg-white transition-all z-10 outline-none focus-visible:ring-4 focus-visible:ring-[#CA3433]/40"
+        aria-label="Next Slide"
       >
         <ChevronRight size={20} className="text-gray-700" />
       </button>
@@ -75,9 +94,10 @@ export const HeroCarousel = () => {
           <button
             key={i}
             onClick={() => setCurrent(i)}
-            className={`transition-all duration-300 rounded-full ${
-              i === current ? 'w-6 h-2 bg-white' : 'w-2 h-2 bg-white/50'
+            className={`transition-all duration-300 rounded-full h-2 outline-none ${
+              i === current ? 'w-6 bg-white' : 'w-2 bg-white/50 hover:bg-white/80'
             }`}
+            aria-label={`Go to slide ${i + 1}`}
           />
         ))}
       </div>
