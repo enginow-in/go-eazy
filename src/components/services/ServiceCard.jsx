@@ -5,9 +5,9 @@ import { cn } from '../../utils/helpers'
 import { useTranslation } from 'react-i18next'
 
 const getCategoryConfig = (t) => ({
-  tiffin:   { label: t('nearby.categories.tiffin'),   emoji: '🍱', color: 'bg-amber-100 text-amber-700', border: 'border-amber-200' },
-  laundry:  { label: t('nearby.categories.laundry'),  emoji: '🧺', color: 'bg-blue-100 text-blue-700',   border: 'border-blue-200' },
-  cleaning: { label: t('nearby.categories.cleaning'), emoji: '🧹', color: 'bg-green-100 text-green-700', border: 'border-green-200' },
+  tiffin:   { label: t('nearby.categories.tiffin', 'Tiffin'),   emoji: '🍱', color: 'bg-amber-100 text-amber-700', border: 'border-amber-200' },
+  laundry:  { label: t('nearby.categories.laundry', 'Laundry'),  emoji: '🧺', color: 'bg-blue-100 text-blue-700',   border: 'border-blue-200' },
+  cleaning: { label: t('nearby.categories.cleaning', 'Cleaning'), emoji: '🧹', color: 'bg-green-100 text-green-700', border: 'border-green-200' },
 })
 
 const ServiceCardComponent = ({ service, layout = 'grid' }) => {
@@ -15,8 +15,18 @@ const ServiceCardComponent = ({ service, layout = 'grid' }) => {
   const { t } = useTranslation()
   const [imgLoaded, setImgLoaded] = useState(false)
   
-  const categoryConfig = getCategoryConfig(t)
-  const cat = categoryConfig[service.category] || { label: service.category, emoji: '🛠️', color: 'bg-gray-100 text-gray-700' }
+  // FIXED: Memoize the object config generation to prevent rendering reference breakups
+  const categoryConfig = useMemo(() => getCategoryConfig(t), [t])
+  
+  // FIXED: Secure custom category initialization parameters inside a useMemo sequence
+  const cat = useMemo(() => {
+    return categoryConfig[service.category] || { 
+      label: service.category, 
+      emoji: '🛠️', 
+      color: 'bg-gray-100 text-gray-700' 
+    }
+  }, [categoryConfig, service.category])
+
   const mainImage = (service.images && service.images[0]) || null
 
   // Memoize values with deterministic calculation
@@ -45,6 +55,7 @@ const ServiceCardComponent = ({ service, layout = 'grid' }) => {
           {mainImage ? (
             <img 
               src={mainImage} 
+              alt={service.name}
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
               onLoad={() => setImgLoaded(true)}
               loading="lazy"
@@ -76,7 +87,9 @@ const ServiceCardComponent = ({ service, layout = 'grid' }) => {
 
           <div className="flex items-end justify-between mt-auto pb-0.5">
             <div className="flex flex-col">
-              <span className="text-[9px] font-bold text-gray-400 uppercase leading-none mb-0.5">{t('services.labels.startingFrom')}</span>
+              <span className="text-[9px] font-bold text-gray-400 uppercase leading-none mb-0.5">
+                {t('services.labels.startingFrom', 'Starting From')}
+              </span>
               <span className="font-black text-gray-900 text-base sm:text-lg leading-none">₹{formatPrice(firstPrice)}</span>
             </div>
             
@@ -126,7 +139,8 @@ const ServiceCardComponent = ({ service, layout = 'grid' }) => {
       <div className="px-3.5 py-2.5 flex-1 flex flex-col">
         <div className="flex items-center justify-between mb-0.5">
           <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1">
-            <MapPin size={10} /> {service.area}, {t(`cities.${service.city}`) || service.city}
+            {/* FIXED: Provided safe structural localization literals for dynamic keys */}
+            <MapPin size={10} /> {service.area}, {t(`cities.${service.city}`, service.city)}
           </span>
           <div className="flex items-center gap-1 bg-gray-50/50 px-1 py-0.5 rounded-lg">
             <span className="font-black text-[9px] text-gray-900">{rating}</span>
@@ -139,15 +153,17 @@ const ServiceCardComponent = ({ service, layout = 'grid' }) => {
         </h3>
         
         <p className="text-[11px] text-gray-500 font-bold mb-2 line-clamp-1">
-           {service.speciality || t('services.labels.descriptionFallback') || t('services.labels.aboutFallback')}
+           {/* FIXED: Protected string literal fallbacks for component details description fields */}
+           {service.speciality || t('services.labels.descriptionFallback', 'About Service') || t('services.labels.aboutFallback', 'Details')}
         </p>
         
         <div className="mt-auto pt-2 border-t border-gray-50 flex items-center justify-between">
           <div className="flex flex-col">
-            <span className="text-[8px] font-bold text-gray-400 uppercase leading-none">{t('services.labels.from')}</span>
+            {/* FIXED: Fallback declaration for localized labels */}
+            <span className="text-[8px] font-bold text-gray-400 uppercase leading-none">{t('services.labels.from', 'From')}</span>
             <span className="font-black text-gray-900 text-base leading-tight">₹{formatPrice(firstPrice)}</span>
           </div>
-          <button className="text-[#CA3433] hover:text-brand-800 transition-colors">
+          <button className="text-[#CA3433] hover:text-brand-800 transition-colors" aria-label="View Details">
             <Eye size={18} />
           </button>
         </div>
