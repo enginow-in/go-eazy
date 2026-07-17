@@ -1,25 +1,24 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { ChevronRight, Flame } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { PropertyCard } from '../property/PropertyCard'
 import { useProperties } from '../../hooks/useProperties'
 import { setFilters } from '../../store/propertySlice'
 import { MOCK_PROPERTIES } from '../../utils/constants'
-
 import { Skeleton } from '../ui/Skeleton'
 
 const SectionSkeleton = () => (
-  <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide">
-    {[1,2,3,4].map(i => (
+  <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
+    {[1, 2, 3, 4].map(i => (
       <div key={i} className="flex-shrink-0 w-64 rounded-xl bg-white border border-gray-100 overflow-hidden p-3 space-y-3">
-        <Skeleton className="h-44 w-full rounded-xl" />
+        <Skeleton className="h-44 w-full rounded-xl" variant="rectangle" />
         <div className="space-y-2 px-1">
-          <Skeleton className="h-5 w-4/5" />
-          <Skeleton className="h-4 w-3/5" />
+          <Skeleton className="h-5 w-4/5" variant="text" />
+          <Skeleton className="h-4 w-3/5" variant="text" />
           <div className="pt-1 flex gap-2">
-            <Skeleton className="h-3 w-1/4 rounded-full" />
-            <Skeleton className="h-3 w-1/4 rounded-full" />
+            <Skeleton className="h-3 w-1/4" variant="rectangle" className="rounded-full" />
+            <Skeleton className="h-3 w-1/4" variant="rectangle" className="rounded-full" />
           </div>
         </div>
       </div>
@@ -33,16 +32,37 @@ export const PropertySection = ({ title, type, icon, viewAllPath }) => {
   const { fetchByType } = useProperties()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
+  
+  // Inherit global query criteria parameters safely
+  const currentFilters = useSelector((state) => state.properties?.filters || {})
+  const fetchRef = useRef(fetchByType)
 
   useEffect(() => {
+    fetchRef.current = fetchByType
+  }, [fetchByType])
+
+  useEffect(() => {
+    let isMounted = true
+    
     const loadData = async () => {
-      const data = await fetchByType(type)
-      setItems(data?.length ? data : MOCK_PROPERTIES.filter(p => p.type === type))
-      setLoading(false)
+      setLoading(true)
+      try {
+        const data = await fetchRef.current(type)
+        if (isMounted) {
+          setItems(data?.length ? data : MOCK_PROPERTIES.filter(p => p.type === type))
+        }
+      } catch (err) {
+        if (isMounted) {
+          setItems(MOCK_PROPERTIES.filter(p => p.type === type))
+        }
+      } finally {
+        if (isMounted) setLoading(false)
+      }
     }
     
     loadData()
-  }, [type, fetchByType])
+    return () => { isMounted = false }
+  }, [type])
 
   if (!loading && items.length === 0) return null
 
@@ -58,10 +78,13 @@ export const PropertySection = ({ title, type, icon, viewAllPath }) => {
         </div>
         <button
           onClick={() => {
-            dispatch(setFilters({ type: type === 'all' ? '' : type }))
+            dispatch(setFilters({ 
+              ...currentFilters, 
+              type: type === 'all' ? '' : type 
+            }))
             navigate(viewAllPath || '/search')
           }}
-          className="flex items-center gap-1 text-sm font-semibold text-brand-500 hover:text-brand-700 transition-colors"
+          className="flex items-center gap-1 text-sm font-semibold text-[#CA3433] hover:text-[#ac2d2c] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#CA3433]/20 rounded px-1"
         >
           View all <ChevronRight size={16} />
         </button>
@@ -83,19 +106,33 @@ export const PropertySection = ({ title, type, icon, viewAllPath }) => {
 }
 
 export const FeaturedSection = () => {
+  const dispatch = useDispatch()
   const { featured, fetchFeatured, loading } = useProperties()
-  const items = featured.length ? featured : MOCK_PROPERTIES.sort((a,b) => b.views - a.views).slice(0,6)
+  const currentFilters = useSelector((state) => state.properties?.filters || {})
+  
+  const items = featured?.length ? featured : MOCK_PROPERTIES.sort((a, b) => b.views - a.views).slice(0, 6)
+  const fetchRef = useRef(fetchFeatured)
 
-  useEffect(() => { fetchFeatured() }, [])
+  useEffect(() => {
+    fetchRef.current = fetchFeatured
+  }, [fetchFeatured])
+
+  useEffect(() => {
+    fetchRef.current()
+  }, [])
 
   return (
     <section className="mb-12">
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
-          <Flame size={24} className="text-orange-500" />
+          <Flame size={24} className="text-orange-500 animate-pulse" />
           <h2 className="font-display font-bold text-xl text-gray-900">Most Popular</h2>
         </div>
-        <Link to="/search" className="flex items-center gap-1 text-sm font-semibold text-brand-500 hover:text-brand-700 transition-colors">
+        <Link 
+          to="/search" 
+          onClick={() => dispatch(setFilters({ ...currentFilters, type: '' }))}
+          className="flex items-center gap-1 text-sm font-semibold text-[#CA3433] hover:text-[#ac2d2c] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#CA3433]/20 rounded px-1"
+        >
           View all <ChevronRight size={16} />
         </Link>
       </div>
