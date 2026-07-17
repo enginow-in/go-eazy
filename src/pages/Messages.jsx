@@ -16,6 +16,7 @@ export const Messages = () => {
   const initialConvId = searchParams.get('id')
 
   const [activeConvId, setActiveConvId] = useState(initialConvId || null)
+  const [activeTab, setActiveTab] = useState('stays') // 'stays' or 'roommates'
   const [messages, setMessages] = useState([])
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [inputText, setInputText] = useState('')
@@ -26,11 +27,25 @@ export const Messages = () => {
   // 1. Initial Load: Fetch conversations
   useEffect(() => {
     fetchConversations().then((data) => {
-      // If there's an initial ID from search params, activate it
-      if (initialConvId) {
-        setActiveConvId(initialConvId)
-      } else if (data && data.length > 0 && !activeConvId) {
-        setActiveConvId(data[0].id)
+      if (data && data.length > 0) {
+        let initialConv = null
+        if (initialConvId) {
+          initialConv = data.find(c => c.id === initialConvId)
+        }
+        if (initialConv) {
+          setActiveConvId(initialConvId)
+          setActiveTab(initialConv.property_id ? 'stays' : 'roommates')
+        } else if (!activeConvId) {
+          // Default to first stays/property chat, or fallback to first chat
+          const firstStays = data.find(c => c.property_id)
+          if (firstStays) {
+            setActiveConvId(firstStays.id)
+            setActiveTab('stays')
+          } else {
+            setActiveConvId(data[0].id)
+            setActiveTab(data[0].property_id ? 'stays' : 'roommates')
+          }
+        }
       }
     })
   }, [fetchConversations, initialConvId])
@@ -119,6 +134,14 @@ export const Messages = () => {
 
   const activeParticipant = getParticipantInfo(activeConv)
 
+  const filteredConversations = conversations.filter(conv => {
+    if (activeTab === 'stays') {
+      return !!conv.property_id
+    } else {
+      return !conv.property_id
+    }
+  })
+
   return (
     <div className="pt-4 pb-20 bg-gray-50 min-h-[calc(100vh-4rem)] flex flex-col">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-1 flex flex-col h-[calc(100vh-10rem)]">
@@ -137,10 +160,34 @@ export const Messages = () => {
           {/* Left Pane: Conversations List */}
           <div className={`w-full md:w-80 border-r border-gray-100 flex flex-col ${activeConvId && 'hidden md:flex'}`}>
             <div className="p-4 border-b border-gray-100">
-              <h2 className="font-bold text-gray-900 font-display">Active Chats</h2>
+              <h2 className="font-bold text-gray-900 font-display mb-3">Active Chats</h2>
+              <div className="flex bg-gray-100/80 p-0.5 rounded-xl border border-gray-200/50">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('stays')
+                    const firstStays = conversations.find(c => c.property_id)
+                    setActiveConvId(firstStays ? firstStays.id : null)
+                  }}
+                  className={`flex-1 py-1.5 text-[11px] font-bold rounded-lg transition-all cursor-pointer text-center ${activeTab === 'stays' ? 'bg-white text-[#CA3433] shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+                >
+                  Properties
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('roommates')
+                    const firstRoommate = conversations.find(c => !c.property_id)
+                    setActiveConvId(firstRoommate ? firstRoommate.id : null)
+                  }}
+                  className={`flex-1 py-1.5 text-[11px] font-bold rounded-lg transition-all cursor-pointer text-center ${activeTab === 'roommates' ? 'bg-white text-[#CA3433] shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+                >
+                  Roommates
+                </button>
+              </div>
             </div>
             <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
-              {loadingConversations && conversations.length === 0 ? (
+              {loadingConversations && filteredConversations.length === 0 ? (
                 <div className="p-4 space-y-4">
                   {[1, 2, 3].map(i => (
                     <div key={i} className="flex gap-3 animate-pulse">
@@ -152,13 +199,13 @@ export const Messages = () => {
                     </div>
                   ))}
                 </div>
-              ) : conversations.length === 0 ? (
+              ) : filteredConversations.length === 0 ? (
                 <div className="p-8 text-center text-gray-400">
                   <MessageSquare className="mx-auto mb-3 opacity-50" size={32} />
                   <p className="text-sm font-medium">No messages yet.</p>
                 </div>
               ) : (
-                conversations.map((conv) => {
+                filteredConversations.map((conv) => {
                   const part = getParticipantInfo(conv)
                   const isActive = conv.id === activeConvId
                   return (
@@ -181,9 +228,15 @@ export const Messages = () => {
                             {part.role}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-500 truncate flex items-center gap-1">
-                          <Building size={12} className="shrink-0" /> {conv.property?.title}
-                        </p>
+                        {conv.property ? (
+                          <p className="text-xs text-gray-500 truncate flex items-center gap-1">
+                            <Building size={12} className="shrink-0" /> {conv.property?.title}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-gray-500 truncate flex items-center gap-1">
+                            <User size={12} className="shrink-0" /> Roommate Chat
+                          </p>
+                        )}
                       </div>
                     </button>
                   )
@@ -210,9 +263,15 @@ export const Messages = () => {
                   )}
                   <div className="min-w-0 flex-1">
                     <h2 className="font-bold text-gray-900 truncate">{activeParticipant.name}</h2>
-                    <p onClick={() => navigate(`/property/${activeConv.property?.id}`)} className="text-xs text-[#CA3433] hover:underline font-bold flex items-center gap-1 cursor-pointer w-fit mt-0.5">
-                      <Building size={12} /> {activeConv.property?.title}
-                    </p>
+                    {activeConv.property ? (
+                      <p onClick={() => navigate(`/property/${activeConv.property?.id}`)} className="text-xs text-[#CA3433] hover:underline font-bold flex items-center gap-1 cursor-pointer w-fit mt-0.5">
+                        <Building size={12} /> {activeConv.property?.title}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-500 font-bold flex items-center gap-1 w-fit mt-0.5">
+                        <User size={12} /> Roommate Chat
+                      </p>
+                    )}
                   </div>
                 </div>
 

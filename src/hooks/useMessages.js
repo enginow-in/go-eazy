@@ -67,6 +67,41 @@ export const useMessages = () => {
     }
   }, [user])
 
+  const getOrCreateRoommateConversation = useCallback(async (otherUserId) => {
+    if (!user) throw new Error('Not authenticated')
+    try {
+      // 1. Try to find existing roommate conversation (property_id is null)
+      // Since it's peer-to-peer, tenant_id and landlord_id are interchangeable.
+      // We will check for both combinations.
+      const { data: existing, error: findError } = await supabase
+        .from('conversations')
+        .select('*')
+        .is('property_id', null)
+        .or(`and(tenant_id.eq.${user.id},landlord_id.eq.${otherUserId}),and(tenant_id.eq.${otherUserId},landlord_id.eq.${user.id})`)
+        .maybeSingle()
+
+      if (findError) throw findError
+      if (existing) return existing
+
+      // 2. Create new if not found
+      const { data: created, error: createError } = await supabase
+        .from('conversations')
+        .insert({
+          property_id: null,
+          tenant_id: user.id,
+          landlord_id: otherUserId
+        })
+        .select()
+        .single()
+
+      if (createError) throw createError
+      return created
+    } catch (e) {
+      console.error('Error in getOrCreateRoommateConversation:', e)
+      throw e
+    }
+  }, [user])
+
   const fetchMessages = useCallback(async (conversationId) => {
     try {
       const { data, error } = await supabase
@@ -109,6 +144,7 @@ export const useMessages = () => {
     loadingConversations,
     fetchConversations,
     getOrCreateConversation,
+    getOrCreateRoommateConversation,
     fetchMessages,
     sendMessage
   }
