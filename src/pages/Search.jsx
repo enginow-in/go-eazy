@@ -13,6 +13,7 @@ import { AMENITY_ICONS, cn } from '../utils/helpers'
 import { Skeleton } from '../components/ui/Skeleton'
 import { useAuth } from '../hooks/useAuth'
 import { RecommendedSection } from '../components/property/RecommendedSection'
+import { useDebounce } from '../hooks/useDebounce'
 
 export const Search = () => {
   const { t } = useTranslation()
@@ -31,6 +32,9 @@ export const Search = () => {
     sortBy: filters.sortBy || 'created_at', 
     sortOrder: filters.sortOrder || 'desc'
   })
+
+  const debouncedCity = useDebounce(localFilters.city, 400)
+  const debouncedArea = useDebounce(localFilters.area, 400)
 
   // Read ?type= from URL and apply as filter
   useEffect(() => {
@@ -56,6 +60,16 @@ export const Search = () => {
       sortOrder: filters.sortOrder || 'desc'
     })
   }, [filters])
+
+  // Debounced search sync for city & area
+  useEffect(() => {
+    if (debouncedCity !== (filters.city || '') || debouncedArea !== (filters.area || '')) {
+      updateFilters({
+        city: debouncedCity,
+        area: debouncedArea
+      })
+    }
+  }, [debouncedCity, debouncedArea, updateFilters, filters.city, filters.area])
 
   const applyFilters = () => {
     updateFilters(localFilters)

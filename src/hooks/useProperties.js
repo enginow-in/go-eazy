@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useRef, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { MOCK_PROPERTIES } from '../utils/constants'
@@ -29,34 +29,47 @@ export const useProperties = () => {
   } = useSelector(s => s.property)
   const { user, profile } = useSelector(s => s.auth)
 
+  const filtersRef = useRef(filters)
+  const pageRef = useRef(page)
+
+  useEffect(() => {
+    filtersRef.current = filters
+  }, [filters])
+
+  useEffect(() => {
+    pageRef.current = page
+  }, [page])
+
   const fetchProperties = useCallback(async (reset = false) => {
     dispatch(setLoading(true))
+    const currentFilters = filtersRef.current
+    const currentPage = pageRef.current
     try {
       let query = supabase
         .from('properties')
         .select(`${PUBLIC_PROPERTY_FIELDS}, profiles!properties_landlord_id_fkey(${PUBLIC_PROFILE_FIELDS})`, { count: 'exact' })
         .eq('availability', true)
 
-      if (filters.type) query = query.eq('type', filters.type)
-      if (filters.priceMin > 0) query = query.gte('price', filters.priceMin)
-      if (filters.priceMax < 100000) query = query.lte('price', filters.priceMax)
+      if (currentFilters.type) query = query.eq('type', currentFilters.type)
+      if (currentFilters.priceMin > 0) query = query.gte('price', currentFilters.priceMin)
+      if (currentFilters.priceMax < 100000) query = query.lte('price', currentFilters.priceMax)
       
-      if (filters.amenities?.length > 0) {
-        query = query.contains('amenities', filters.amenities)
+      if (currentFilters.amenities?.length > 0) {
+        query = query.contains('amenities', currentFilters.amenities)
       }
 
-      if (filters.city) {
-        query = query.ilike('city', `%${filters.city}%`)
+      if (currentFilters.city) {
+        query = query.ilike('city', `%${currentFilters.city}%`)
       }
 
-      if (filters.area) {
-        const fuzzyPattern = '%' + filters.area.toLowerCase().split('').filter(c => c.trim()).join('%') + '%'
+      if (currentFilters.area) {
+        const fuzzyPattern = '%' + currentFilters.area.toLowerCase().split('').filter(c => c.trim()).join('%') + '%'
         query = query.ilike('area', fuzzyPattern)
       }
 
-      const from = reset ? 0 : page * PAGE_SIZE
+      const from = reset ? 0 : currentPage * PAGE_SIZE
       const { data, error, count: dbCount } = await query
-        .order(filters.sortBy || 'created_at', { ascending: filters.sortOrder === 'asc' })
+        .order(currentFilters.sortBy || 'created_at', { ascending: currentFilters.sortOrder === 'asc' })
         .range(from, from + PAGE_SIZE - 1)
 
       if (error) throw error
@@ -69,14 +82,14 @@ export const useProperties = () => {
       }
 
       dispatch(setHasMore((data || []).length === PAGE_SIZE))
-      dispatch(setPage(reset ? 1 : page + 1))
+      dispatch(setPage(reset ? 1 : currentPage + 1))
     } catch (err) {
       console.error('fetchProperties error:', err)
       dispatch(setListings([]))
     } finally {
       dispatch(setLoading(false))
     }
-  }, [filters, page, dispatch])
+  }, [dispatch])
 
   const fetchFeatured = useCallback(async () => {
     try {
