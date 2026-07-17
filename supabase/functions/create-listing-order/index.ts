@@ -65,6 +65,15 @@ serve(async (req: Request) => {
 
     const user = authData.user
 
+    // Parse dynamic inputs safely from client request
+    const { propertyId, title, amount = 500 } = await req.json()
+    if (!propertyId || !title) {
+      return new Response(JSON.stringify({ error: 'Missing required fields: propertyId, title' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      })
+    }
+
     // 2. Check Razorpay credentials are configured
     const key_id = Deno.env.get('RAZORPAY_KEY_ID')
     const key_secret = Deno.env.get('RAZORPAY_KEY_SECRET')
@@ -75,8 +84,7 @@ serve(async (req: Request) => {
       })
     }
 
-    // 3. Create Razorpay Order for ₹199
-    // CRITICAL: Amount is hardcoded server-side, never from client
+    // 3. Create Razorpay Order
     const auth = btoa(`${key_id}:${key_secret}`)
     const resp = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
@@ -85,12 +93,14 @@ serve(async (req: Request) => {
         'Authorization': `Basic ${auth}`
       },
       body: JSON.stringify({
-        amount: 19900,        // ₹199.00 in paise — hardcoded server-side only
+        amount: amount * 100, // Dynamic premium structure converted safely to paise
         currency: 'INR',
-        receipt: `listing_${user.id.substring(0, 8)}_${Date.now()}`,
+        receipt: `receipt_prop_${propertyId.substring(0, 8)}_${Date.now()}`,
         notes: {
-          user_id: user.id,
-          purpose: 'property_listing'
+          property_id: propertyId,
+          landlord_id: user.id,
+          property_title: title,
+          purpose: 'premium_promotion'
         }
       })
     })
@@ -106,7 +116,24 @@ serve(async (req: Request) => {
 
     const order = await resp.json()
 
-    return new Response(JSON.stringify(order), {
+    // 4. Record the pending tracking row in the new premium_listings table
+    const { error: dbError } = await supabaseAdmin
+      .from('premium_listings')
+      .insert({
+        property_id: propertyId,
+        landlord_id: user.id,
+        razorpay_order_id: order.id,
+        amount_paid: amount,
+        status: 'pending'
+      })
+
+    if (dbError) {
+      console.error('Database pre-log failed:', dbError.message)
+      // Throw error to cascade into server fallback block
+      throw new Error(`Database record preservation failed: ${dbError.message}`)
+    }
+
+    return new Response(JSON.stringify({ orderId: order.id }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
