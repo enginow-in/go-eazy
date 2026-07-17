@@ -132,10 +132,17 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   }
 
   const removeImage = (index) => {
-    setPreviewUrls(prev => prev.filter((_, i) => i !== index))
-    if (index >= (initialData?.images?.length || 0)) {
-      setImages(prev => prev.filter((_, i) => i !== index - (initialData?.images?.length || 0)))
+    const url = previewUrls[index]
+    // `previewUrls` mixes already-uploaded URLs with newly-added blob: previews,
+    // while `images` only holds the new File objects. Map to the correct File by
+    // counting how many blob previews precede this slot — this stays correct
+    // regardless of the order existing/new images are removed in.
+    if (url?.startsWith('blob:')) {
+      const newFileIndex = previewUrls.slice(0, index).filter(u => u?.startsWith('blob:')).length
+      setImages(prev => prev.filter((_, i) => i !== newFileIndex))
+      URL.revokeObjectURL(url)
     }
+    setPreviewUrls(prev => prev.filter((_, i) => i !== index))
   }
 
   const toggleAmenity = (id) => {
