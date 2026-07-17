@@ -110,6 +110,14 @@ export const ServiceDetail = () => {
     checkStatus()
   }, [service, user, id, fetchServiceGatedData])
 
+  // Clear unlocked state if user logs out while on the page
+  useEffect(() => {
+    if (!user) {
+      setContactUnlocked(false)
+      setGatedData(null)
+    }
+  }, [user])
+
   // Check if current user has already reviewed
   const myReview = reviews.find(r => r.reviewer_id === user?.id)
 

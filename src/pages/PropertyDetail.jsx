@@ -116,6 +116,14 @@ export const PropertyDetail = () => {
     }
   }, [currentProperty, user, id, fetchGatedData, gatedData])
 
+  // Clear unlocked state if user logs out while on the page
+  useEffect(() => {
+    if (!user) {
+      setHasUnlocked(false)
+      setGatedData(null)
+    }
+  }, [user])
+
   const openGallery = (index) => {
     setInitialSlideIndex(index)
     setIsGalleryOpen(true)
