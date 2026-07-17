@@ -1,59 +1,74 @@
 import { createSlice } from '@reduxjs/toolkit'
 
+const defaultFilters = {
+  city: '',
+  area: '',
+  type: '',
+  priceMin: 0,
+  priceMax: 100000,
+  amenities: [],
+  query: '',
+  sortBy: 'created_at',
+  sortOrder: 'desc',
+}
+
+const initialState = {
+  listings: [],
+  featured: [],
+  currentProperty: null,
+  favorites: [],
+  recentlyViewed: [],
+  filters: { ...defaultFilters },
+  loading: false,
+  hasMore: true,
+  page: 0,
+  totalCount: 0,
+  reviews: [],
+  reviewsLoading: false,
+}
+
 const propertySlice = createSlice({
   name: 'property',
-  initialState: {
-    listings: [],
-    featured: [],
-    currentProperty: null,
-    favorites: [],
-    recentlyViewed: [],
-    filters: {
-      city: '',
-      area: '',
-      type: '',
-      priceMin: 0,
-      priceMax: 100000,
-      amenities: [],
-      query: '',
-      sortBy: 'created_at',
-      sortOrder: 'desc',
-    },
-    loading: false,
-    hasMore: true,
-    page: 0,
-    totalCount: 0,
-    reviews: [],
-    reviewsLoading: false,
-  },
+  initialState,
   reducers: {
     setListings: (state, action) => {
-      state.listings = action.payload
+      state.listings = Array.isArray(action.payload) ? action.payload : []
     },
     appendListings: (state, action) => {
-      state.listings = [...state.listings, ...action.payload]
+      const incoming = Array.isArray(action.payload) ? action.payload : []
+      state.listings = [...state.listings, ...incoming]
     },
     setFeatured: (state, action) => {
-      state.featured = action.payload
+      state.featured = Array.isArray(action.payload) ? action.payload : []
     },
     setCurrentProperty: (state, action) => {
-      state.currentProperty = action.payload
+      state.currentProperty = action.payload || null
     },
     setFavorites: (state, action) => {
-      state.favorites = action.payload
+      state.favorites = Array.isArray(action.payload) ? action.payload : []
     },
     toggleFavorite: (state, action) => {
-      const id = action.payload
-      const idx = state.favorites.indexOf(id)
-      if (idx >= 0) state.favorites.splice(idx, 1)
-      else state.favorites.push(id)
+      const targetId = action.payload
+      if (targetId === undefined || targetId === null) return
+
+      const exists = state.favorites.includes(targetId)
+      if (exists) {
+        state.favorites = state.favorites.filter(id => id !== targetId)
+      } else {
+        state.favorites.push(targetId)
+      }
     },
     setRecentlyViewed: (state, action) => {
-      state.recentlyViewed = action.payload
+      state.recentlyViewed = Array.isArray(action.payload) ? action.payload : []
     },
     addRecentlyViewed: (state, action) => {
-      const id = action.payload
-      state.recentlyViewed = [id, ...state.recentlyViewed.filter(i => i !== id)].slice(0, 20)
+      const targetId = action.payload
+      if (!targetId) return
+      
+      state.recentlyViewed = [
+        targetId,
+        ...state.recentlyViewed.filter(id => id !== targetId)
+      ].slice(0, 20)
     },
     setFilters: (state, action) => {
       state.filters = { ...state.filters, ...action.payload }
@@ -61,32 +76,41 @@ const propertySlice = createSlice({
       state.listings = []
     },
     resetFilters: (state) => {
-      state.filters = {
-        city: '', area: '', type: '',
-        priceMin: 0, priceMax: 100000,
-        amenities: [], query: '', sortBy: 'created_at', sortOrder: 'desc',
-      }
+      state.filters = { ...defaultFilters }
       state.page = 0
       state.listings = []
     },
-    setLoading: (state, action) => { state.loading = action.payload },
-    setHasMore: (state, action) => { state.hasMore = action.payload },
-    setPage: (state, action) => { state.page = action.payload },
-    setTotalCount: (state, action) => { state.totalCount = action.payload },
+    setLoading: (state, action) => { 
+      state.loading = Boolean(action.payload) 
+    },
+    setHasMore: (state, action) => { 
+      state.hasMore = Boolean(action.payload) 
+    },
+    setPage: (state, action) => { 
+      state.page = typeof action.payload === 'number' ? action.payload : 0 
+    },
+    setTotalCount: (state, action) => { 
+      state.totalCount = typeof action.payload === 'number' ? action.payload : 0 
+    },
     setReviews: (state, action) => {
-      state.reviews = action.payload
+      state.reviews = Array.isArray(action.payload) ? action.payload : []
     },
     addReview: (state, action) => {
-      const review = action.payload
-      const index = state.reviews.findIndex(r => r.id === review.id)
-      if (index >= 0) state.reviews[index] = review
-      else state.reviews.unshift(review)
+      const incomingReview = action.payload
+      if (!incomingReview?.id) return
+
+      const index = state.reviews.findIndex(r => r.id === incomingReview.id)
+      if (index >= 0) {
+        state.reviews[index] = { ...state.reviews[index], ...incomingReview }
+      } else {
+        state.reviews.unshift(incomingReview)
+      }
     },
     removeReview: (state, action) => {
       state.reviews = state.reviews.filter(r => r.id !== action.payload)
     },
     setReviewsLoading: (state, action) => {
-      state.reviewsLoading = action.payload
+      state.reviewsLoading = Boolean(action.payload)
     },
   },
 })
@@ -97,4 +121,5 @@ export const {
   setFilters, resetFilters, setLoading, setHasMore, setPage, setTotalCount,
   setReviews, addReview, removeReview, setReviewsLoading
 } = propertySlice.actions
+
 export default propertySlice.reducer
