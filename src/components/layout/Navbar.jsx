@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { Search, ChevronDown, User, LogOut, Home, Building, Tent, MapPin, Grid, PlusCircle, LayoutDashboard, Menu, X } from 'lucide-react'
+import { Search, ChevronDown, User, LogOut, Home, Building, Tent, MapPin, Grid, PlusCircle, LayoutDashboard, Menu, X, MessageSquare } from 'lucide-react'
 import { openAuthModal } from '../../store/authSlice'
 import { toggleMobileMenu, closeMobileMenu } from '../../store/uiSlice'
 import { useAuth } from '../../hooks/useAuth'
@@ -163,11 +163,20 @@ export const Navbar = () => {
             {loading ? (
               <Skeleton className="h-10 w-28 rounded-full" />
             ) : user ? (
-              <div className="relative">
-                <button
-                  onClick={() => setUserMenuOpen(v => !v)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#0B0F19] text-white text-sm font-semibold hover:bg-[#CA3433] transition-all duration-300 transform hover:scale-105"
+              <div className="flex items-center gap-4">
+                <Link
+                  to="/messages"
+                  className="w-10 h-10 rounded-full hover:bg-gray-50 flex items-center justify-center text-gray-500 hover:text-[#CA3433] border border-gray-200 transition-colors relative"
+                  title="Messages"
                 >
+                  <MessageSquare size={18} />
+                </Link>
+
+                <div className="relative">
+                  <button
+                    onClick={() => setUserMenuOpen(v => !v)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#0B0F19] text-white text-sm font-semibold hover:bg-[#CA3433] transition-all duration-300 transform hover:scale-105"
+                  >
                   {profile?.avatar_url ? (
                     <img src={profile.avatar_url} alt="Avatar" className="w-5 h-5 rounded-full object-cover" />
                   ) : (
@@ -207,6 +216,7 @@ export const Navbar = () => {
                   </>
                 )}
               </div>
+            </div>
             ) : (
               <button 
                 onClick={() => dispatch(openAuthModal('login'))}
@@ -397,6 +407,12 @@ export const Navbar = () => {
             
             {user ? (
                <>
+                <Link to="/messages"
+                  className="block font-semibold text-gray-700 py-2"
+                  onClick={() => dispatch(closeMobileMenu())}
+                >
+                  Messages
+                </Link>
                 <Link to={role === 'admin' ? '/systemadmin' : role === 'landlord' ? '/landlord' : role === 'service_provider' ? '/service-provider' : '/dashboard'}
                   className="block font-semibold text-gray-700 py-2"
                   onClick={() => dispatch(closeMobileMenu())}
