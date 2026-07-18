@@ -149,6 +149,9 @@ export const Navbar = () => {
               <Link to="/nearby" className="hover:text-gray-900 transition-colors py-2">{t('nav.nearby')}</Link>
               <button onClick={() => user ? navigate('/landlord') : dispatch(openAuthModal('login'))} className="hover:text-gray-900 transition-colors">{t('nav.list')}</button>
               <Link to="/about" className="hover:text-gray-900 transition-colors py-2">{t('nav.about')}</Link>
+              {role === 'admin' && (
+                <Link to="/systemadmin" className="text-[#CA3433] font-bold hover:text-red-700 transition-colors py-2">Admin Dashboard</Link>
+              )}
             </div>
             
             <div className="w-px h-6 bg-gray-200"></div>

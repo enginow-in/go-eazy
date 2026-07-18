@@ -50,6 +50,8 @@ export const MOCK_PROPERTIES = [
     id: 'f3eb6265-2617-5c58-0ed5-253f2f693e0g',
     title: 'Cozy PG for Students',
     description: 'Fully furnished PG accommodation with home-cooked meals included. Walk to university campus.',
+    video_url: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    video_verification_status: "pending",
     price: 8500,
     city: 'Srinagar',
     area: 'Main Market',

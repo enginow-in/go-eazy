@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, X, Image as ImageIcon, Zap, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react'
+import { Plus, X, Image as ImageIcon, Zap, CheckCircle2, ChevronRight, ChevronLeft, Video } from 'lucide-react'
 import { Input, Textarea, Select } from '../ui/Input'
 import { Button } from '../ui/Button'
 import { PROPERTY_TYPES, AMENITIES } from '../../utils/constants'
 import { useProperties } from '../../hooks/useProperties'
 import { useSelector } from 'react-redux'
-import { supabase } from '../../lib/supabase'
+import { supabase, isDemoMode } from '../../lib/supabase'
 import toast from 'react-hot-toast'
 import { LocationPicker } from '../map/LocationPicker'
 
@@ -88,13 +88,15 @@ const StepTimeline = ({ current }) => (
 // ── Main Form ─────────────────────────────────────────────────────────────────
 export const PropertyForm = ({ initialData, isEdit = false }) => {
   const navigate = useNavigate()
-  const { updateProperty } = useProperties()
+  const { updateProperty, createProperty } = useProperties()
   const { user } = useSelector(s => s.auth)
   const [loading, setLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [step, setStep] = useState(1)
   const [images, setImages] = useState([])
   const [previewUrls, setPreviewUrls] = useState(initialData?.images || [])
+  const [videoFile, setVideoFile] = useState(null)
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState(initialData?.video_url || '')
 
   const [form, setForm] = useState({
     title:             initialData?.title || '',
@@ -129,6 +131,19 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
     }
     setImages(prev => [...prev, ...files])
     setPreviewUrls(prev => [...prev, ...files.map(f => URL.createObjectURL(f))])
+  }
+
+  const handleVideoChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    if (file.size > 50 * 1024 * 1024) { toast.error('Video exceeds 50MB limit'); return }
+    setVideoFile(file)
+    setVideoPreviewUrl(URL.createObjectURL(file))
+  }
+
+  const removeVideo = () => {
+    setVideoFile(null)
+    setVideoPreviewUrl('')
   }
 
   const removeImage = (index) => {
@@ -168,7 +183,24 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
     if (!validateForm()) return
     setLoading(true)
     try {
-      await updateProperty(initialData.id, { ...form, images: previewUrls.filter(u => !u.startsWith('blob:')) }, images)
+      let finalVideoUrl = videoPreviewUrl === initialData?.video_url ? initialData?.video_url : videoPreviewUrl
+      if (videoFile) {
+        const ext = videoFile.name.split('.').pop()
+        const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${ext}`
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('property-videos').upload(`${user.id}/${fileName}`, videoFile, { upsert: false })
+        if (!uploadError) {
+            const { data: { publicUrl } } = supabase.storage.from('property-videos').getPublicUrl(uploadData.path)
+            finalVideoUrl = publicUrl
+        }
+      }
+
+      await updateProperty(initialData.id, { 
+        ...form, 
+        images: previewUrls.filter(u => !u.startsWith('blob:')),
+        video_url: finalVideoUrl || null,
+        video_verification_status: videoFile ? 'pending' : (initialData?.video_verification_status || 'pending')
+      }, images)
       toast.success('Property updated successfully!')
       navigate('/landlord')
     } catch (err) {
@@ -179,6 +211,27 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   const handlePayToGoLive = async () => {
     if (!validateForm()) return
     if (loading) return
+
+    if (isDemoMode) {
+      setLoading(true)
+      try {
+        await createProperty({
+          ...form,
+          images: previewUrls,
+          video_url: videoPreviewUrl || null,
+          video_verification_status: videoFile ? 'pending' : 'verified',
+          profiles: { full_name: user?.user_metadata?.full_name || 'Demo Landlord', email: user?.email || '' }
+        }, [])
+        setShowSuccess(true)
+        setTimeout(() => navigate('/landlord'), 2800)
+      } catch (err) {
+        toast.error('Demo Mode Error: ' + err.message)
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
     setLoading(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -194,6 +247,20 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
         if (uploadError) throw new Error('Image upload failed: ' + uploadError.message)
         const { data: { publicUrl } } = supabase.storage.from('property-images').getPublicUrl(uploadData.path)
         uploadedUrls.push(publicUrl)
+      }
+
+      let finalVideoUrl = null
+      if (videoFile) {
+        const ext = videoFile.name.split('.').pop()
+        const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${ext}`
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('property-videos').upload(`${session.user.id}/${fileName}`, videoFile, { upsert: false })
+        if (!uploadError) {
+            const { data: { publicUrl } } = supabase.storage.from('property-videos').getPublicUrl(uploadData.path)
+            finalVideoUrl = publicUrl
+        } else {
+            finalVideoUrl = videoPreviewUrl // demo mode fallback
+        }
       }
 
       const loadRazorpay = () => new Promise(resolve => {
@@ -228,7 +295,7 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
             const verifyResp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-listing-payment`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s2?.access_token}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
-              body: JSON.stringify({ ...response, property_data: { ...form, images: uploadedUrls } })
+              body: JSON.stringify({ ...response, property_data: { ...form, images: uploadedUrls, video_url: finalVideoUrl, video_verification_status: 'pending' } })
             })
             if (!verifyResp.ok) { const e = await verifyResp.json().catch(() => ({})); throw new Error(e.error || 'Payment verification failed') }
             setShowSuccess(true)
@@ -379,6 +446,26 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
                 <ImageIcon size={24} className="mb-2" />
                 <span className="text-sm font-semibold">Add Photo</span>
                 <input id="property-images" type="file" multiple accept="image/*" className="hidden" onChange={handleImageChange} />
+              </label>
+            )}
+          </div>
+
+          <div className="mt-6">
+            <h4 className="text-sm font-bold text-gray-900 mb-2">Walkthrough Video (Optional)</h4>
+            <p className="text-xs text-gray-500 mb-4">Add a 30-60 second video. Verified videos get a special badge! (Max 50MB)</p>
+            {videoPreviewUrl ? (
+              <div className="relative w-full max-w-sm aspect-video rounded-xl overflow-hidden border border-gray-200 bg-black group">
+                <video src={videoPreviewUrl} className="w-full h-full object-contain" controls />
+                <button type="button" onClick={removeVideo}
+                  className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <label className="w-full max-w-sm aspect-video rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:border-[#CA3433] hover:bg-red-50/30 transition-colors text-gray-500">
+                <Video size={24} className="mb-2" />
+                <span className="text-sm font-semibold">Upload Video</span>
+                <input type="file" accept="video/*" className="hidden" onChange={handleVideoChange} />
               </label>
             )}
           </div>
