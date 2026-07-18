@@ -125,7 +125,7 @@ export const useAuth = () => {
     if (error) throw error
 
     if (data.user) {
-      await supabase.from('profiles').upsert({
+      const { error: upsertError } = await supabase.from('profiles').upsert({
         id: data.user.id,
         email,
         full_name: name,
@@ -133,6 +133,9 @@ export const useAuth = () => {
         avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
         created_at: new Date().toISOString(),
       })
+      // Surface profile creation failures — a user with no profile row will
+      // have a broken experience, so we must not silently swallow this error.
+      if (upsertError) throw upsertError
     }
     return data
   }
