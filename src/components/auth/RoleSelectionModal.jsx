@@ -19,7 +19,7 @@ export const RoleSelectionModal = () => {
   const [loading, setLoading] = useState(false)
 
   // Show for any logged-in user who has a profile but no role yet
-  const location = window.location
+  const location = useLocation()
   const isOpen = !!user && !!profile && !role && location.pathname !== '/systemadmin'
 
   const handleConfirm = async () => {
