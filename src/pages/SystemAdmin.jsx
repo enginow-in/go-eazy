@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useServices } from '../hooks/useServices'
-import { LogOut, ShieldAlert, ShieldCheck, Activity, Users, Building, AlertTriangle, FileText, CheckCircle, XCircle, Eye } from 'lucide-react'
+import { LogOut, ShieldAlert, ShieldCheck, Activity, Users, Building, AlertTriangle, FileText, CheckCircle, XCircle, Eye, Video } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { useProperties } from '../hooks/useProperties'
 import { Modal } from '../components/ui/Modal'
 import { Button } from '../components/ui/Button'
 import toast from 'react-hot-toast'
@@ -22,12 +23,19 @@ export const SystemAdmin = () => {
   const [selectedDoc, setSelectedDoc] = useState(null)
   const [showApprovals, setShowApprovals] = useState(false)
 
+  // Video Approvals State
+  const { getAdminPendingVideos, updateVideoStatus } = useProperties()
+  const [pendingVideos, setPendingVideos] = useState([])
+  const [loadingVideos, setLoadingVideos] = useState(true)
+  const [showVideoApprovals, setShowVideoApprovals] = useState(false)
+
 
   useEffect(() => {
     // Only load stats if authorized
     if (user && role === 'admin') {
       loadStats()
       loadProviders()
+      loadVideos()
     }
   }, [user])
 
@@ -59,6 +67,28 @@ export const SystemAdmin = () => {
       console.error('Failed to load pending services', e)
     } finally {
       setLoadingProviders(false)
+    }
+  }
+
+  const loadVideos = async () => {
+    try {
+      const data = await getAdminPendingVideos()
+      setPendingVideos(data)
+    } catch(e) {
+      console.error('Failed to load videos', e)
+    } finally {
+      setLoadingVideos(false)
+    }
+  }
+
+  const handleVideoAction = async (id, newStatus) => {
+    const toastId = toast.loading(`Marking video as ${newStatus}...`)
+    try {
+      await updateVideoStatus(id, newStatus)
+      setPendingVideos(prev => prev.filter(v => v.id !== id))
+      toast.success(`Video ${newStatus}`, { id: toastId })
+    } catch {
+      toast.error('Failed to update status', { id: toastId })
     }
   }
 
@@ -175,7 +205,7 @@ export const SystemAdmin = () => {
       <main className="max-w-6xl mx-auto p-6 lg:p-10 space-y-10">
         
         {/* Welcome & Stats Section (Hidden when managing list) */}
-        {!showApprovals && (
+        {!showApprovals && !showVideoApprovals && (
           <>
             <div>
               <h1 className="text-3xl font-extrabold font-display">System Overview</h1>
@@ -227,11 +257,12 @@ export const SystemAdmin = () => {
 
         {/* ── APPROVAL WORKFLOW ── */}
         <div>
-          {!showApprovals ? (
-            <div 
-              className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-[#CA3433]/30 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
-              onClick={() => setShowApprovals(true)}
-            >
+          {!showApprovals && !showVideoApprovals ? (
+            <div className="space-y-4">
+              <div 
+                className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-[#CA3433]/30 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
+                onClick={() => setShowApprovals(true)}
+              >
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 bg-red-50 text-[#CA3433] rounded-xl flex items-center justify-center shrink-0">
                   <CheckCircle size={28} />
@@ -247,7 +278,28 @@ export const SystemAdmin = () => {
                 Open Management <span className="ml-1 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">→</span>
               </Button>
             </div>
-          ) : (
+
+            <div 
+              className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-[#CA3433]/30 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
+              onClick={() => setShowVideoApprovals(true)}
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-red-50 text-[#CA3433] rounded-xl flex items-center justify-center shrink-0">
+                  <Video size={28} />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold font-display text-gray-900">Video Approvals</h2>
+                  <p className="text-gray-500 text-sm mt-0.5">
+                     {loadingVideos ? 'Loading pending videos...' : `Manage ${pendingVideos.length} property walkthrough videos`}
+                  </p>
+                </div>
+              </div>
+              <Button variant="primary" className="shrink-0 bg-gray-900 hover:bg-black group-hover:bg-[#CA3433] transition-colors border-none">
+                Open Management <span className="ml-1 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">→</span>
+              </Button>
+            </div>
+          </div>
+          ) : showApprovals ? (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
               <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-4">
                 <h2 className="text-2xl font-bold font-display text-gray-900">Provider Approvals <span className="text-[#CA3433] text-lg ml-2">({providers.length})</span></h2>
@@ -332,7 +384,55 @@ export const SystemAdmin = () => {
                 </div>
               )}
             </div>
-          )}
+          ) : showVideoApprovals ? (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+              <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-4">
+                <h2 className="text-2xl font-bold font-display text-gray-900">Video Approvals <span className="text-[#CA3433] text-lg ml-2">({pendingVideos.length})</span></h2>
+                <button onClick={() => setShowVideoApprovals(false)} className="text-sm font-bold text-gray-500 hover:text-gray-900 px-4 py-2 rounded-xl hover:bg-gray-100 transition-colors flex items-center gap-1.5 active:scale-95">
+                  <XCircle size={16} /> Close
+                </button>
+              </div>
+              
+              {loadingVideos ? (
+                <div className="space-y-4">
+                  {[1,2].map(i => <div key={i} className="h-64 bg-white border border-gray-100 shadow-sm animate-pulse rounded-2xl" />)}
+                </div>
+              ) : pendingVideos.length === 0 ? (
+                <div className="bg-white rounded-2xl p-12 text-center border border-dashed border-gray-300">
+                  <CheckCircle className="mx-auto text-gray-300 mb-3" size={40} />
+                  <p className="text-gray-500 font-medium">All caught up! No property videos waiting for approval.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {pendingVideos.map(v => (
+                    <div key={v.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+                      <div className="relative aspect-video bg-black">
+                        <video src={v.video_url} controls className="w-full h-full object-contain" />
+                      </div>
+                      <div className="p-4 flex-1">
+                        <h3 className="font-bold text-lg text-gray-900 mb-1">{v.title}</h3>
+                        <p className="text-sm text-gray-500 mb-4">By: {v.profiles?.full_name}</p>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => handleVideoAction(v.id, 'verified')}
+                            className="flex-1 py-2.5 px-4 text-xs font-bold tracking-wider uppercase bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors shadow-sm"
+                          >
+                            Approve
+                          </button>
+                          <button 
+                            onClick={() => handleVideoAction(v.id, 'rejected')}
+                            className="flex-1 py-2.5 px-4 text-xs font-bold tracking-wider uppercase bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : null}
         </div>
 
         {/* Document Modal */}

@@ -1,9 +1,8 @@
 import { useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { supabase } from '../lib/supabase'
+import { supabase, isDemoMode } from '../lib/supabase'
 import { MOCK_PROPERTIES } from '../utils/constants'
-import {
-  setListings, appendListings, setFeatured, setCurrentProperty,
+import { setListings, appendListings, setFeatured, setCurrentProperty,
   setFavorites, toggleFavorite as toggleFav,
   setRecentlyViewed, addRecentlyViewed,
   setLoading, setHasMore, setPage, setFilters, setTotalCount, resetFilters,
@@ -14,10 +13,19 @@ const PAGE_SIZE = 12
 
 const PUBLIC_PROPERTY_FIELDS = `
   id, landlord_id, type, title, description, price, city, area, pincode, 
-  amenities, images, availability, views, created_at
+  amenities, images, availability, views, created_at, video_url, video_verification_status
 `
 
 const PUBLIC_PROFILE_FIELDS = 'full_name, avatar_url, bio'
+
+const getDemoProperties = () => {
+  try {
+    const stored = localStorage.getItem('demo_properties')
+    if (stored) return JSON.parse(stored)
+    localStorage.setItem('demo_properties', JSON.stringify(MOCK_PROPERTIES))
+    return MOCK_PROPERTIES
+  } catch (e) { return MOCK_PROPERTIES }
+}
 
 export const useProperties = () => {
   const dispatch = useDispatch()
@@ -32,6 +40,38 @@ export const useProperties = () => {
   const fetchProperties = useCallback(async (reset = false) => {
     dispatch(setLoading(true))
     try {
+      if (isDemoMode) {
+        let filtered = [...getDemoProperties()]
+        if (filters.type) filtered = filtered.filter(p => p.type === filters.type)
+        if (filters.priceMin > 0) filtered = filtered.filter(p => p.price >= filters.priceMin)
+        if (filters.priceMax < 100000) filtered = filtered.filter(p => p.price <= filters.priceMax)
+        
+        if (filters.amenities?.length > 0) {
+          filtered = filtered.filter(p => filters.amenities.every(a => p.amenities?.includes(a)))
+        }
+
+        if (filters.city) {
+          filtered = filtered.filter(p => p.city?.toLowerCase().includes(filters.city.toLowerCase()))
+        }
+
+        if (filters.area) {
+          filtered = filtered.filter(p => p.area?.toLowerCase().includes(filters.area.toLowerCase()))
+        }
+
+        const from = reset ? 0 : page * PAGE_SIZE
+        const paginated = filtered.slice(from, from + PAGE_SIZE)
+        
+        if (reset) {
+          dispatch(setListings(paginated))
+          dispatch(setTotalCount(filtered.length))
+        } else {
+          dispatch(appendListings(paginated))
+        }
+        dispatch(setHasMore(paginated.length === PAGE_SIZE))
+        dispatch(setPage(reset ? 1 : page + 1))
+        return
+      }
+
       let query = supabase
         .from('properties')
         .select(`${PUBLIC_PROPERTY_FIELDS}, profiles!properties_landlord_id_fkey(${PUBLIC_PROFILE_FIELDS})`, { count: 'exact' })
@@ -112,6 +152,20 @@ export const useProperties = () => {
   const fetchPropertyById = useCallback(async (id) => {
     dispatch(setLoading(true))
     try {
+      if (isDemoMode) {
+        const mockProp = getDemoProperties().find(p => p.id === id)
+        if (mockProp) {
+           dispatch(setCurrentProperty(mockProp))
+           if (user) {
+             dispatch(addRecentlyViewed(id))
+           }
+        } else {
+           dispatch(setCurrentProperty(null))
+        }
+        dispatch(setLoading(false))
+        return
+      }
+
       const { data, error } = await supabase
         .from('properties')
         .select(`${PUBLIC_PROPERTY_FIELDS}, profiles!properties_landlord_id_fkey(${PUBLIC_PROFILE_FIELDS})`)
@@ -211,6 +265,12 @@ export const useProperties = () => {
   }
 
   const createProperty = async (propertyData, images) => {
+    if (isDemoMode) {
+      const stored = getDemoProperties()
+      const newProp = { ...propertyData, id: 'demo_' + Date.now(), landlord_id: user?.id, views: 0, created_at: new Date().toISOString() }
+      localStorage.setItem('demo_properties', JSON.stringify([newProp, ...stored]))
+      return newProp
+    }
     const imageUrls = []
     for (const img of images) {
       const ext = img.name.split('.').pop()
@@ -226,6 +286,12 @@ export const useProperties = () => {
   }
 
   const updateProperty = async (id, updates, newImages) => {
+    if (isDemoMode) {
+      const stored = getDemoProperties()
+      const updated = stored.map(p => p.id === id ? { ...p, ...updates } : p)
+      localStorage.setItem('demo_properties', JSON.stringify(updated))
+      return { id, ...updates }
+    }
     let imageUrls = updates.images || []
     if (newImages?.length) {
       for (const img of newImages) {
@@ -282,9 +348,35 @@ export const useProperties = () => {
   }, [user, dispatch])
 
   const getLandlordProperties = async () => {
+    if (isDemoMode) return getDemoProperties().filter(p => p.landlord_id === user?.id) || []
     const { data, error } = await supabase.from('properties').select('*').eq('landlord_id', user.id).order('created_at', { ascending: false })
     if (error) throw error
     return data || []
+  }
+
+  const getAdminPendingVideos = async () => {
+    if (isDemoMode) return getDemoProperties().filter(p => p.video_verification_status === 'pending' && p.video_url)
+    const { data, error } = await supabase.from('properties')
+      .select('id, title, landlord_id, video_url, video_verification_status, profiles!properties_landlord_id_fkey(full_name, email)')
+      .eq('video_verification_status', 'pending')
+      .not('video_url', 'is', null)
+    
+    if (error) throw error
+    return data || []
+  }
+
+  const updateVideoStatus = async (propertyId, status) => {
+    if (isDemoMode) {
+      const stored = getDemoProperties()
+      const updated = stored.map(p => p.id === propertyId ? { ...p, video_verification_status: status } : p)
+      localStorage.setItem('demo_properties', JSON.stringify(updated))
+      return { id: propertyId, video_verification_status: status }
+    }
+    const { data, error } = await supabase.from('properties')
+      .update({ video_verification_status: status })
+      .eq('id', propertyId)
+    if (error) throw error
+    return data
   }
 
   const getRecommendedProperties = useCallback(() => {
@@ -336,6 +428,7 @@ export const useProperties = () => {
     getRecommendedProperties,
     fetchGatedData,
     reviews, reviewsLoading,
-    fetchReviews, submitReview, deleteReview
+    fetchReviews, submitReview, deleteReview,
+    getAdminPendingVideos, updateVideoStatus
   }
 }

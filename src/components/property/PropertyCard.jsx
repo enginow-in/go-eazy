@@ -1,7 +1,7 @@
 import React, { useState, useMemo, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { Bookmark, Star, Home, Eye } from 'lucide-react'
+import { Bookmark, Star, Home, Eye, CheckCircle2 } from 'lucide-react'
 import { openAuthModal } from '../../store/authSlice'
 import { useProperties } from '../../hooks/useProperties'
 import { cn } from '../../utils/helpers'
@@ -55,6 +55,11 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           />
           {!imgLoaded && <div className="skeleton absolute inset-0" />}
           {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
+          {property.video_verification_status === 'verified' && (
+            <div className="absolute top-2 left-2 px-2 py-1 bg-green-500/90 backdrop-blur-sm text-white text-[9px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1 shadow-sm z-20">
+              <CheckCircle2 size={10} /> Video Verified
+            </div>
+          )}
           <button
             onClick={handleFav}
             className={cn(
@@ -117,6 +122,11 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
              {t(`property.types.${property.type}`) || property.type}
           </div>
           {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
+          {property.video_verification_status === 'verified' && (
+            <div className="absolute top-2 left-2 px-2 py-0.5 bg-green-500/90 backdrop-blur-sm text-white text-[8px] font-black uppercase tracking-widest rounded-md flex items-center gap-1 z-20">
+              <CheckCircle2 size={8} /> Verified
+            </div>
+          )}
         </div>
         <div className="px-3 py-2">
           <h3 className={cn(
@@ -157,6 +167,11 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         />
         {!imgLoaded && <div className="skeleton absolute inset-0" />}
         {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
+        {property.video_verification_status === 'verified' && (
+          <div className="absolute top-2 left-2 px-2 py-1 bg-green-500/90 backdrop-blur-sm text-white text-[9px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1 shadow-sm z-20">
+            <CheckCircle2 size={10} /> Video Verified
+          </div>
+        )}
         <button
           onClick={handleFav}
           className={cn(

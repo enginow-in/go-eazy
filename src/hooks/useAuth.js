@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { supabase } from '../lib/supabase'
+import { supabase, isDemoMode } from '../lib/supabase'
 import { setUser, setProfile, logout, setLoading } from '../store/authSlice'
 
 export const useAuth = () => {
@@ -8,6 +8,22 @@ export const useAuth = () => {
   const { user, profile, role, loading, authModalOpen, authModalTab } = useSelector(s => s.auth)
 
   useEffect(() => {
+    if (isDemoMode) {
+      const saved = localStorage.getItem('mock_session')
+      if (saved) {
+        const { user, profile } = JSON.parse(saved)
+        if (user.email === 'admin@goeazy.com') {
+          user.user_metadata.role = 'admin'
+          profile.role = 'admin'
+        }
+        dispatch(setUser(user))
+        dispatch(setProfile(profile))
+      } else {
+        dispatch(setLoading(false))
+      }
+      return
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
 
@@ -113,6 +129,15 @@ export const useAuth = () => {
   }
 
   const signUp = async ({ email, password, name, role }) => {
+    if (isDemoMode) {
+      const mockUser = { id: `mock-user-${Date.now()}`, email, user_metadata: { full_name: name, role } }
+      const mockProfile = { id: mockUser.id, email, full_name: name, role, avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`, created_at: new Date().toISOString() }
+      localStorage.setItem('mock_session', JSON.stringify({ user: mockUser, profile: mockProfile }))
+      dispatch(setUser(mockUser))
+      dispatch(setProfile(mockProfile))
+      return { user: mockUser }
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email, password,
       options: { 
@@ -138,12 +163,46 @@ export const useAuth = () => {
   }
 
   const signIn = async ({ email, password }) => {
+    if (isDemoMode) {
+      const saved = localStorage.getItem('mock_session')
+      if (saved) {
+        const { user, profile } = JSON.parse(saved)
+        if (user.email === email) {
+          if (email === 'admin@goeazy.com') {
+             user.user_metadata.role = 'admin'
+             profile.role = 'admin'
+          }
+          dispatch(setUser(user))
+          dispatch(setProfile(profile))
+          return { user }
+        }
+      }
+      const mockRole = email === 'admin@goeazy.com' ? 'admin' : 'buyer'
+      const mockUser = { id: `mock-user-${Date.now()}`, email, user_metadata: { full_name: email.split('@')[0], role: mockRole } }
+      const mockProfile = { id: mockUser.id, email, full_name: email.split('@')[0], role: mockRole, avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`, created_at: new Date().toISOString() }
+      localStorage.setItem('mock_session', JSON.stringify({ user: mockUser, profile: mockProfile }))
+      dispatch(setUser(mockUser))
+      dispatch(setProfile(mockProfile))
+      return { user: mockUser }
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
     return data
   }
 
   const signInWithGoogle = async () => {
+    if (isDemoMode) {
+      const mockRole = 'admin' // Force admin for Google login in demo mode for ease of testing
+      const mockUser = { id: `mock-google-${Date.now()}`, email: 'admin@goeazy.com', user_metadata: { full_name: 'Admin User', role: mockRole } }
+      const mockProfile = { id: mockUser.id, email: mockUser.email, full_name: 'Admin User', role: mockRole, avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=AdminUser`, created_at: new Date().toISOString() }
+      localStorage.setItem('mock_session', JSON.stringify({ user: mockUser, profile: mockProfile }))
+      dispatch(setUser(mockUser))
+      dispatch(setProfile(mockProfile))
+      window.location.href = '/'
+      return
+    }
+
     // Priority: Saved return path > Env variable > current origin
     const savedPath = localStorage.getItem('sb_return_to')
     const redirectUrl = savedPath 
@@ -163,6 +222,11 @@ export const useAuth = () => {
   }
 
   const signOut = async () => {
+    if (isDemoMode) {
+      localStorage.removeItem('mock_session')
+      dispatch(logout())
+      return
+    }
     await supabase.auth.signOut()
     dispatch(logout())
   }

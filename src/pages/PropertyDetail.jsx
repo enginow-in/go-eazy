@@ -384,7 +384,13 @@ export const PropertyDetail = () => {
                    <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2 font-display">
                      {formatPrice(p.price)}
                    </h1>
-                   <div className="flex items-center gap-2 mt-1">
+                   <div className="flex items-center gap-2 mt-1 flex-wrap">
+                     {p.video_verification_status === 'verified' && (
+                       <div className="flex items-center gap-1 bg-green-500 text-white px-2 py-0.5 rounded-lg shadow-sm">
+                         <CheckCircle2 size={14} />
+                         <span className="text-xs font-bold uppercase tracking-widest">Video Verified</span>
+                       </div>
+                     )}
                      <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-100">
                        <Star size={14} className="text-amber-500 fill-amber-500" />
                        <span className="text-sm font-bold text-amber-900">{avgRating}</span>
@@ -407,6 +413,19 @@ export const PropertyDetail = () => {
                 {(hasUnlocked || p.landlord_id === user?.id) ? (gatedData?.exact_location || `${p.area}, ${p.city}`) : `${p.area}, ${p.city} • ${p.pincode}`}
               </p>
             </div>
+
+            {/* Walkthrough Video Card */}
+            {p.video_verification_status === 'verified' && p.video_url && (
+              <div className="bg-white rounded-lg sm:rounded-xl p-6 sm:p-8 shadow-[0_2px_12px_rgb(0,0,0,0.03)] border border-green-100 overflow-hidden relative">
+                <div className="absolute top-0 left-0 w-1.5 h-full bg-green-500" />
+                <h2 className="text-2xl font-bold text-gray-900 mb-6 tracking-tight font-display flex items-center gap-2">
+                  <CheckCircle2 className="text-green-500" size={24} /> Verified Walkthrough
+                </h2>
+                <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden border border-gray-200">
+                  <video src={p.video_url} controls className="w-full h-full object-contain" />
+                </div>
+              </div>
+            )}
 
             {/* Amenities Card */}
             {p.amenities && p.amenities.length > 0 && (
