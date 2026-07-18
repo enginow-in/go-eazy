@@ -13,8 +13,9 @@ export const AMENITIES = [
   { id: 'water', label: '24h Water' },
 ]
 
+// Patched: Added missing locations present in mock objects data layer to avoid filter drop bugs
 export const CITIES = [
-  'Dehradun', 'Srinagar', 'Rishikesh', 'Haldwani', 'Nainital', 'Haridwar', 'Roorkee', 'Rudrapur'
+  'Dehradun', 'Srinagar', 'Rishikesh', 'Haldwani', 'Nainital', 'Haridwar', 'Roorkee', 'Rudrapur', 'Pune', 'Delhi'
 ]
 
 export const SORT_OPTIONS = [
@@ -188,9 +189,10 @@ export const MOCK_PROPERTIES = [
   },
 ]
 
+// Patched: Standardized identifier keys format as strings to maintain consistent tracking arrays mapping
 export const CAROUSEL_SLIDES = [
   {
-    id: 1,
+    id: 'slide-1',
     title: 'Find Your Perfect Stay',
     subtitle: 'Thousands of verified rooms, flats & PGs across Uttarakhand',
     cta: 'Explore Now',
@@ -198,7 +200,7 @@ export const CAROUSEL_SLIDES = [
     image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1400&q=80',
   },
   {
-    id: 2,
+    id: 'slide-2',
     title: 'Students Love GOEAZY',
     subtitle: 'Budget-friendly PGs & hostels near top universities',
     cta: 'Browse PGs',
@@ -206,7 +208,7 @@ export const CAROUSEL_SLIDES = [
     image: 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=1400&q=80',
   },
   {
-    id: 3,
+    id: 'slide-3',
     title: 'Premium Flats for Professionals',
     subtitle: 'Fully furnished apartments near business districts',
     cta: 'View Flats',
