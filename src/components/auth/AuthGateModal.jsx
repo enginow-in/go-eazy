@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Sparkles } from 'lucide-react'
@@ -225,10 +226,16 @@ export const AuthGateModal = () => {
             )}
             Continue with Google
           </button>
-
-          <p className="text-center text-[10px] text-gray-400 mt-3 leading-relaxed">
-            By continuing, you agree to our <span className="text-[#CA3433] font-semibold">Terms</span> & <span className="text-[#CA3433] font-semibold">Privacy Policy</span>
-          </p>
+<p className="text-center text-[10px] text-gray-400 mt-3 leading-relaxed">
+  By continuing, you agree to our{' '}
+  <Link to="/terms" target="_blank" rel="noopener noreferrer" className="text-[#CA3433] font-semibold hover:underline">
+    Terms
+  </Link>{' '}
+  &{' '}
+  <Link to="/privacy" target="_blank" rel="noopener noreferrer" className="text-[#CA3433] font-semibold hover:underline">
+    Privacy Policy
+  </Link>
+</p>
         </div>
       </motion.div>
     </div>
