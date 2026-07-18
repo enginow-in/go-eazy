@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import { useDispatch } from 'react-redux'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Filter, Grid, List as ListIcon, ChevronDown } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useProperties } from '../hooks/useProperties'
@@ -13,6 +13,7 @@ import { AMENITY_ICONS, cn } from '../utils/helpers'
 import { Skeleton } from '../components/ui/Skeleton'
 import { useAuth } from '../hooks/useAuth'
 import { RecommendedSection } from '../components/property/RecommendedSection'
+import useRecentSearches from '../hooks/useRecentSearches'
 
 export const Search = () => {
   const { t } = useTranslation()
@@ -58,6 +59,8 @@ export const Search = () => {
   }, [filters])
 
   const applyFilters = () => {
+    // Save the current city search term to recent searches
+    addSearch(localFilters.city)
     updateFilters(localFilters)
     setShowFilters(false)
   }
