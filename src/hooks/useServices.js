@@ -281,6 +281,7 @@ export const useServices = () => {
     const { data, error } = await supabase
       .from('service_providers')
       .select('*, profiles!service_providers_provider_id_fkey(full_name, email)')
+      .eq('verification_status', 'pending')
       .order('created_at', { ascending: false })
       
     if (error) throw error
