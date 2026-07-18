@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { 
   MapPin, Heart, Share2, Phone, Mail, ArrowLeft, 
   CheckCircle2, ChevronDown, ChevronUp, Lock, EyeOff, X, 
-  Star, Trash2, Sparkles, Calendar 
+  Star, Trash2, Sparkles, Calendar, Link 
 } from 'lucide-react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay, Pagination, Navigation } from 'swiper/modules'
@@ -392,8 +392,17 @@ export const PropertyDetail = () => {
                      <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">• {reviews.length} {t('property.labels.reviews')}</span>
                    </div>
                  </div>
-                 <div className="bg-[#E6FF80] px-4 py-1.5 rounded-full text-[#1A1C14] font-bold text-sm tracking-wide">
-                   {isAvailable ? t('property.labels.active') : t('property.labels.inactive')}
+                 <div className="flex flex-col items-end gap-3">
+                   <div className="bg-[#E6FF80] px-4 py-1.5 rounded-full text-[#1A1C14] font-bold text-sm tracking-wide">
+                     {isAvailable ? t('property.labels.active') : t('property.labels.inactive')}
+                   </div>
+                   <button 
+                     onClick={handleShare} 
+                     className="flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-gray-900 transition-colors bg-gray-50 hover:bg-gray-100 px-3 py-1.5 rounded-full border border-gray-200"
+                   >
+                     <Link size={14} />
+                     Copy Link
+                   </button>
                  </div>
               </div>
               <div className="flex items-center gap-2 text-sm font-semibold text-gray-800 mb-2 whitespace-nowrap overflow-x-auto scrollbar-hide py-1">
