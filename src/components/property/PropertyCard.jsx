@@ -1,11 +1,12 @@
 import React, { useState, useMemo, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { Bookmark, Star, Home, Eye } from 'lucide-react'
+import { Bookmark, Star, Home, Eye, Flag } from 'lucide-react'
 import { openAuthModal } from '../../store/authSlice'
 import { useProperties } from '../../hooks/useProperties'
 import { cn } from '../../utils/helpers'
 import { useTranslation } from 'react-i18next'
+import { ReportModal } from '../common/ReportModal'
 
 const PropertyCardComponent = ({ property, layout = 'grid', compact = false, condensed = false, badge = null }) => {
   const navigate = useNavigate()
@@ -14,6 +15,13 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   const { user } = useSelector(s => s.auth)
   const { favorites, toggleFavorite } = useProperties()
   const [imgLoaded, setImgLoaded] = useState(false)
+  const [showReport, setShowReport] = useState(false)
+
+  const handleReport = (e) => {
+    e.stopPropagation()
+    if (!user) { dispatch(openAuthModal('signup')); return }
+    setShowReport(true)
+  }
 
   const isFav = favorites.includes(property.id)
   const images = property.images || []
@@ -55,6 +63,13 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           />
           {!imgLoaded && <div className="skeleton absolute inset-0" />}
           {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
+          <button
+            onClick={handleReport}
+            className="absolute bottom-2 right-2 w-8 h-8 rounded-full flex items-center justify-center z-10 bg-white/80 backdrop-blur-sm text-gray-400 hover:text-red-500 hover:bg-white transition-all duration-200 shadow-sm"
+            title="Report listing"
+          >
+            <Flag size={13} />
+          </button>
           <button
             onClick={handleFav}
             className={cn(
@@ -137,6 +152,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
 
   // Standard Grid Layout (Default)
   return (
+    <>
     <div
       className={cn(
         'group bg-white rounded-2xl border border-gray-100 shadow-md',
@@ -157,6 +173,13 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         />
         {!imgLoaded && <div className="skeleton absolute inset-0" />}
         {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
+        <button
+          onClick={handleReport}
+          className="absolute bottom-2 right-2 w-8 h-8 rounded-full flex items-center justify-center z-10 bg-white/80 backdrop-blur-sm text-gray-400 hover:text-red-500 hover:bg-white transition-all duration-200 shadow-sm"
+          title="Report listing"
+        >
+          <Flag size={13} />
+        </button>
         <button
           onClick={handleFav}
           className={cn(
@@ -205,6 +228,14 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         </div>
       </div>
     </div>
+
+    {/* Report Modal */}
+    <ReportModal
+      open={showReport}
+      onClose={() => setShowReport(false)}
+      propertyId={property.id}
+    />
+    </>
   )
 }
 
