@@ -25,6 +25,12 @@ export const Navbar = () => {
   const [langMenuOpen, setLangMenuOpen] = useState(false)
   const [selectedCity, setSelectedCity] = useState(filters.city || 'All Cities')
   const [searchQuery, setSearchQuery] = useState(filters.query || '')
+
+  // Keep selectedCity in sync with filters.city — it can be reset externally
+  // (e.g. when the user clicks Reset Filters on the Search page).
+  React.useEffect(() => {
+    setSelectedCity(filters.city || 'All Cities')
+  }, [filters.city])
   // Tracks if the user is actively typing in the Navbar's own search bar.
   // Without this guard, the debounce effect fires on any re-render where
   // searchQuery !== filters.query, causing rogue /search redirects (e.g. while
