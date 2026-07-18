@@ -92,7 +92,10 @@ export const AuthModal = () => {
   }
 
   return (
-    <Modal open={authModalOpen} onClose={() => dispatch(closeAuthModal())} size="sm">
+    // key={authModalTab} forces React to remount the entire modal tree when the
+    // target tab changes externally (e.g. openAuthModal('signup')). This prevents
+    // the one-render flash where useState(authModalTab) still held the old value.
+    <Modal key={authModalTab} open={authModalOpen} onClose={() => dispatch(closeAuthModal())} size="sm">
       {/* Tabs */}
       <div className="flex gap-1 p-1 bg-gray-100 rounded-xl mb-4">
         {['login', 'signup'].map(t => (
