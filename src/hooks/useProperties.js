@@ -6,7 +6,8 @@ import {
   setListings, appendListings, setFeatured, setCurrentProperty,
   setFavorites, toggleFavorite as toggleFav,
   setRecentlyViewed, addRecentlyViewed,
-  setLoading, setHasMore, setPage, setFilters, setTotalCount, resetFilters,
+  setLoading, setHasMore, setPage, setFilters, setTotalCount,
+  resetFilters as resetPropertyFilters,
   setReviews, addReview, removeReview, setReviewsLoading
 } from '../store/propertySlice'
 
@@ -321,8 +322,13 @@ export const useProperties = () => {
       filtered = listings.filter(p => p.type === prefs.type).slice(0, 10)
     }
 
-    // Sort randomly and limit to 8 results for the section
-    return filtered.sort(() => 0.5 - Math.random()).slice(0, 8)
+    // Fisher-Yates shuffle — uniform distribution, respects sort contract
+    const shuffled = [...filtered]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    return shuffled.slice(0, 8)
   }, [listings, profile])
 
   return {
@@ -332,7 +338,8 @@ export const useProperties = () => {
     createProperty, updateProperty, deleteProperty,
     fetchFavorites, toggleFavorite, fetchRecentlyViewed, getLandlordProperties,
     updateFilters: useCallback((f) => dispatch(setFilters(f)), [dispatch]),
-    resetFilters: useCallback(() => dispatch(resetFilters()), [dispatch]),
+    // Alias the exported key to avoid collision with the imported action creator
+    resetFilters: useCallback(() => dispatch(resetPropertyFilters()), [dispatch]),
     getRecommendedProperties,
     fetchGatedData,
     reviews, reviewsLoading,
