@@ -15,8 +15,9 @@ const ServiceCardComponent = ({ service, layout = 'grid' }) => {
   const { t } = useTranslation()
   const [imgLoaded, setImgLoaded] = useState(false)
   
-  const categoryConfig = getCategoryConfig(t)
-  const cat = categoryConfig[service.category] || { label: service.category, emoji: '🛠️', color: 'bg-gray-100 text-gray-700' }
+  const categoryConfig = useMemo(() => getCategoryConfig(t), [t])
+  const fallbackCat = useMemo(() => ({ label: service.category, emoji: '🛠️', color: 'bg-gray-100 text-gray-700' }), [service.category])
+  const cat = categoryConfig[service.category] || fallbackCat
   const mainImage = (service.images && service.images[0]) || null
 
   // Memoize values with deterministic calculation
@@ -76,7 +77,7 @@ const ServiceCardComponent = ({ service, layout = 'grid' }) => {
 
           <div className="flex items-end justify-between mt-auto pb-0.5">
             <div className="flex flex-col">
-              <span className="text-[9px] font-bold text-gray-400 uppercase leading-none mb-0.5">{t('services.labels.startingFrom')}</span>
+              <span className="text-[9px] font-bold text-gray-400 uppercase leading-none mb-0.5">{t('services.labels.startingFrom', 'Starting From')}</span>
               <span className="font-black text-gray-900 text-base sm:text-lg leading-none">₹{formatPrice(firstPrice)}</span>
             </div>
             
@@ -126,7 +127,7 @@ const ServiceCardComponent = ({ service, layout = 'grid' }) => {
       <div className="px-3.5 py-2.5 flex-1 flex flex-col">
         <div className="flex items-center justify-between mb-0.5">
           <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1">
-            <MapPin size={10} /> {service.area}, {t(`cities.${service.city}`) || service.city}
+            <MapPin size={10} /> {service.area}, {t(`cities.${service.city}`, service.city)}
           </span>
           <div className="flex items-center gap-1 bg-gray-50/50 px-1 py-0.5 rounded-lg">
             <span className="font-black text-[9px] text-gray-900">{rating}</span>
@@ -139,12 +140,12 @@ const ServiceCardComponent = ({ service, layout = 'grid' }) => {
         </h3>
         
         <p className="text-[11px] text-gray-500 font-bold mb-2 line-clamp-1">
-           {service.speciality || t('services.labels.descriptionFallback') || t('services.labels.aboutFallback')}
+           {service.speciality || t('services.labels.descriptionFallback', 'Professional service provider')}
         </p>
         
         <div className="mt-auto pt-2 border-t border-gray-50 flex items-center justify-between">
           <div className="flex flex-col">
-            <span className="text-[8px] font-bold text-gray-400 uppercase leading-none">{t('services.labels.from')}</span>
+            <span className="text-[8px] font-bold text-gray-400 uppercase leading-none">{t('services.labels.from', 'From')}</span>
             <span className="font-black text-gray-900 text-base leading-tight">₹{formatPrice(firstPrice)}</span>
           </div>
           <button className="text-[#CA3433] hover:text-brand-800 transition-colors">
