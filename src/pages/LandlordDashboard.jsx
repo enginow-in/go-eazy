@@ -22,6 +22,7 @@ export const LandlordDashboard = () => {
   const [siteVisits, setSiteVisits] = useState([])
   const [loadingVisits, setLoadingVisits] = useState(true)
   const [actioningVisitId, setActioningVisitId] = useState(null)
+  const [pendingDeleteId, setPendingDeleteId] = useState(null)
 
   useEffect(() => {
     if (user) {
@@ -43,7 +44,13 @@ export const LandlordDashboard = () => {
   }
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this listing?')) return
+    setPendingDeleteId(id)
+  }
+
+  const confirmDelete = async () => {
+    if (!pendingDeleteId) return
+    const id = pendingDeleteId
+    setPendingDeleteId(null)
     const toastId = toast.loading('Deleting property...')
     try {
       await deleteProperty(id)
@@ -111,6 +118,39 @@ export const LandlordDashboard = () => {
 
   return (
     <div className="pt-12 lg:pt-0 pb-20 bg-gray-50 min-h-screen">
+
+      {/* Delete Confirmation Modal */}
+      {pendingDeleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 w-full max-w-sm animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-start gap-4">
+              <div className="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
+                <Trash2 size={20} className="text-[#CA3433]" />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 text-[17px] leading-snug">Delete Listing?</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  This will permanently remove the property and all associated data. This cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setPendingDeleteId(null)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 py-2.5 rounded-xl bg-[#CA3433] text-white text-sm font-bold hover:bg-[#ac2d2c] active:scale-95 transition-all shadow-sm shadow-[#CA3433]/20"
+              >
+                Delete Permanently
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Top Actions */}
