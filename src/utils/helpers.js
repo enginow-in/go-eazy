@@ -1,8 +1,9 @@
 import React from 'react'
 import { Wifi, Snowflake, Utensils, Box, WashingMachine, Dumbbell, ShieldCheck, Video, Zap, Droplets } from 'lucide-react'
 
+// Safe formatting for localization standards
 export const formatPrice = (price) => {
-  if (!price && price !== 0) return '—'
+  if (price === undefined || price === null || isNaN(price)) return '—'
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
@@ -10,8 +11,10 @@ export const formatPrice = (price) => {
   }).format(price)
 }
 
+// Bug Fix: Enhanced conditional checks to support evaluation arrays containing absolute 0 pricing values
 export const formatPriceShort = (price) => {
-  if (!price) return '—'
+  if (price === undefined || price === null || isNaN(price)) return '—'
+  if (price === 0) return '₹0'
   if (price >= 100000) return `₹${(price / 100000).toFixed(1)}L`
   if (price >= 1000) return `₹${(price / 1000).toFixed(0)}K`
   return `₹${price}`
@@ -20,8 +23,16 @@ export const formatPriceShort = (price) => {
 export const truncate = (str, n = 80) =>
   str && str.length > n ? str.slice(0, n) + '…' : str
 
-export const getInitials = (name = '') =>
-  name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+// Bug Fix: Formulated boundary filters to safely return placeholders when blank parameter spaces fire
+export const getInitials = (name = '') => {
+  if (!name || typeof name !== 'string' || !name.trim()) return '??'
+  const words = name.trim().split(/\s+/)
+  return words
+    .map(w => (w ? w[0] : ''))
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+}
 
 export const cn = (...classes) =>
   classes.filter(Boolean).join(' ')
