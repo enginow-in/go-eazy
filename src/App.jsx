@@ -29,6 +29,8 @@ const ServiceProviderDashboard = lazy(() => import('./pages/ServiceProviderDashb
 const ServiceNew              = lazy(() => import('./pages/ServiceNew').then(m => ({ default: m.ServiceNew })))
 const About                   = lazy(() => import('./pages/About').then(m => ({ default: m.About })))
 const SystemAdmin             = lazy(() => import('./pages/SystemAdmin').then(m => ({ default: m.SystemAdmin })))
+// Legal pages use `export default` (not named exports), so no .then() wrapper is needed.
+// All other pages above use named exports and require .then(m => ({ default: m.PageName })).
 const PrivacyPolicy           = lazy(() => import('./pages/legal/PrivacyPolicy'))
 const TermsOfService          = lazy(() => import('./pages/legal/TermsOfService'))
 const CookiePolicy            = lazy(() => import('./pages/legal/CookiePolicy'))
