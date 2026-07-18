@@ -1,0 +1,16 @@
+node_modules
+dist
+.git
+.github
+.vscode
+.worktrees
+coverage
+*.log
+.env
+.env.*
+!.env.example
+README.md
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+SECURITY.md
+scratch.txt
