@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { useSearchParams } from 'react-router-dom'
 import { Filter, Grid, List as ListIcon, ChevronDown } from 'lucide-react'
@@ -65,9 +65,6 @@ export const Search = () => {
   useEffect(() => {
     fetchProperties(true)
   }, [filters, fetchProperties])
-
-  // Use the actual totalCount from database
-  const count = useMemo(() => totalCount, [totalCount])
 
   const renderFilterContent = () => (
     <div className="space-y-6">
