@@ -20,6 +20,44 @@ function getCorsHeaders(req: Request) {
   }
 }
 
+// ── Rate limiting (in-memory sliding window) ──────────────────────────────────
+// Note: This is per-edge-instance (not globally shared) and is intended to
+// immediately throttle abusive traffic without extra infra/dependencies.
+const rateLimiterState: Map<string, number[]> = new Map()
+
+function getClientKey(req: Request, userId?: string) {
+  if (userId) return `user:${userId}`
+  const xff = req.headers.get('x-forwarded-for') || ''
+  const cf = req.headers.get('cf-connecting-ip') || ''
+  const raw = cf || xff.split(',')[0]?.trim() || ''
+  return `ip:${raw || 'unknown'}`
+}
+
+function isRateLimited(key: string, windowMs: number, maxRequests: number) {
+  const now = Date.now()
+  const arr = rateLimiterState.get(key) || []
+  // keep only timestamps within window
+  const cutoff = now - windowMs
+  while (arr.length && arr[0] < cutoff) arr.shift()
+  if (arr.length >= maxRequests) {
+    rateLimiterState.set(key, arr)
+    return { limited: true, remaining: 0, resetAt: cutoff + windowMs }
+  }
+  arr.push(now)
+  rateLimiterState.set(key, arr)
+  // simple cap for memory safety
+  if (rateLimiterState.size > 5000) {
+    // evict oldest keys
+    let evicted = 0
+    for (const [k] of rateLimiterState) {
+      rateLimiterState.delete(k)
+      evicted++
+      if (evicted >= 500) break
+    }
+  }
+  return { limited: false, remaining: maxRequests - arr.length, resetAt: cutoff + windowMs }
+}
+
 serve(async (req: Request) => {
   const corsHeaders = getCorsHeaders(req)
 
@@ -35,6 +73,29 @@ serve(async (req: Request) => {
   }
 
   try {
+    // 0. Rate-limit at the very start of the POST handler.
+    // Use per-user if Authorization exists, otherwise fall back to client IP.
+    const authHeaderAtStart = req.headers.get('Authorization')
+    const hasBearer = !!authHeaderAtStart?.startsWith('Bearer ')
+
+    // We do not parse JWT claims here (keeps this fast); use IP for
+    // unauthenticated requests and a shared key for authenticated ones.
+    const key = hasBearer ? 'user:authenticated' : getClientKey(req)
+
+    const windowMs = 60 * 1000 // 1 minute window
+    const maxRequests = 30
+    const rl = isRateLimited(key, windowMs, maxRequests)
+    if (rl.limited) {
+      return new Response(JSON.stringify({ error: 'Too Many Requests' }), {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)),
+        },
+        status: 429,
+      })
+    }
+
     // 1. Authenticate user
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
