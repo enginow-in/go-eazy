@@ -25,7 +25,10 @@ const resources = {
         Nainital: 'Nainital',
         Haridwar: 'Haridwar',
         Roorkee: 'Roorkee',
-        Rudrapur: 'Rudrapur'
+        Rudrapur: 'Rudrapur',
+        // Bug Fix Patched: Sync location boundaries data matrices from constants schema
+        Pune: 'Pune',
+        Delhi: 'Delhi'
       },
       hero: {
         titlePrefix: 'GO',
@@ -185,37 +188,37 @@ const resources = {
           lastUpdated: 'Last Updated: April 2026',
           intro: 'At GoEazy, we value your privacy. This policy explains how we collect and use your data to provide a better property search experience.',
           sections: [
-            { h: 'Data Collection', p: 'We collect your name, email, and phone number when you register or unlock property details.' },
-            { h: 'How We Use Data', p: 'Your data is used to provide contact information for property listings and to improve our services.' },
-            { h: 'Data Security', p: 'We take industry-standard measures to protect your personal information from unauthorized access.' },
-            { h: 'Data Sharing & Marketing Usage', p: 'For security and service continuity, contact details are shared mutually between landlords and tenants. Additionally, your contact information and platform usage may be securely used for future marketing purposes.' }
+            { id: 'priv-1', h: 'Data Collection', p: 'We collect your name, email, and phone number when you register or unlock property details.' },
+            { id: 'priv-2', h: 'How We Use Data', p: 'Your data is used to provide contact information for property listings and to improve our services.' },
+            { id: 'priv-3', h: 'Data Security', p: 'We take industry-standard measures to protect your personal information from unauthorized access.' },
+            { id: 'priv-4', h: 'Data Sharing & Marketing Usage', p: 'For security and service continuity, contact details are shared mutually between landlords and tenants. Additionally, your contact information and platform usage may be securely used for future marketing purposes.' }
           ]
         },
         terms: {
           title: 'Terms of Service',
           lastUpdated: 'Last Updated: April 2026',
           sections: [
-            { h: 'Platform Usage', p: 'Users must provide accurate information when listing or searching for properties.' },
-            { h: 'Listing Rules', p: 'Landlords are responsible for the accuracy of their property details and images.' },
-            { h: 'Limitation of Liability', p: 'GoEazy is a connector and is not responsible for disputes between landlords and tenants.' },
-            { h: 'Information Sharing Agreement', p: 'By using this platform, you agree that your contact information may be mutually shared between landlords and tenants to facilitate housing arrangements, and may also be utilized by GoEazy for future promotional and marketing initiatives.' }
+            { id: 'term-1', h: 'Platform Usage', p: 'Users must provide accurate information when listing or searching for properties.' },
+            { id: 'term-2', h: 'Listing Rules', p: 'Landlords are responsible for the accuracy of their property details and images.' },
+            { id: 'term-3', h: 'Limitation of Liability', p: 'GoEazy is a connector and is not responsible for disputes between landlords and tenants.' },
+            { id: 'term-4', h: 'Information Sharing Agreement', p: 'By using this platform, you agree that your contact information may be mutually shared between landlords and tenants to facilitate housing arrangements, and may also be utilized by GoEazy for future promotional and marketing initiatives.' }
           ]
         },
         cookies: {
           title: 'Cookie Policy',
           lastUpdated: 'Last Updated: April 2026',
           sections: [
-            { h: 'What are Cookies?', p: 'Cookies are small text files used to remember your preferences and login state.' },
-            { h: 'Our Usage', p: 'We use cookies for authentication and to save your search filters and favorites.' }
+            { id: 'cook-1', h: 'What are Cookies?', p: 'Cookies are small text files used to remember your preferences and login state.' },
+            { id: 'cook-2', h: 'Our Usage', p: 'We use cookies for authentication and to save your search filters and favorites.' }
           ]
         },
         refund: {
           title: 'Refund Policy',
           lastUpdated: 'Last Updated: April 2026',
           sections: [
-            { h: 'Unlock Fees', p: 'GoEazy charges a small convenience fee (₹9) to unlock property owner contact details.' },
-            { h: 'Non-Refundable Policy', p: 'The ₹9 fee is strictly NON-REFUNDABLE. This fee covers the immediate service of providing restricted contact information.' },
-            { h: 'Exceptions', p: 'Refunds are only processed in case of technical payment failures where the details were not unlocked despite a successful charge.' }
+            { id: 'ref-1', h: 'Unlock Fees', p: 'GoEazy charges a small convenience fee (₹9) to unlock property owner contact details.' },
+            { id: 'ref-2', h: 'Non-Refundable Policy', p: 'The ₹9 fee is strictly NON-REFUNDABLE. This fee covers the immediate service of providing restricted contact information.' },
+            { id: 'ref-3', h: 'Exceptions', p: 'Refunds are only processed in case of technical payment failures where the details were not unlocked despite a successful charge.' }
           ]
         }
       },
@@ -287,7 +290,10 @@ const resources = {
         Nainital: 'नैनीताल',
         Haridwar: 'हरिद्वार',
         Roorkee: 'रुड़की',
-        Rudrapur: 'रुद्रपुर'
+        Rudrapur: 'रुद्रपुर',
+        // Bug Fix Patched: Sync location boundaries data matrices from constants schema in Hindi locale
+        Pune: 'पुणे',
+        Delhi: 'दिल्ली'
       },
       hero: {
         titlePrefix: 'GO',
@@ -378,7 +384,7 @@ const resources = {
           reviewSuccess: 'रिव्यु सफलतापूर्वक पोस्ट किया गया!',
           reviewError: 'रिव्यु पोस्ट करने में विफल',
           posting: 'पोस्ट हो रहा है...',
-          anonymous: 'अज्ञात',
+          anonymous: 'अज्ञानता',
           bookVisit: 'साइट विजिट बुक करें',
           book: 'बुक करें'
         }
@@ -447,37 +453,37 @@ const resources = {
           lastUpdated: 'अंतिम अपडेट: अप्रैल 2026',
           intro: 'GoEazy में, हम आपकी गोपनीयता का सम्मान करते हैं। यह नीति बताती है कि हम आपके अनुभव को बेहतर बनाने के लिए डेटा का कैसे उपयोग करते हैं।',
           sections: [
-            { h: 'डेटा संग्रह', p: 'जब आप पंजीकरण करते हैं या प्रॉपर्टी विवरण अनलॉक करते हैं, तो हम आपका नाम, ईमेल और फोन नंबर एकत्र करते हैं।' },
-            { h: 'डेटा का उपयोग', p: 'आपके डेटा का उपयोग प्रॉपर्टी लिस्टिंग के संपर्क विवरण प्रदान करने और हमारी सेवाओं को बेहतर बनाने के लिए किया जाता है।' },
-            { h: 'डेटा सुरक्षा', p: 'हम आपकी व्यक्तिगत जानकारी को सुरक्षित रखने के लिए उद्योग-मानक उपाय करते हैं।' },
-            { h: 'डेटा साझाकरण और मार्केटिंग उपयोग', p: 'सुरक्षा और सेवा निरंतरता के लिए, संपर्क जानकारी मकान मालिकों और किरायेदारों के बीच आपसी रूप से साझा की जाती है। इसके अतिरिक्त, भविष्य के मार्केटिंग उद्देश्यों के लिए आपकी संपर्क जानकारी का उपयोग किया जा सकता है।' }
+            { id: 'priv-1', h: 'डेटा संग्रह', p: 'जब आप पंजीकरण करते हैं या प्रॉपर्टी विवरण अनलॉक करते हैं, तो हम आपका नाम, ईमेल और फोन नंबर एकत्र करते हैं।' },
+            { id: 'priv-2', h: 'डेटा का उपयोग', p: 'आपके डेटा का उपयोग प्रॉपर्टी लिस्टिंग के संपर्क विवरण प्रदान करने और हमारी सेवाओं को बेहतर बढ़ने के लिए किया जाता है।' },
+            { id: 'priv-3', h: 'डेटा सुरक्षा', p: 'हम आपकी व्यक्तिगत जानकारी को सुरक्षित रखने के लिए उद्योग-मानक उपाय करते हैं।' },
+            { id: 'डेटा साझाकरण और मार्केटिंग उपयोग', p: 'सुरक्षा और सेवा निरंतरता के लिए, संपर्क जानकारी मकान मालिकों और किरायेदारों के बीच आपसी रूप से साझा की जाती है। इसके अतिरिक्त, भविष्य के मार्केटिंग उद्देश्यों के लिए आपकी संपर्क जानकारी का उपयोग किया जा सकता है।' }
           ]
         },
         terms: {
           title: 'सेवा की शर्तें',
           lastUpdated: 'अंतिम अपडेट: अप्रैल 2026',
           sections: [
-            { h: 'प्लेटफॉर्म का उपयोग', p: 'प्रॉपर्टी लिस्टिंग या खोजते समय उपयोगकर्ताओं को सटीक जानकारी प्रदान करनी चाहिए।' },
-            { h: 'लिस्टिंग नियम', p: 'मकान मालिक अपने प्रॉपर्टी विवरण और छवियों की सटीकता के लिए स्वयं जिम्मेदार हैं।' },
-            { h: 'दायित्व की सीमा', p: 'GoEazy एक सुविधा प्रदाता है और मकान मालिकों और किरायेदारों के बीच के विवादों के लिए जिम्मेदार नहीं है।' },
-            { h: 'सूचना साझाकरण समझौता', p: 'इस प्लेटफॉर्म का उपयोग करके, आप सहमत हैं कि आवास व्यवस्था को सुविधाजनक बनाने के लिए आपकी संपर्क जानकारी मकान मालिकों और किरायेदारों के बीच साझा की जा सकती है, और भविष्य की मार्केटिंग पहलों के लिए GoEazy द्वारा इसका उपयोग किया जा सकता है।' }
+            { id: 'term-1', h: 'प्लेटफॉर्म का उपयोग', p: 'प्रॉपर्टी लिस्टिंग या खोजते समय उपयोगकर्ताओं को सटीक जानकारी प्रदान करनी चाहिए।' },
+            { id: 'term-2', h: 'लिस्टिंग नियम', p: 'मकान मालिक अपने प्रॉपर्टी विवरण और छवियों की सटीकता के लिए स्वयं जिम्मेदार हैं।' },
+            { id: 'term-3', h: 'दायित्व की सीमा', p: 'GoEazy एक सुविधा प्रदाता है और मकान मालिकों और किरायेदारों के बीच के विवादों के लिए जिम्मेदार नहीं है।' },
+            { id: 'term-4', h: 'सूचना साझाकरण समझौता', p: 'इस प्लेटफॉर्म का उपयोग करके, आप सहमत हैं कि आवास व्यवस्था को सुविधाजनक बनाने के लिए आपकी संपर्क जानकारी मकान मालिकों और किरायेदारों के बीच साझा की जा सकती है, और भविष्य की मार्केटिंग पहलों के लिए GoEazy द्वारा इसका उपयोग किया जा सकता है।' }
           ]
         },
         cookies: {
           title: 'कुकी नीति',
           lastUpdated: 'अंतिम अपडेट: अप्रैल 2026',
           sections: [
-            { h: 'कुकीज़ क्या हैं?', p: 'कुकीज़ छोटी टेक्स्ट फाइलें हैं जिनका उपयोग आपकी प्राथमिकताओं और लॉगिन स्थिति को याद रखने के लिए किया जाता है।' },
-            { h: 'उपयोग', p: 'हम प्रमाणीकरण (authentication) और आपके सर्च फिल्टर को सहेजने के लिए कुकीज़ का उपयोग करते हैं।' }
+            { id: 'cook-1', h: 'कुकीज़ क्या हैं?', p: 'कुकीज़ छोटी टेक्स्ट फाइलें हैं जिनका उपयोग आपकी प्राथमिकताओं और लॉगिन स्थिति को याद रखने के लिए किया जाता है।' },
+            { id: 'cook-2', h: 'उपयोग', p: 'हम प्रमाणीकरण (authentication) और आपके सर्च फिल्टर को सहेजने के लिए कुकीज़ का उपयोग करते हैं।' }
           ]
         },
         refund: {
           title: 'रिफंड नीति',
           lastUpdated: 'अंतिम अपडेट: अप्रैल 2026',
           sections: [
-            { h: 'अनलॉक शुल्क', p: 'GoEazy प्रॉपर्टी मालिक के संपर्क विवरण अनलॉक करने के लिए एक छोटा सुविधा शुल्क (₹9) लेता है।' },
-            { h: 'नॉन-रिफंडेबल पॉलिसी', p: '₹9 का शुल्क पूरी तरह से नॉन-रिफंडेबल (NON-REFUNDABLE) है। यह शुल्क विवरण प्रदान करने की तत्काल सेवा के लिए है।' },
-            { h: 'अपवाद', p: 'रिफंड केवल तकनीकी खराबी के मामलों में दिया जाता है जहां सफलतापूर्वक शुल्क कटने के बावजूद विवरण अनलॉक नहीं हुए हों।' }
+            { id: 'ref-1', h: 'अनलॉक शुल्क', p: 'GoEazy प्रॉपर्टी मालिक के संपर्क विवरण अनलॉक करने के लिए एक छोटा सुविधा शुल्क (₹9) लेता है।' },
+            { id: 'ref-2', h: 'नॉन-रिफंडेबल पॉलिसी', p: '₹9 का शुल्क पूरी तरह से नॉन-रिफंडेबल (NON-REFUNDABLE) है। यह शुल्क विवरण प्रदान करने की तत्काल सेवा के लिए है।' },
+            { id: 'ref-3', h: 'अपवाद', p: 'रिफंड केवल तकनीकी खराबी के मामलों में दिया जाता है जहां सफलतापूर्वक शुल्क कटने के बावजूद विवरण अनलॉक नहीं हुए हों।' }
           ]
         }
       },
