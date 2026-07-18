@@ -15,12 +15,13 @@ html {
 }
 
 body {
-  font-family: var(--font-sans);
-  background-color: var(--color-surface);
-  color: var(--color-text-primary);
+  font-family: var(--font-sans, sans-serif);
+  background-color: var(--color-surface, #f8fafc);
+  color: var(--color-text-primary, #0f172a);
   line-height: 1.6;
 }
-/* Image & Content Protection */
+
+/* Image Protection (Kept safe but functional for links) */
 img {
   -webkit-user-drag: none;
   -khtml-user-drag: none;
@@ -31,33 +32,41 @@ img {
   -ms-user-select: none;
 }
 
+/* Bug Fix: Removed hostile global text-selection block on body to retain accessibility features */
 body {
-  user-select: none;
-  -webkit-user-select: none;
-  -ms-user-select: none;
-  -moz-user-select: none;
+  text-rendering: optimizeLegibility;
 }
 
-input, textarea, [contenteditable="true"] {
-  user-select: text !important;
-  -webkit-user-select: text !important;
-  -ms-user-select: text !important;
-  -moz-user-select: text !important;
-}
-
-/* Tactile Interactions */
+/* Tactile Interactions Optimization */
 button:active, 
 .btn:active,
 [role="button"]:active {
   transform: scale(0.96);
-  transition: transform 0.1s ease;
+  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
-::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+/* Focus Ring Accessibility Safe Standard */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #CA3433;
+  outline-offset: 2px;
+}
+
+/* Scrollbar customization */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
 
 /* Horizontal scroll sections */
 .scroll-row {
@@ -66,45 +75,68 @@ button:active,
   overflow-x: auto;
   padding-bottom: 1rem;
   scrollbar-width: none;
+  -ms-overflow-style: none; /* Safely remove scrollbar representation on IE/Edge */
 }
-.scroll-row::-webkit-scrollbar { display: none; }
+.scroll-row::-webkit-scrollbar {
+  display: none !important;
+}
 
-/* Glass */
+/* Glassmorphism utility */
 .glass {
-  background: rgba(255,255,255,0.75);
+  background: rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255,255,255,0.5);
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-/* Animations */
+/* Core System Keyframes Framework */
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
+
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-8px); }
-}
-@keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position:  200% 0; }
+  50% { transform: translateY(-8px); }
 }
 
-.animate-fadeInUp { animation: fadeInUp 0.6s ease both; }
-.animate-float    { animation: float 4s ease-in-out infinite; }
+@keyframes shimmerAnimation {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
 
+.animate-fadeInUp {
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Bug Fix: Normalized rendering gradients matrix mapping to match hardware accelerated layers */
 .skeleton {
   background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.4s infinite;
-  border-radius: 0.5rem;
+  animation: shimmerAnimation 1.5s infinite linear;
+  will-change: background-position;
 }
 
-/* Hero gradient */
+/* Hero background gradients */
 .hero-gradient {
   background: radial-gradient(ellipse 80% 60% at 50% 0%, #dbeeff 0%, #f8fafc 60%, #fff 100%);
 }
 
-/* Swiper overrides for premium aesthetic */
-.swiper-pagination-bullet-active { background: #CA3433 !important; }
+/* Swiper pagination layout override */
+.swiper-pagination-bullet-active {
+  background: #CA3433 !important;
+}
