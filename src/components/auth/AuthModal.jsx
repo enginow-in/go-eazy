@@ -31,14 +31,35 @@ export const AuthModal = () => {
 
   React.useEffect(() => { setTab(authModalTab) }, [authModalTab])
 
-  const validate = () => {
-    const e = {}
-    if (tab === 'signup' && !form.name.trim()) e.name = 'Name is required'
-    if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) e.email = 'Valid email required'
-    if (form.password.length < 8) e.password = 'Min 8 characters'
-    setErrors(e)
-    return !Object.keys(e).length
+   const validate = () => {
+  const e = {};
+
+  // 1. Name validation (only for signup tab)
+  if (tab === 'signup' && (!form.name || !form.name.trim())) {
+    e.name = 'Name is required';
   }
+
+  // 2. Email validation (checks if empty first, then checks format)
+  if (!form.email || !form.email.trim()) {
+    e.email = 'Email is required';
+  } else if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+    e.email = 'Valid email required';
+  }
+
+  // 3. Password validation
+  if (!form.password) {
+    e.password = 'Password is required';
+  } else if (form.password.length < 8) {
+    e.password = 'Password must be at least 8 characters long';
+  } else {
+    const weakPasswords = ['12345678', 'password', 'password123'];
+    if (weakPasswords.includes(form.password.toLowerCase())) {
+      e.password = 'This password is too common. Please choose a stronger one';
+    }
+  }
+  console.log("Validation errors found:", e)
+  return Object.keys(e).length === 0;
+};
 
   const handleSubmit = async (e) => {
     e.preventDefault()
