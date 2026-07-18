@@ -108,6 +108,7 @@ export const ServiceNew = () => {
   const handleFileChange = e => {
     const files = Array.from(e.target.files)
     setDocumentFiles(v => [...v, ...files])
+    e.target.value = ''
   }
   const removeFile = (i) => setDocumentFiles(v => v.filter((_, idx) => idx !== i))
 
