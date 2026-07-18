@@ -12,6 +12,7 @@ import { RoleSelectionModal } from './components/auth/RoleSelectionModal'
 import { OnboardingQuiz } from './components/common/OnboardingQuiz'
 import { useSelector } from 'react-redux'
 import { useAuth } from './hooks/useAuth'
+import { useAuthInit } from './hooks/useAuthInit'
 import ScrollToTop from './components/common/ScrollToTop'
 
 // Heavy pages: lazy-loaded into separate chunks to prevent
@@ -41,7 +42,11 @@ const PageSpinner = () => (
 )
 
 function App() {
-  useAuth() 
+  // Initialize the single Supabase auth subscription at the app root.
+  // useAuthInit must be called here — NOT inside useAuth() — to ensure
+  // exactly one onAuthStateChange listener exists regardless of how many
+  // components consume useAuth() for state reads.
+  useAuthInit()
   const { loading } = useSelector(s => s.auth)
 
   if (loading) {
