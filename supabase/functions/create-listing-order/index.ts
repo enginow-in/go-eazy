@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
+import { logger } from '../_shared/logger.ts'
+
 
 const ALLOWED_ORIGINS = [
   'https://goeazy.in',
@@ -56,7 +58,8 @@ serve(async (req: Request) => {
 
     const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token)
     if (authError || !authData?.user) {
-      console.error('Auth failed:', authError?.message)
+      logger.error(authError ?? 'Auth failed', { route: 'chat/send', function: 'create-listing-order' })
+
       return new Response(JSON.stringify({ error: 'Authentication failed', detail: authError?.message }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 401,
@@ -96,7 +99,8 @@ serve(async (req: Request) => {
 
     if (!resp.ok) {
       const errorText = await resp.text()
-      console.error('Razorpay Order API error:', resp.status, errorText)
+      logger.error(new Error(errorText), { route: 'chat/send', function: 'create-listing-order', status: resp.status })
+
       return new Response(JSON.stringify({ error: 'Failed to create payment order', detail: errorText, status: resp.status }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 502,
@@ -111,7 +115,8 @@ serve(async (req: Request) => {
     })
 
   } catch (error: any) {
-    console.error('Unexpected error in create-listing-order:', error.message || error)
+    logger.error(error, { route: 'chat/send', function: 'create-listing-order' })
+
     return new Response(JSON.stringify({ error: `Internal Server Error: ${error.message}` }), {
       headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
       status: 500,
