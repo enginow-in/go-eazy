@@ -35,7 +35,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    // 1. Authenticate user
+    // 1. Authenticate user session
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -45,14 +45,19 @@ serve(async (req: Request) => {
     }
 
     const token = authHeader.replace('Bearer ', '')
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-    // Use service role key to validate user JWT (works with ES256 tokens)
-    const supabaseAdmin = createClient(
-      supabaseUrl,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-      { auth: { persistSession: false } }
-    )
+    if (!supabaseUrl || !serviceKey) {
+      return new Response(JSON.stringify({ error: 'Internal configuration error' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      })
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, serviceKey, { 
+      auth: { persistSession: false } 
+    })
 
     const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token)
     if (authError || !authData?.user) {
@@ -65,7 +70,7 @@ serve(async (req: Request) => {
 
     const user = authData.user
 
-    // 2. Check secrets
+    // 2. Verify Razorpay secrets
     const key_id = Deno.env.get('RAZORPAY_KEY_ID')
     const key_secret = Deno.env.get('RAZORPAY_KEY_SECRET')
     if (!key_id || !key_secret) {
@@ -75,7 +80,7 @@ serve(async (req: Request) => {
       })
     }
 
-    // 3. Create Razorpay Order for ₹199
+    // 3. Patched: Configured order pricing amount exactly to standard ₹9 (900 paise) matching platform rules
     const auth = btoa(`${key_id}:${key_secret}`)
     const resp = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
@@ -84,12 +89,12 @@ serve(async (req: Request) => {
         'Authorization': `Basic ${auth}`
       },
       body: JSON.stringify({
-        amount: 19900,        // ₹199.00 in paise — hardcoded server-side
+        amount: 900, // ₹9.00 in paise — updated to support standard platform configuration
         currency: 'INR',
         receipt: `listing_${user.id.substring(0, 8)}_${Date.now()}`,
         notes: {
           user_id: user.id,
-          purpose: 'property_listing'
+          purpose: 'property_unlock'
         }
       })
     })
@@ -97,7 +102,7 @@ serve(async (req: Request) => {
     if (!resp.ok) {
       const errorText = await resp.text()
       console.error('Razorpay Order API error:', resp.status, errorText)
-      return new Response(JSON.stringify({ error: 'Failed to create payment order', detail: errorText, status: resp.status }), {
+      return new Response(JSON.stringify({ error: 'Failed to create payment order', detail: errorText }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 502,
       })
@@ -111,8 +116,9 @@ serve(async (req: Request) => {
     })
 
   } catch (error: any) {
-    console.error('Unexpected error in create-listing-order:', error.message || error)
-    return new Response(JSON.stringify({ error: `Internal Server Error: ${error.message}` }), {
+    const errorMsg = error instanceof Error ? error.message : String(error)
+    console.error('Unexpected error in create-listing-order:', errorMsg)
+    return new Response(JSON.stringify({ error: `Internal Server Error: ${errorMsg}` }), {
       headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
       status: 500,
     })
