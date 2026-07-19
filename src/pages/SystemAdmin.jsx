@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useServices } from '../hooks/useServices'
-import { LogOut, ShieldAlert, ShieldCheck, Activity, Users, Building, AlertTriangle, FileText, CheckCircle, XCircle, Eye } from 'lucide-react'
+import { LogOut, ShieldAlert, ShieldCheck, Activity, Users, Building, AlertTriangle, FileText, CheckCircle, XCircle, Eye, Video } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { Modal } from '../components/ui/Modal'
 import { Button } from '../components/ui/Button'
@@ -21,6 +21,8 @@ export const SystemAdmin = () => {
   const [loadingProviders, setLoadingProviders] = useState(true)
   const [selectedDoc, setSelectedDoc] = useState(null)
   const [showApprovals, setShowApprovals] = useState(false)
+  const [videoListings, setVideoListings] = useState([])
+  const [loadingVideos, setLoadingVideos] = useState(true)
 
 
   useEffect(() => {
@@ -28,6 +30,7 @@ export const SystemAdmin = () => {
     if (user && role === 'admin') {
       loadStats()
       loadProviders()
+      loadVideoListings()
     }
   }, [user])
 
@@ -60,6 +63,36 @@ export const SystemAdmin = () => {
     } finally {
       setLoadingProviders(false)
     }
+  }
+
+  const loadVideoListings = async () => {
+    setLoadingVideos(true)
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('id, title, city, area, landlord_id, video_url, video_status, video_reviewer_notes, created_at')
+        .not('video_url', 'is', null)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      setVideoListings(data || [])
+    } catch (e) {
+      console.error('Failed to load property videos', e)
+      toast.error('Unable to load property video reviews')
+    } finally { setLoadingVideos(false) }
+  }
+
+  const handleVideoAction = async (property, status) => {
+    try {
+      const { error } = await supabase.from('properties').update({
+        video_status: status,
+        video_reviewer_id: user.id,
+        video_reviewed_at: new Date().toISOString(),
+        video_reviewer_notes: status === 'rejected' ? 'Video requires changes before approval.' : null,
+      }).eq('id', property.id)
+      if (error) throw error
+      setVideoListings(prev => prev.map(item => item.id === property.id ? { ...item, video_status: status } : item))
+      toast.success(`Video ${status}`)
+    } catch (e) { toast.error(e.message || 'Failed to update video status') }
   }
 
   const handleAction = async (id, newStatus) => {
@@ -334,6 +367,40 @@ export const SystemAdmin = () => {
             </div>
           )}
         </div>
+
+        {/* PROPERTY VIDEO VERIFICATION */}
+        <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center justify-between gap-4 mb-5">
+            <div>
+              <h2 className="text-2xl font-bold font-display flex items-center gap-2"><Video className="text-[#CA3433]" size={22} /> Video Verification</h2>
+              <p className="text-sm text-gray-500 mt-1">Review walkthrough videos before the public Video Verified badge is shown.</p>
+            </div>
+            <button onClick={loadVideoListings} className="text-xs font-bold text-[#CA3433] hover:underline">Refresh</button>
+          </div>
+          {loadingVideos ? <div className="h-24 rounded-xl bg-gray-50 animate-pulse" /> : videoListings.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-gray-200 p-8 text-center text-sm text-gray-500">No property videos are waiting for review.</div>
+          ) : (
+            <div className="space-y-4">
+              {videoListings.map(property => (
+                <article key={property.id} className="rounded-2xl border border-gray-100 p-4 flex flex-col lg:flex-row gap-4">
+                  <video src={property.video_url} controls preload="metadata" className="w-full lg:w-64 h-36 rounded-xl bg-black object-contain" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <div><h3 className="font-bold text-gray-900 truncate">{property.title}</h3><p className="text-sm text-gray-500">{property.area}, {property.city}</p></div>
+                      <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase ${property.video_status === 'approved' ? 'bg-green-100 text-green-700' : property.video_status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>{property.video_status}</span>
+                    </div>
+                    <p className="mt-3 text-xs text-gray-400">Landlord ID: {property.landlord_id}</p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button onClick={() => handleVideoAction(property, 'approved')} className="rounded-xl bg-green-600 px-4 py-2 text-xs font-bold text-white hover:bg-green-700">Approve</button>
+                      <button onClick={() => handleVideoAction(property, 'rejected')} className="rounded-xl bg-red-50 px-4 py-2 text-xs font-bold text-red-700 hover:bg-red-100">Reject</button>
+                      <button onClick={() => handleVideoAction(property, 'pending')} className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50">Request re-check</button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
 
         {/* Document Modal */}
         <Modal open={!!selectedDoc} onClose={() => setSelectedDoc(null)} size="lg" className="bg-white">
