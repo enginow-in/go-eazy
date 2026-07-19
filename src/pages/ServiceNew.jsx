@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import {
@@ -68,6 +68,20 @@ export const ServiceNew = () => {
   // Step 1: Photo (Poster)
   const [posterImages, setPosterImages] = useState([])
   const [posterPreviews, setPosterPreviews] = useState([])
+
+  const removePosterImage = (index) => {
+    const removedUrl = posterPreviews[index]
+    if (removedUrl) URL.revokeObjectURL(removedUrl)
+
+    setPosterImages(v => v.filter((_, idx) => idx !== index))
+    setPosterPreviews(v => v.filter((_, idx) => idx !== index))
+  }
+
+  useEffect(() => {
+    return () => {
+      posterPreviews.forEach(url => URL.revokeObjectURL(url))
+    }
+  }, [])
 
   // Step 2: Location
   const [location, setLocation] = useState({
@@ -232,10 +246,7 @@ export const ServiceNew = () => {
                     <div key={i} className="relative aspect-video rounded-xl overflow-hidden group border border-gray-200">
                       <img src={preview} className="w-full h-full object-cover" />
                       <button 
-                        onClick={() => {
-                          setPosterImages(v => v.filter((_, idx) => idx !== i))
-                          setPosterPreviews(v => v.filter((_, idx) => idx !== i))
-                        }}
+                        onClick={() => removePosterImage(i)}
                         className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <Trash2 size={14} />
