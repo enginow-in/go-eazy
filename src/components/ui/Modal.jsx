@@ -1,13 +1,27 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useLayoutEffect } from 'react'
 import { cn } from '../../utils/helpers'
 import { X } from 'lucide-react'
 
+let modalCount = 0
+
 export const Modal = ({ open, onClose, children, title, size = 'md', className = '' }) => {
-  useEffect(() => {
-    if (open) document.body.style.overflow = 'hidden'
-    else document.body.style.overflow = ''
-    return () => { document.body.style.overflow = '' }
+  useLayoutEffect(() => {
+    if (open) {
+      modalCount++
+      document.body.style.overflow = 'hidden'
+    }
+    return () => {
+      modalCount--
+      if (modalCount === 0) document.body.style.overflow = ''
+    }
   }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [open, onClose])
 
   if (!open) return null
 
@@ -22,29 +36,30 @@ export const Modal = ({ open, onClose, children, title, size = 'md', className =
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title || 'Modal'}
       onClick={onClose}
     >
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
-      {/* Modal */}
       <div
         className={cn(
           'relative w-full bg-white rounded-xl shadow-2xl',
-          'max-h-[90vh] overflow-y-auto',
+          'max-h-[90vh] overflow-y-auto overscroll-contain',
           'animate-fadeInUp',
           sizes[size],
           className
         )}
         onClick={e => e.stopPropagation()}
       >
-        {/* Header */}
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white z-10 rounded-t-xl">
             <h2 className="text-lg font-bold text-gray-900">{title}</h2>
             <button
               onClick={onClose}
               className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500"
+              aria-label="Close modal"
             >
               <X size={18} />
             </button>
@@ -54,6 +69,7 @@ export const Modal = ({ open, onClose, children, title, size = 'md', className =
           <button
             onClick={onClose}
             className="absolute top-2 right-2 z-10 p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600 sm:top-3 sm:right-3"
+            aria-label="Close modal"
           >
             <X size={20} />
           </button>
