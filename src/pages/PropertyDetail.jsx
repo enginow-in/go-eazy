@@ -408,6 +408,21 @@ export const PropertyDetail = () => {
               </p>
             </div>
 
+            {p.video_status === 'approved' && p.video_url && (
+              <section className="bg-white rounded-lg sm:rounded-xl p-4 sm:p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)] border border-emerald-100">
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">Video Verified walkthrough</h2>
+                    <p className="text-sm text-gray-500 mt-1">This walkthrough has been reviewed and approved by GoEazy.</p>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">Verified</span>
+                </div>
+                <video controls preload="metadata" poster={images[0]} className="w-full max-h-[30rem] rounded-xl bg-black object-contain" src={p.video_url}>
+                  Your browser does not support video playback.
+                </video>
+              </section>
+            )}
+
             {/* Amenities Card */}
             {p.amenities && p.amenities.length > 0 && (
               <div className="bg-white rounded-lg sm:rounded-xl p-6 sm:p-8 shadow-[0_2px_12px_rgb(0,0,0,0.03)] border border-gray-100/50">

@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, X, Image as ImageIcon, Zap, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react'
+import { Plus, X, Image as ImageIcon, Video, Zap, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react'
 import { Input, Textarea, Select } from '../ui/Input'
 import { Button } from '../ui/Button'
 import { PROPERTY_TYPES, AMENITIES } from '../../utils/constants'
@@ -95,6 +95,8 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
   const [step, setStep] = useState(1)
   const [images, setImages] = useState([])
   const [previewUrls, setPreviewUrls] = useState(initialData?.images || [])
+  const [videoFile, setVideoFile] = useState(null)
+  const [videoPreview, setVideoPreview] = useState(initialData?.video_url || '')
 
   const [form, setForm] = useState({
     title:             initialData?.title || '',
@@ -138,6 +140,41 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
     }
   }
 
+  useEffect(() => () => {
+    if (videoPreview?.startsWith('blob:')) URL.revokeObjectURL(videoPreview)
+  }, [videoPreview])
+
+  const handleVideoChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!['video/mp4', 'video/webm', 'video/quicktime'].includes(file.type)) {
+      toast.error('Please choose an MP4, WebM, or MOV video'); return
+    }
+    if (file.size > 100 * 1024 * 1024) { toast.error('Video must be smaller than 100MB'); return }
+    const url = URL.createObjectURL(file)
+    const probe = document.createElement('video')
+    probe.preload = 'metadata'
+    probe.onloadedmetadata = () => {
+      if (probe.duration < 30 || probe.duration > 60) {
+        URL.revokeObjectURL(url)
+        toast.error('Walkthrough videos must be between 30 and 60 seconds'); return
+      }
+      setVideoFile(file)
+      setVideoPreview(url)
+    }
+    probe.onerror = () => { URL.revokeObjectURL(url); toast.error('Unable to read this video') }
+    probe.src = url
+  }
+
+  const uploadVideo = async (session) => {
+    if (!videoFile) return videoPreview || null
+    const ext = videoFile.name.split('.').pop()?.toLowerCase() || 'mp4'
+    const path = `${session.user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+    const { data, error } = await supabase.storage.from('property-videos').upload(path, videoFile, { upsert: false, contentType: videoFile.type })
+    if (error) throw new Error('Video upload failed: ' + error.message)
+    return supabase.storage.from('property-videos').getPublicUrl(data.path).data.publicUrl
+  }
+
   const toggleAmenity = (id) => {
     setForm(f => ({
       ...f,
@@ -168,7 +205,9 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
     if (!validateForm()) return
     setLoading(true)
     try {
-      await updateProperty(initialData.id, { ...form, images: previewUrls.filter(u => !u.startsWith('blob:')) }, images)
+      const { data: { session } } = await supabase.auth.getSession()
+      const videoUrl = videoFile ? await uploadVideo(session) : (videoPreview || null)
+      await updateProperty(initialData.id, { ...form, video_url: videoUrl, images: previewUrls.filter(u => !u.startsWith('blob:')) }, images)
       toast.success('Property updated successfully!')
       navigate('/landlord')
     } catch (err) {
@@ -195,6 +234,7 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
         const { data: { publicUrl } } = supabase.storage.from('property-images').getPublicUrl(uploadData.path)
         uploadedUrls.push(publicUrl)
       }
+      const videoUrl = await uploadVideo(session)
 
       const loadRazorpay = () => new Promise(resolve => {
         if (window.Razorpay) return resolve(true)
@@ -228,7 +268,7 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
             const verifyResp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-listing-payment`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s2?.access_token}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
-              body: JSON.stringify({ ...response, property_data: { ...form, images: uploadedUrls } })
+              body: JSON.stringify({ ...response, property_data: { ...form, images: uploadedUrls, video_url: videoUrl } })
             })
             if (!verifyResp.ok) { const e = await verifyResp.json().catch(() => ({})); throw new Error(e.error || 'Payment verification failed') }
             setShowSuccess(true)
@@ -380,6 +420,25 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
                 <span className="text-sm font-semibold">Add Photo</span>
                 <input id="property-images" type="file" multiple accept="image/*" className="hidden" onChange={handleImageChange} />
               </label>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-red-100 bg-red-50/40 p-4 space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h4 className="font-bold text-gray-900 flex items-center gap-2"><Video size={17} className="text-[#CA3433]" /> Walkthrough video</h4>
+                <p className="text-xs text-gray-500 mt-1">Optional 30–60 second MP4, WebM, or MOV (max 100MB). Admin approval is required before it appears publicly.</p>
+              </div>
+              <label className="shrink-0 cursor-pointer rounded-xl bg-white border border-red-200 px-3 py-2 text-xs font-bold text-[#CA3433] hover:bg-red-50">
+                {videoPreview ? 'Replace' : 'Add video'}
+                <input type="file" accept="video/mp4,video/webm,video/quicktime" className="hidden" onChange={handleVideoChange} />
+              </label>
+            </div>
+            {videoPreview && (
+              <div className="relative overflow-hidden rounded-xl bg-black">
+                <video src={videoPreview} controls preload="metadata" className="w-full max-h-64 object-contain" />
+                <button type="button" onClick={() => { setVideoFile(null); setVideoPreview('') }} className="absolute top-2 right-2 rounded-lg bg-black/70 p-2 text-white hover:bg-red-600" aria-label="Remove walkthrough video"><X size={15} /></button>
+              </div>
             )}
           </div>
 
