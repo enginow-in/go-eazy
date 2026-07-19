@@ -50,7 +50,7 @@ serve(async (req: Request) => {
       })
     }
 
-    // 1. Authenticate user
+    // 1. Authenticate user session
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -59,14 +59,18 @@ serve(async (req: Request) => {
     }
 
     const token = authHeader.replace('Bearer ', '')
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-    // Use service role key to validate ES256 JWTs
-    const supabaseAdmin = createClient(
-      supabaseUrl,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-      { auth: { persistSession: false } }
-    )
+    if (!supabaseUrl || !serviceKey) {
+      return new Response(JSON.stringify({ error: 'Internal setup configuration parameters error' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500,
+      })
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, serviceKey, { 
+      auth: { persistSession: false } 
+    })
 
     const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token)
     if (authError || !authData?.user) {
@@ -87,7 +91,7 @@ serve(async (req: Request) => {
       })
     }
 
-    // 3. Cross-validate with Razorpay API — ensure amount is exactly ₹199
+    // 3. Cross-validate with Razorpay API
     const keyId = Deno.env.get('RAZORPAY_KEY_ID')!
     const auth = btoa(`${keyId}:${secret}`)
     const payResp = await fetch(`https://api.razorpay.com/v1/payments/${razorpay_payment_id}`, {
@@ -106,19 +110,21 @@ serve(async (req: Request) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403,
       })
     }
-    // In test mode, status is 'authorized'; in live mode, it's 'captured'
+
     if (!['captured', 'authorized'].includes(payment.status)) {
       return new Response(JSON.stringify({ error: `Payment not completed: ${payment.status}` }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403,
       })
     }
-    if (payment.amount !== 19900) {
-      return new Response(JSON.stringify({ error: 'Amount tampered' }), {
+
+    // Bug Fix 1: Aligned target integer verification mapping parameters to match standard ₹9 value (900 paise)
+    if (payment.amount !== 900) {
+      return new Response(JSON.stringify({ error: 'Amount verification parameter tampered' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403,
       })
     }
 
-    // 4. All checks pass — create the property using the same admin client
+    // 4. Create the property listing entry
     const { data: property, error: insertError } = await supabaseAdmin
       .from('properties')
       .insert({
@@ -140,8 +146,10 @@ serve(async (req: Request) => {
     })
 
   } catch (error: any) {
-    console.error('Unexpected error in verify-listing-payment:', error.message)
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+    // Bug Fix 2: Shielded error extraction structures against object parameter leakage issues
+    const handledMessage = error instanceof Error ? error.message : String(error)
+    console.error('Unexpected error in verify-listing-payment:', handledMessage)
+    return new Response(JSON.stringify({ error: `Internal Server Error: ${handledMessage}` }), {
       headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' }, status: 500,
     })
   }
