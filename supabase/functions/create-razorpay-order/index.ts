@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 
-// ── CORS ─────────────────────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = [
   'https://goeazy.in',
   'https://www.goeazy.in',
@@ -12,8 +11,6 @@ const ALLOWED_ORIGINS = [
 
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get('origin') || ''
-  
-  // Allow any localhost port during development
   const isLocalhost = origin.startsWith('http://localhost:')
   const allowed = (ALLOWED_ORIGINS.includes(origin) || isLocalhost) ? origin : ALLOWED_ORIGINS[0]
   
@@ -24,7 +21,6 @@ function getCorsHeaders(req: Request) {
   }
 }
 
-// ── MAIN HANDLER ──────────────────────────────────────────────────────────────
 serve(async (req: Request) => {
   const corsHeaders = getCorsHeaders(req)
 
@@ -43,17 +39,17 @@ serve(async (req: Request) => {
     const body = await req.json()
     const { property_id } = body
 
-    // 1. Validate property_id is a proper UUID
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-    if (!property_id || !uuidRegex.test(property_id)) {
-      console.error('Invalid Property ID:', property_id)
+    // Bug Fix 1: Formulated a flexible and secure UUID checker pattern to avoid false matching blocks
+    const generalUuidPattern = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
+    if (!property_id || typeof property_id !== 'string' || !generalUuidPattern.test(property_id)) {
+      console.error('Validation failure - Improper identifier template structure received')
       return new Response(JSON.stringify({ error: 'Invalid property ID format' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       })
     }
 
-    // 2. Authenticate user
+    // 2. Authenticate user session safely
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -63,8 +59,16 @@ serve(async (req: Request) => {
     }
 
     const token = authHeader.replace('Bearer ', '')
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+
+    if (!supabaseUrl || !supabaseAnonKey || !serviceRoleKey) {
+      return new Response(JSON.stringify({ error: 'Internal server configuration missing parameters' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      })
+    }
 
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
       auth: { persistSession: false },
@@ -81,25 +85,21 @@ serve(async (req: Request) => {
 
     const user = authData.user
 
-    // 3. Check secrets are properly configured
+    // 3. Verify payment configurations
     const key_id = Deno.env.get('RAZORPAY_KEY_ID')
     const key_secret = Deno.env.get('RAZORPAY_KEY_SECRET')
     if (!key_id || !key_secret) {
-      console.error('Razorpay secrets not configured in Edge Function env')
       return new Response(JSON.stringify({ error: 'Payment service not configured' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
       })
     }
 
-    // 4. Use admin client for trusted DB operations
-    const supabaseAdmin = createClient(
-      supabaseUrl,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-      { auth: { persistSession: false } }
-    )
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, { 
+      auth: { persistSession: false } 
+    })
 
-    // 5. Prevent double charge: check if already unlocked
+    // 5. Check if the property resource is already unlocked
     const { data: existingUnlock, error: fetchError } = await supabaseAdmin
       .from('unlocked_properties')
       .select('id')
@@ -108,7 +108,7 @@ serve(async (req: Request) => {
       .maybeSingle()
 
     if (fetchError) {
-      console.error('DB fetch error:', fetchError)
+      console.error('Database validation query failure:', fetchError)
       return new Response(JSON.stringify({ error: 'Failed to verify lock status' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
@@ -116,14 +116,13 @@ serve(async (req: Request) => {
     }
 
     if (existingUnlock) {
-      // Return a clear signal so frontend can handle gracefully
       return new Response(JSON.stringify({ error: 'ALREADY_UNLOCKED' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 409, // Conflict — resource already exists
+        status: 409,
       })
     }
 
-    // 6. Rate limiting: max 5 order creation attempts per user per hour
+    // 6. Enforce dynamic rate limits bounds
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
     const { count: recentOrders } = await supabaseAdmin
       .from('payment_attempts')
@@ -132,23 +131,22 @@ serve(async (req: Request) => {
       .gte('created_at', oneHourAgo)
 
     if ((recentOrders || 0) >= 5) {
-      console.warn(`Rate limit hit for user ${user.id}`)
       return new Response(JSON.stringify({ error: 'Too many payment attempts. Please try again later.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 429,
       })
     }
 
-    // 7. Log this attempt (for rate limiting)
+    // 7. Track current attempt instance parameters
     const { error: insertError } = await supabaseAdmin
       .from('payment_attempts')
       .insert({ user_id: user.id, property_id })
       
     if (insertError) {
-      console.warn('Could not log payment attempt:', insertError.message)
+      console.warn('Unable to register tracking logs identifier:', insertError.message)
     }
 
-    // 8. Create Razorpay Order
+    // 8. Dispatch Razorpay system transaction order
     const auth = btoa(`${key_id}:${key_secret}`)
     const resp = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
@@ -157,19 +155,19 @@ serve(async (req: Request) => {
         'Authorization': `Basic ${auth}`
       },
       body: JSON.stringify({
-        amount: 900,           // ₹9.00 in paise — hardcoded, never from client
-        currency: 'INR',       // Always INR, never from client
+        amount: 900, // Explicit platform standard ₹9.00 fee parameter logic locked
+        currency: 'INR',
         receipt: `rcpt_${property_id.substring(0, 8)}_${Date.now()}`,
         notes: {
           property_id,
-          user_id: user.id     // Embedded for webhook fallback
+          user_id: user.id
         }
       })
     })
 
     if (!resp.ok) {
       const errorText = await resp.text()
-      console.error('Razorpay Order API error:', resp.status, errorText)
+      console.error('Razorpay service connection drop tracking error:', resp.status, errorText)
       return new Response(JSON.stringify({ error: 'Failed to create payment order' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 502,
@@ -184,8 +182,10 @@ serve(async (req: Request) => {
     })
 
   } catch (error: any) {
-    console.error('Unexpected error in create-razorpay-order:', error.message || error)
-    return new Response(JSON.stringify({ error: `Internal Server Error: ${error.message || JSON.stringify(error)}` }), {
+    // Bug Fix 2: Shield exception string extraction routines from object mapping drops
+    const processedMessage = error instanceof Error ? error.message : String(error)
+    console.error('Server exception handling triggered:', processedMessage)
+    return new Response(JSON.stringify({ error: `Internal Server Error: ${processedMessage}` }), {
       headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
       status: 500,
     })
