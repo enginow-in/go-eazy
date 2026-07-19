@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { setUser, setProfile, logout, setLoading } from '../store/authSlice'
@@ -6,11 +6,10 @@ import { setUser, setProfile, logout, setLoading } from '../store/authSlice'
 export const useAuth = () => {
   const dispatch = useDispatch()
   const { user, profile, role, loading, authModalOpen, authModalTab } = useSelector(s => s.auth)
+  const fetchingProfileRef = useRef(null)
 
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
-
       if (error) console.error('Auth: Session error', error)
       
       dispatch(setUser(session?.user ?? null))
@@ -18,10 +17,7 @@ export const useAuth = () => {
       else dispatch(setLoading(false))
     })
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-
-      
       dispatch(setUser(session?.user ?? null))
       if (session?.user) {
         fetchProfile(session.user.id)
@@ -36,6 +32,8 @@ export const useAuth = () => {
   }, [])
 
   const fetchProfile = async (userId) => {
+    if (fetchingProfileRef.current === userId) return
+    fetchingProfileRef.current = userId
     try {
       // First try to fetch
       let { data, error } = await supabase
@@ -109,6 +107,8 @@ export const useAuth = () => {
     } catch (err) {
       console.error('Auth: fetchProfile catch block', err)
       dispatch(setLoading(false))
+    } finally {
+      fetchingProfileRef.current = null
     }
   }
 
