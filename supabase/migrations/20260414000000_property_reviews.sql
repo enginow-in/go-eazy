@@ -2,7 +2,7 @@
 -- PROPERTY REVIEWS TABLE
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.property_reviews (
-  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  id uuid NOT NULL DEFAULT extensions.uuid_generate_v4(),
   property_id uuid NOT NULL REFERENCES public.properties(id) ON DELETE CASCADE,
   reviewer_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   rating integer NOT NULL CHECK (rating BETWEEN 1 AND 5),

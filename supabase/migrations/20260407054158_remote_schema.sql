@@ -15,8 +15,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 );
 
 -- PROPERTIES
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS public.properties (
-  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  id uuid NOT NULL DEFAULT extensions.uuid_generate_v4(),
   landlord_id uuid NOT NULL REFERENCES public.profiles(id) on delete cascade,
   title text NOT NULL,
   description text,
