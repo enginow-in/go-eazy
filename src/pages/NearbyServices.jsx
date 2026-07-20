@@ -22,7 +22,6 @@ export const NearbyServices = () => {
   const { services, filters, loading, hasMore, fetchServices, updateFilters } = useServices()
 
   const [viewMode, setViewMode] = useState('grid')
-  const [searchInput, setSearchInput] = useState('')
   const [showCityDropdown, setShowCityDropdown] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [localFilters, setLocalFilters] = useState({
@@ -154,7 +153,6 @@ export const NearbyServices = () => {
   // Live search handler
   const handleSearch = (e) => {
     const val = e.target.value
-    setSearchInput(val)
     updateFilters({ query: val })
   }
 
@@ -235,7 +233,7 @@ export const NearbyServices = () => {
                 id="service-search"
                 type="text"
                 placeholder={t('nearby.searchPlaceholder')}
-                value={searchInput}
+                value={filters.query || ''}
                 onChange={handleSearch}
                 className="w-full pl-11 pr-4 py-3 bg-white border border-[#CA3433] sm:border-gray-200 rounded-full sm:rounded-2xl text-sm focus:outline-none focus:border-[#CA3433] focus:ring-4 focus:ring-[#CA3433]/5 transition-all shadow-sm"
               />
@@ -384,7 +382,7 @@ export const NearbyServices = () => {
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">{t('nearby.noFound')}</h3>
             <p className="text-gray-500 max-w-xs mx-auto mb-8">{t('nearby.noFoundDesc')}</p>
-            <Button variant="secondary" onClick={() => { dispatch(resetServiceFilters()); setSearchInput('') }} className="rounded-xl border-gray-200">
+            <Button variant="secondary" onClick={() => dispatch(resetServiceFilters())} className="rounded-xl border-gray-200">
               {t('nearby.reset')}
             </Button>
           </div>
