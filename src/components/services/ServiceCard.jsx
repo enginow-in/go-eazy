@@ -13,11 +13,14 @@ const getCategoryConfig = (t) => ({
 const ServiceCardComponent = ({ service, layout = 'grid' }) => {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const [imgLoaded, setImgLoaded] = useState(false)
+  const [loadedImage, setLoadedImage] = useState(null)
+  const [failedImage, setFailedImage] = useState(null)
   
   const categoryConfig = getCategoryConfig(t)
   const cat = categoryConfig[service.category] || { label: service.category, emoji: '🛠️', color: 'bg-gray-100 text-gray-700' }
   const mainImage = (service.images && service.images[0]) || null
+  const imageAvailable = mainImage && failedImage !== mainImage
+  const imageLoaded = loadedImage === mainImage
 
   // Memoize values with deterministic calculation
   const { rating } = useMemo(() => {
@@ -42,11 +45,13 @@ const ServiceCardComponent = ({ service, layout = 'grid' }) => {
         onClick={() => navigate(`/services/${service.id}`)}
       >
         <div className="relative w-32 h-32 sm:w-40 sm:h-40 flex-shrink-0 rounded-2xl overflow-hidden bg-gray-50 border border-gray-100/50">
-          {mainImage ? (
+          {imageAvailable ? (
             <img 
               src={mainImage} 
+              alt={service.name}
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
-              onLoad={() => setImgLoaded(true)}
+              onLoad={() => setLoadedImage(mainImage)}
+              onError={() => setFailedImage(mainImage)}
               loading="lazy"
             />
           ) : (
@@ -54,7 +59,7 @@ const ServiceCardComponent = ({ service, layout = 'grid' }) => {
                <span className="text-3xl">{cat.emoji}</span>
             </div>
           )}
-          {mainImage && !imgLoaded && <div className="skeleton absolute inset-0" />}
+          {imageAvailable && !imageLoaded && <div className="skeleton absolute inset-0" />}
           
           <div className="absolute top-2 left-2 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-lg text-[8px] font-black text-gray-900 uppercase tracking-wider flex items-center gap-1">
              <span>{cat.emoji}</span> {cat.label}
@@ -100,15 +105,16 @@ const ServiceCardComponent = ({ service, layout = 'grid' }) => {
       onClick={() => navigate(`/services/${service.id}`)}
     >
       <div className="relative w-full aspect-[4/3] bg-gray-50 overflow-hidden rounded-b-2xl">
-        {mainImage ? (
+        {imageAvailable ? (
           <img
             src={mainImage}
             alt={service.name}
             className={cn(
               'w-full h-full object-cover group-hover:scale-110 transition-transform duration-700',
-              imgLoaded ? 'opacity-100' : 'opacity-0'
+              imageLoaded ? 'opacity-100' : 'opacity-0'
             )}
-            onLoad={() => setImgLoaded(true)}
+            onLoad={() => setLoadedImage(mainImage)}
+            onError={() => setFailedImage(mainImage)}
             loading="lazy"
           />
         ) : (
@@ -116,7 +122,7 @@ const ServiceCardComponent = ({ service, layout = 'grid' }) => {
              <span className="text-5xl opacity-40">{cat.emoji}</span>
           </div>
         )}
-        {mainImage && !imgLoaded && <div className="skeleton absolute inset-0" />}
+        {imageAvailable && !imageLoaded && <div className="skeleton absolute inset-0" />}
         
         <div className="absolute top-2 left-2 px-2.5 py-1.5 bg-white/95 backdrop-blur-sm rounded-xl text-[9px] font-black text-gray-900 uppercase tracking-widest shadow-sm border border-gray-100 flex items-center gap-1.5">
            <span>{cat.emoji}</span> {cat.label}
