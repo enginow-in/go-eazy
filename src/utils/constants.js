@@ -47,7 +47,7 @@ export const MOCK_PROPERTIES = [
     created_at: '2026-01-15',
   },
   {
-    id: 'f3eb6265-2617-5c58-0ed5-253f2f693e0g',
+    id: 'f3eb6265-2617-4c58-aed5-253f2f693e00',
     title: 'Cozy PG for Students',
     description: 'Fully furnished PG accommodation with home-cooked meals included. Walk to university campus.',
     price: 8500,
@@ -87,7 +87,7 @@ export const MOCK_PROPERTIES = [
     created_at: '2026-01-10',
   },
   {
-    id: 'd5e6f7g8-h9i0-4j1k-2l3m-4n5o6p7q8r9s',
+    id: 'd5e6f7a8-b9c0-4f1e-8a3b-4c5d6e7f8a9b',
     title: 'Boys Hostel near Medical College',
     description: 'Clean and secure hostel for medical students. Attached bathrooms, study room, 24hr power backup.',
     price: 6000,
@@ -147,7 +147,7 @@ export const MOCK_PROPERTIES = [
     created_at: '2026-02-05',
   },
   {
-    id: 'd0e1f2a3-b4c5-4d6e-7f8a-9b0c1d2e3f4g',
+    id: 'd0e1f2a3-b4c5-4d6e-af8a-9b0c1d2e3f4a',
     title: 'Premium 2BHK near Hinjewadi IT Park',
     description: 'Luxurious 2BHK with modular kitchen, covered parking, and club house access.',
     price: 28000,
