@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { 
   MapPin, Heart, Share2, Phone, Mail, ArrowLeft, 
   CheckCircle2, ChevronDown, ChevronUp, Lock, EyeOff, X, 
-  Star, Trash2, Sparkles, Calendar 
+  Star, Trash2, Sparkles, Calendar, Link, Check
 } from 'lucide-react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay, Pagination, Navigation } from 'swiper/modules'
@@ -55,6 +55,7 @@ export const PropertyDetail = () => {
   } = useProperties()
 
   const [showScrollToTop, setShowScrollToTop] = useState(false)
+  const [isCopied, setIsCopied] = useState(false)
   const [gatedData, setGatedData] = useState(null)
   
   const [reviewRating, setReviewRating] = useState(0)
@@ -162,9 +163,15 @@ export const PropertyDetail = () => {
     toggleFavorite(p.id)
   }
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href)
-    toast.success(t('property.sections.linkCopied'))
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      toast.success(t('property.sections.linkCopied'))
+      setIsCopied(true)
+      setTimeout(() => setIsCopied(false), 2000)
+    } catch {
+      toast.error(t('property.sections.linkCopyError'))
+    }
   }
 
   const submitSiteVisit = async () => {
@@ -392,8 +399,26 @@ export const PropertyDetail = () => {
                      <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">• {reviews.length} {t('property.labels.reviews')}</span>
                    </div>
                  </div>
-                 <div className="bg-[#E6FF80] px-4 py-1.5 rounded-full text-[#1A1C14] font-bold text-sm tracking-wide">
-                   {isAvailable ? t('property.labels.active') : t('property.labels.inactive')}
+                 <div className="flex items-center gap-2">
+                   <div className="bg-[#E6FF80] px-4 py-1.5 rounded-full text-[#1A1C14] font-bold text-sm tracking-wide">
+                     {isAvailable ? t('property.labels.active') : t('property.labels.inactive')}
+                   </div>
+                   <button
+                     id="copy-link-button"
+                     onClick={handleShare}
+                     title={t('property.sections.copyLink')}
+                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition-all duration-200 cursor-pointer ${
+                       isCopied
+                         ? 'bg-green-50 border-green-200 text-green-700'
+                         : 'bg-white border-gray-200 text-gray-600 hover:border-gray-400 hover:text-gray-900'
+                     }`}
+                   >
+                     {isCopied ? (
+                       <><Check size={13} />{t('property.sections.copied')}</>
+                     ) : (
+                       <><Link size={13} />{t('property.sections.copyLink')}</>
+                     )}
+                   </button>
                  </div>
               </div>
               <div className="flex items-center gap-2 text-sm font-semibold text-gray-800 mb-2 whitespace-nowrap overflow-x-auto scrollbar-hide py-1">
