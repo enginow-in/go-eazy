@@ -87,9 +87,9 @@ export const useProperties = () => {
         .order('views', { ascending: false })
         .limit(8)
       if (error) throw error
-      dispatch(setFeatured(data?.length ? data : MOCK_PROPERTIES.sort((a, b) => b.views - a.views).slice(0, 8)))
+      dispatch(setFeatured(data?.length ? data : [...MOCK_PROPERTIES].sort((a, b) => b.views - a.views).slice(0, 8)))
     } catch {
-      dispatch(setFeatured(MOCK_PROPERTIES.sort((a, b) => b.views - a.views).slice(0, 8)))
+      dispatch(setFeatured([...MOCK_PROPERTIES].sort((a, b) => b.views - a.views).slice(0, 8)))
     }
   }, [dispatch])
 

@@ -84,7 +84,7 @@ export const PropertySection = ({ title, type, icon, viewAllPath }) => {
 
 export const FeaturedSection = () => {
   const { featured, fetchFeatured, loading } = useProperties()
-  const items = featured.length ? featured : MOCK_PROPERTIES.sort((a,b) => b.views - a.views).slice(0,6)
+  const items = featured.length ? featured : [...MOCK_PROPERTIES].sort((a,b) => b.views - a.views).slice(0,6)
 
   useEffect(() => { fetchFeatured() }, [])
 
