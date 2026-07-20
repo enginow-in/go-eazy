@@ -103,7 +103,14 @@ export const AuthGateModal = () => {
             {['login', 'signup'].map(t => (
               <button
                 key={t}
-                onClick={() => { setTab(t); setErrors({}) }}
+                onClick={() => { 
+                  setTab(t) 
+                   setErrors({})
+                   setForm(f => ({ 
+                    ...f,
+                    password: '',
+                   }))
+                  }}
                 className={`flex-1 py-1.5 rounded-md text-xs font-bold transition-all ${
                   tab === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'
                 }`}
@@ -168,7 +175,7 @@ export const AuthGateModal = () => {
                         <button
                           key={opt.value}
                           type="button"
-                          onClick={() => setSelectedRole(opt.value)}
+                          onClick={() =>  setSelectedRole(opt.value)}
                           className={`flex-1 flex flex-col items-center gap-0.5 py-1 px-1 rounded-lg border-2 text-center transition-all ${
                             selectedRole === opt.value
                               ? 'border-[#CA3433] bg-red-50'
@@ -191,7 +198,8 @@ export const AuthGateModal = () => {
               type="submit"
               variant="primary"
               className="w-full mt-3 bg-[#CA3433] shadow-lg shadow-red-500/20 rounded-lg py-2.5 text-sm font-bold group"
-              loading={formLoading}
+              loading={formLoading || googleLoading}
+              disabled={ formLoading || googleLoading}
             >
               <span className="flex items-center justify-center gap-1.5">
                 {tab === 'login' ? 'Sign In' : 'Create Account'}
@@ -210,7 +218,7 @@ export const AuthGateModal = () => {
           {/* Google */}
           <button
             onClick={handleGoogle}
-            disabled={googleLoading}
+            disabled={googleLoading || formLoading }
             className="w-full flex items-center justify-center gap-2.5 py-2.5 border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all"
           >
             {googleLoading ? (
