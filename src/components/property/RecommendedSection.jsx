@@ -14,8 +14,10 @@ export const RecommendedSection = ({ viewMode = 'grid' }) => {
     if (!loading && !isLocked.current) {
       const recs = getRecommendedProperties()
       if (recs.length > 0) {
-        setRecommendations(recs)
         isLocked.current = true
+        queueMicrotask(() => {
+          setRecommendations(recs)
+        })
       }
     }
   }, [loading, getRecommendedProperties])
