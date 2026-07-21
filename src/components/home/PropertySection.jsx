@@ -86,7 +86,7 @@ export const FeaturedSection = () => {
   const { featured, fetchFeatured, loading } = useProperties()
   const items = featured.length ? featured : MOCK_PROPERTIES.sort((a,b) => b.views - a.views).slice(0,6)
 
-  useEffect(() => { fetchFeatured() }, [])
+  useEffect(() => { fetchFeatured() }, [fetchFeatured])
 
   return (
     <section className="mb-12">
