@@ -1,12 +1,11 @@
 import React, { useState } from 'react'
-import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { Mail, Lock, User, Eye, EyeOff, Home, GraduationCap, Utensils, CheckCircle2, Sparkles, ArrowRight } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { useAuth } from '../hooks/useAuth'
 import toast from 'react-hot-toast'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 
 const ROLE_OPTIONS = [
   { value: 'user',             label: 'Student / Professional', icon: <GraduationCap size={20} className="text-brand-500" />, desc: 'Find PGs, Hostels & Flats' },
@@ -15,7 +14,6 @@ const ROLE_OPTIONS = [
 ]
 
 export const AuthHome = () => {
-  const dispatch = useDispatch()
   const navigate = useNavigate()
   const { signIn, signUp, signInWithGoogle } = useAuth()
 
