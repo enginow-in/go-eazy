@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, Heart } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
@@ -15,13 +15,7 @@ export const SavedProperties = () => {
   const [favProps, setFavProps] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (user) {
-      loadProperties()
-    }
-  }, [user, favorites]) // React to changes in favorites list
-
-  const loadProperties = async () => {
+  const loadProperties = useCallback(async () => {
     if (!user) return
     
     // Only set loading if we don't have any data yet
@@ -37,6 +31,7 @@ export const SavedProperties = () => {
           .in('id', favorites)
         
         if (error) throw error
+        
         if (data) {
           // preserve order based on favorites array
           const ordered = favorites.map(id => data.find(p => p.id === id)).filter(Boolean)
@@ -46,12 +41,20 @@ export const SavedProperties = () => {
         setFavProps([])
       }
     } catch (err) {
-      console.error('Error loading saved properties:', err)
-      setFavProps(MOCK_PROPERTIES.filter(p => favorites.includes(p.id)))
+      console.error('[SavedProperties] Load error:', err)
+      // Fallback to mock properties matching favorite IDs
+      const mockMatches = MOCK_PROPERTIES.filter(p => favorites.includes(p.id))
+      setFavProps(mockMatches)
     } finally {
       setLoading(false)
     }
-  }
+  }, [user, favorites, favProps.length])
+
+  useEffect(() => {
+    if (user) {
+      loadProperties()
+    }
+  }, [user, favorites, loadProperties])
 
   return (
     <div className="pt-24 pb-20 bg-gray-50 min-h-screen">
