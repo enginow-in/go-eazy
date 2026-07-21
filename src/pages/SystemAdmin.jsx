@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useServices } from '../hooks/useServices'
@@ -23,13 +23,24 @@ export const SystemAdmin = () => {
   const [showApprovals, setShowApprovals] = useState(false)
 
 
+  const loadProviders = useCallback(async () => {
+    try {
+      const data = await getAdminPendingServices()
+      setProviders(data)
+    } catch (e) {
+      console.error('Failed to load pending services', e)
+    } finally {
+      setLoadingProviders(false)
+    }
+  }, [getAdminPendingServices])
+
   useEffect(() => {
     // Only load stats if authorized
     if (user && role === 'admin') {
       loadStats()
       loadProviders()
     }
-  }, [user])
+  }, [user, role, loadProviders])
 
   const loadStats = async () => {
     try {
@@ -51,16 +62,7 @@ export const SystemAdmin = () => {
     }
   }
 
-  const loadProviders = async () => {
-    try {
-      const data = await getAdminPendingServices()
-      setProviders(data)
-    } catch (e) {
-      console.error('Failed to load pending services', e)
-    } finally {
-      setLoadingProviders(false)
-    }
-  }
+
 
   const handleAction = async (id, newStatus) => {
     const toastId = toast.loading(`Marking as ${newStatus}...`)
