@@ -53,7 +53,7 @@ export const NearbyServices = () => {
     if (cat && ['tiffin', 'laundry', 'cleaning'].includes(cat) && filters.category !== cat) {
       updateFilters({ category: cat })
     }
-  }, [searchParams])
+  }, [searchParams, filters.category, updateFilters])
 
   // Fetch whenever filters change
   useEffect(() => {
