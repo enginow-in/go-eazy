@@ -55,26 +55,27 @@ Input.displayName = 'Input'
 export const Textarea = forwardRef(({ label, error, className = '', ...props }, ref) => {
   const generatedId = useId()
   const id = props.id || generatedId
-  
+
   return (
     <div className="flex flex-col gap-1.5">
       {label && <label htmlFor={id} className="text-sm font-semibold text-gray-700">{label}</label>}
       <textarea
         ref={ref}
         id={id}
-      className={cn(
-        'w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900',
-        'placeholder:text-gray-400 outline-none resize-none',
-        'transition-all duration-200',
-        'border-gray-200 focus:border-brand-400 focus:ring-3 focus:ring-brand-100',
-        error && 'border-red-400',
-        className
-      )}
-      {...props}
-    />
-    {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
-  </div>
-)})
+        className={cn(
+          'w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900',
+          'placeholder:text-gray-400 outline-none resize-none',
+          'transition-all duration-200',
+          'border-gray-200 focus:border-brand-400 focus:ring-3 focus:ring-brand-100',
+          error && 'border-red-400',
+          className
+        )}
+        {...props}
+      />
+      {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
+    </div>
+  )
+})
 Textarea.displayName = 'Textarea'
 
 export const Select = forwardRef(({ label, error, children, className = '', ...props }, ref) => {
@@ -87,19 +88,20 @@ export const Select = forwardRef(({ label, error, children, className = '', ...p
       <select
         ref={ref}
         id={id}
-      className={cn(
-        'w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900',
-        'outline-none appearance-none cursor-pointer',
-        'transition-all duration-200',
-        'border-gray-200 focus:border-brand-400 focus:ring-3 focus:ring-brand-100',
-        error && 'border-red-400',
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </select>
-    {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
-  </div>
-)})
+        className={cn(
+          'w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900',
+          'outline-none appearance-none cursor-pointer',
+          'transition-all duration-200',
+          'border-gray-200 focus:border-brand-400 focus:ring-3 focus:ring-brand-100',
+          error && 'border-red-400',
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </select>
+      {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
+    </div>
+  )
+})
 Select.displayName = 'Select'
