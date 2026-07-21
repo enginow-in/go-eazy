@@ -12,7 +12,7 @@ export const PropertyEdit = () => {
 
   useEffect(() => {
     fetchPropertyById(id).then(() => setLoading(false))
-  }, [id])
+  }, [id, fetchPropertyById])
 
   if (loading) {
     return (
