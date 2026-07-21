@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Home, Eye, Edit, Trash2, ArrowRight, ArrowLeft, List as ListIcon, Calendar, Check, X } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
@@ -6,7 +6,7 @@ import { useProperties } from '../hooks/useProperties'
 import { Button } from '../components/ui/Button'
 import { Badge, TypeBadge } from '../components/ui/Badge'
 import { PropertyCard } from '../components/property/PropertyCard'
-import { formatPriceShort, cn } from '../utils/helpers'
+import { formatPriceShort } from '../utils/helpers'
 import toast from 'react-hot-toast'
 import { Skeleton } from '../components/ui/Skeleton'
 import { supabase } from '../lib/supabase'
@@ -23,24 +23,39 @@ export const LandlordDashboard = () => {
   const [loadingVisits, setLoadingVisits] = useState(true)
   const [actioningVisitId, setActioningVisitId] = useState(null)
 
+  const loadProperties = useCallback(async () => {
+    try {
+      const data = await getLandlordProperties()
+      setProperties(data || [])
+    } catch {
+      toast.error('Failed to load properties')
+    } finally {
+      setLoading(false)
+    }
+  }, [getLandlordProperties])
+
+  const loadSiteVisits = useCallback(async () => {
+    if (!user) return
+    try {
+      setLoadingVisits(true)
+      const { data: landlordProps } = await supabase.from('properties').select('id').eq('landlord_id', user.id)
+      const propIds = (landlordProps || []).map(p => p.id)
+      if (propIds.length === 0) { setSiteVisits([]); return }
+      const { data, error } = await supabase.from('site_visits').select('*, property:properties(title, city), seeker:profiles!user_id(full_name, phone, email)').in('property_id', propIds).order('created_at', { ascending: false })
+      if (!error) setSiteVisits(data || [])
+    } catch {
+      // fallback
+    } finally {
+      setLoadingVisits(false)
+    }
+  }, [user])
+
   useEffect(() => {
     if (user) {
       loadProperties()
       loadSiteVisits()
     }
-  }, [user])
-
-  const loadProperties = async () => {
-    try {
-      const data = await getLandlordProperties()
-      setProperties(data)
-    } catch (err) {
-      console.error('Failed to load properties:', err)
-      toast.error('Failed to load listings')
-    } finally {
-      setLoading(false)
-    }
-  }
+  }, [user, loadProperties, loadSiteVisits])
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this listing?')) return
@@ -55,27 +70,7 @@ export const LandlordDashboard = () => {
     }
   }
 
-  const loadSiteVisits = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('site_visits')
-        .select(`
-          *,
-          property:properties(id, title),
-          renter:profiles!user_id(full_name)
-        `)
-        .eq('landlord_id', user.id)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false })
-      
-      if (error) throw error
-      setSiteVisits(data || [])
-    } catch (err) {
-      console.error('Failed to load visits:', err)
-    } finally {
-      setLoadingVisits(false)
-    }
-  }
+
 
   const handleVisitAction = async (visitId, userId, propertyTitle, action) => {
     setActioningVisitId(visitId)

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { useDispatch } from 'react-redux'
 import { useSearchParams } from 'react-router-dom'
 import { Filter, Grid, List as ListIcon, ChevronDown } from 'lucide-react'
@@ -11,7 +11,6 @@ import { resetFilters } from '../store/propertySlice'
 import { PROPERTY_TYPES, AMENITIES, SORT_OPTIONS } from '../utils/constants'
 import { AMENITY_ICONS, cn } from '../utils/helpers'
 import { Skeleton } from '../components/ui/Skeleton'
-import { useAuth } from '../hooks/useAuth'
 import { RecommendedSection } from '../components/property/RecommendedSection'
 
 export const Search = () => {
@@ -44,23 +43,24 @@ export const Search = () => {
   }, [searchParams, updateFilters, filters.type])
 
   // Sync local filters with global filters when global filters change
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    setLocalFilters({
-      city: filters.city || '', 
-      area: filters.area || '', 
-      priceMin: filters.priceMin || 0, 
-      priceMax: filters.priceMax || 100000, 
-      amenities: [...(filters.amenities || [])], 
-      sortBy: filters.sortBy || 'created_at', 
-      sortOrder: filters.sortOrder || 'desc'
+    queueMicrotask(() => {
+      setLocalFilters({
+        city: filters.city || '', 
+        area: filters.area || '', 
+        priceMin: filters.priceMin || 0, 
+        priceMax: filters.priceMax || 100000, 
+        amenities: [...(filters.amenities || [])], 
+        sortBy: filters.sortBy || 'created_at', 
+        sortOrder: filters.sortOrder || 'desc'
+      })
     })
   }, [filters])
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     updateFilters(localFilters)
     setShowFilters(false)
-  }
+  }, [updateFilters, localFilters])
 
   useEffect(() => {
     fetchProperties(true)
@@ -69,7 +69,8 @@ export const Search = () => {
   // Use the actual totalCount from database
   const count = useMemo(() => totalCount, [totalCount])
 
-  const renderFilterContent = () => (
+  // Memoize Filter UI to prevent unnecessary re-calculation during typing
+  const filterContent = useMemo(() => (
     <div className="space-y-6">
       {/* Location Selection */}
       <div>
@@ -170,10 +171,7 @@ export const Search = () => {
         <Button variant="primary" className="flex-1 rounded-xl shadow-lg shadow-brand-500/10 font-bold py-2.5" onClick={applyFilters}>Show Results</Button>
       </div>
     </div>
-  )
-
-  // Memoize Filter UI to prevent unnecessary re-calculation during typing
-  const filterContent = useMemo(() => renderFilterContent(), [localFilters, t, dispatch, showFilters])
+  ), [localFilters, t, dispatch, applyFilters])
 
   return (
     <div className="pt-4 pb-12 min-h-screen bg-gray-50/50">

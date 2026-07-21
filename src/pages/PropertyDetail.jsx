@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { 
   MapPin, Heart, Share2, Phone, Mail, ArrowLeft, 
@@ -87,13 +87,7 @@ export const PropertyDetail = () => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  useEffect(() => {
-    fetchPropertyById(id)
-    fetchReviews(id)
-    checkUnlockStatus()
-  }, [id, user, fetchPropertyById, fetchReviews])
-
-  const checkUnlockStatus = async () => {
+  const checkUnlockStatus = useCallback(async () => {
     if (!user || !id) return
     const { data } = await supabase
       .from('unlocked_properties')
@@ -106,7 +100,13 @@ export const PropertyDetail = () => {
       const gated = await fetchGatedData(id)
       setGatedData(gated)
     }
-  }
+  }, [user, id, fetchGatedData])
+
+  useEffect(() => {
+    fetchPropertyById(id)
+    fetchReviews(id)
+    checkUnlockStatus()
+  }, [id, user, fetchPropertyById, fetchReviews, checkUnlockStatus])
 
   // Also fetch gated data if current user is the landlord
   useEffect(() => {
@@ -280,7 +280,7 @@ export const PropertyDetail = () => {
                  setVisitDate('')
               }
             }
-          } catch (vErr) {
+          } catch {
             toast.error('Payment verification failed')
           } finally {
             setUnlocking(false)
@@ -308,7 +308,6 @@ export const PropertyDetail = () => {
   }
 
   const images = p.images || []
-  const otherImages = images.slice(1, 5)
 
   const renderSlider = (prefix) => (
     <div className="relative w-full aspect-square md:aspect-[4/3] bg-gray-100 rounded-xl sm:rounded-2xl overflow-hidden shadow-md group border border-gray-200/50">
