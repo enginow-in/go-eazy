@@ -14,7 +14,8 @@ export const About = () => {
         {/* Back Button */}
         <button 
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900 mb-12 transition-colors group"
+          className="flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900 mb-12 transition-colors group outline-none focus-visible:ring-2 focus-visible:ring-[#CA3433]/40 rounded px-1 py-0.5"
+          aria-label={t('aboutPage.back', 'Back')}
         >
           <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
           {t('aboutPage.back', 'Back')}
@@ -26,16 +27,17 @@ export const About = () => {
             {t('aboutPage.title', 'The Story of GoEazy')}
           </h1>
           
-          <div className="space-y-10 text-[22px] sm:text-2xl text-gray-600 italic font-medium leading-[1.8] sm:leading-[1.9] tracking-wide relative">
+          {/* Bug Fix 1: Relaxed overcrowded italic rules to ensure clean line-height and layout reading */}
+          <div className="space-y-8 text-lg sm:text-xl text-gray-600 font-normal leading-relaxed tracking-normal relative">
             
-            {/* Top Quote Mark Icon for aesthetics */}
-            <div className="absolute -top-6 -left-8 text-[#ffc9c9] text-6xl hidden sm:block opacity-50 font-serif">"</div>
+            {/* Top Quote Mark Icon */}
+            <div className="absolute -top-6 -left-8 text-[#ffc9c9] text-6xl hidden sm:block opacity-50 font-serif select-none pointer-events-none">"</div>
 
             <p>
-              {t('aboutPage.section1Text', "We've all been there: scrolling through endless fake listings, calling brokers who never answer, and visiting 'premium flats' that look nothing like the photos. Finding a home away from home shouldn't be a nightmare. That's exactly why GoEazy was built—to finally bring transparency, trust, and ease to the rental market.")}
+              {t('aboutPage.section1Text', "It all started during our early college days. We vividly remember the struggle—wandering from street to street, knocking on random doors just hoping to find a decent, affordable room in a good location. Instead of focusing on our new college life, we were wasting weeks going door-to-door and dealing with unresponsive brokers.")}
             </p>
             <p>
-              {t('aboutPage.section2Text', "We personally vet properties so you don't have to. Real photos, direct contact with owners, and zero hidden surprises. Whether you're a student moving to a new city or a professional seeking a peaceful corner, GoEazy is designed to make your transition as smooth as possible.")}
+              {t('aboutPage.section2Text', "We realized there had to be a better way, and that's how GoEazy was born. We built the exact platform we desperately needed back then. Today, we personally verify every listing and connect you directly with genuine owners, so no other student or professional has to go through that exhausting door-to-door hunt ever again.")}
             </p>
           </div>
 
