@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>You're Offline | GoEazy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red: #CA3433;
+      --red-light: #fef2f2;
+      --gray-50: #F9F8F6;
+      --gray-200: #e5e7eb;
+      --gray-500: #6b7280;
+      --gray-900: #111827;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background: var(--gray-50);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid var(--gray-200);
+      border-radius: 1.5rem;
+      padding: 2.5rem 2rem;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.06);
+    }
+
+    .icon-wrap {
+      width: 72px;
+      height: 72px;
+      border-radius: 1.25rem;
+      background: var(--red-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--gray-900);
+      margin-bottom: 0.5rem;
+    }
+
+    p {
+      color: var(--gray-500);
+      font-size: 0.9rem;
+      line-height: 1.7;
+      margin-bottom: 2rem;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--red);
+      color: white;
+      border: none;
+      border-radius: 0.75rem;
+      padding: 0.75rem 1.5rem;
+      font-size: 0.875rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+      font-family: inherit;
+      text-decoration: none;
+    }
+    .btn-primary:hover { background: #ac2d2c; }
+
+    .tips {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--gray-200);
+      text-align: left;
+    }
+    .tips h2 {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--gray-500);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.75rem;
+    }
+    .tip {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
+      margin-bottom: 0.5rem;
+    }
+    .tip-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--red);
+      margin-top: 0.45rem;
+      flex-shrink: 0;
+    }
+    .tip-text {
+      font-size: 0.8rem;
+      color: var(--gray-500);
+      line-height: 1.5;
+    }
+
+    .logo {
+      font-size: 1.25rem;
+      font-weight: 900;
+      color: var(--red);
+      margin-bottom: 0.25rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon-wrap">
+      <!-- Wifi-off icon (inline SVG, no external deps) -->
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#CA3433" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="1" y1="1" x2="23" y2="23"/>
+        <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
+        <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+        <path d="M10.71 5.05A16 16 0 0 1 22.56 9"/>
+        <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
+        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+        <circle cx="12" cy="20" r="1" fill="#CA3433" stroke="none"/>
+      </svg>
+    </div>
+
+    <div class="logo">GoEazy</div>
+    <h1>You're Offline</h1>
+    <p>
+      It looks like you've lost your internet connection. 
+      Please check your network settings and try again. 
+      Properties you've already viewed may still be available in your cache.
+    </p>
+
+    <button class="btn-primary" onclick="window.location.reload()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 4 23 10 17 10"/>
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+      </svg>
+      Try Again
+    </button>
+
+    <div class="tips">
+      <h2>While you're offline</h2>
+      <div class="tip">
+        <div class="tip-dot"></div>
+        <div class="tip-text">Recently viewed properties may still be accessible</div>
+      </div>
+      <div class="tip">
+        <div class="tip-dot"></div>
+        <div class="tip-text">Check your Wi-Fi or mobile data connection</div>
+      </div>
+      <div class="tip">
+        <div class="tip-dot"></div>
+        <div class="tip-text">Your saved searches will sync when you're back online</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -13,3 +13,31 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </Provider>
   </React.StrictMode>,
 )
+
+// Register Hand-Crafted Service Worker for PWA Offline Caching
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/sw.js')
+      .then((reg) => {
+        console.log('GoEazy PWA Service Worker registered successfully:', reg.scope)
+        
+        // Check for updates to the service worker
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // Broadcast update available event to the UI
+                window.dispatchEvent(new CustomEvent('swUpdateAvailable'))
+              }
+            })
+          }
+        })
+      })
+      .catch((err) => {
+        console.error('GoEazy Service Worker registration failed:', err)
+      })
+  })
+}
+
