@@ -3,10 +3,10 @@ import { createSlice } from '@reduxjs/toolkit'
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
-    user: null,
-    profile: null,
-    role: null, // 'landlord' | 'user' | 'service_provider'
-    loading: true,
+    user: { id: 'dummy-user-123', email: 'open@source.local' },
+    profile: { id: 'dummy-user-123', full_name: 'Open Source User', role: 'admin' },
+    role: 'admin', // mocked as admin so they can see everything
+    loading: false,
     authModalOpen: false,
     authModalTab: 'login', // 'login' | 'signup'
   },

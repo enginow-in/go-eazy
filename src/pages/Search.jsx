@@ -1,24 +1,26 @@
 import React, { useEffect, useState, useMemo } from 'react'
-import { useDispatch } from 'react-redux'
-import { useSearchParams } from 'react-router-dom'
-import { Filter, Grid, List as ListIcon, ChevronDown } from 'lucide-react'
+import { useDispatch, useSelector } from 'react-redux'
+import { useSearchParams, useNavigate } from 'react-router-dom'
+import { Filter, Grid, List as ListIcon, ChevronDown, BarChart3, Save } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useProperties } from '../hooks/useProperties'
 import { PropertyCard } from '../components/property/PropertyCard'
-import { Input, Select } from '../components/ui/Input'
 import { Button } from '../components/ui/Button'
 import { resetFilters } from '../store/propertySlice'
-import { PROPERTY_TYPES, AMENITIES, SORT_OPTIONS } from '../utils/constants'
-import { AMENITY_ICONS, cn } from '../utils/helpers'
+import { addSavedSearch } from '../store/savedSearchSlice'
+import { AMENITIES, SORT_OPTIONS } from '../utils/constants'
+import { cn } from '../utils/helpers'
 import { Skeleton } from '../components/ui/Skeleton'
-import { useAuth } from '../hooks/useAuth'
 import { RecommendedSection } from '../components/property/RecommendedSection'
+import toast from 'react-hot-toast'
 
 export const Search = () => {
   const { t } = useTranslation()
   const dispatch = useDispatch()
+  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { listings, filters, loading, hasMore, fetchProperties, updateFilters, totalCount } = useProperties()
+  const { compareIds } = useSelector(s => s.property)
   
   const [viewMode, setViewMode] = useState('grid')
   const [showFilters, setShowFilters] = useState(false)
@@ -29,7 +31,10 @@ export const Search = () => {
     priceMax: filters.priceMax || 100000, 
     amenities: [...(filters.amenities || [])], 
     sortBy: filters.sortBy || 'created_at', 
-    sortOrder: filters.sortOrder || 'desc'
+    sortOrder: filters.sortOrder || 'desc',
+    bedrooms: filters.bedrooms || '',
+    furnishing_type: filters.furnishing_type || '',
+    pet_friendly: filters.pet_friendly || false,
   })
 
   // Read ?type= from URL and apply as filter
@@ -53,7 +58,10 @@ export const Search = () => {
       priceMax: filters.priceMax || 100000, 
       amenities: [...(filters.amenities || [])], 
       sortBy: filters.sortBy || 'created_at', 
-      sortOrder: filters.sortOrder || 'desc'
+      sortOrder: filters.sortOrder || 'desc',
+      bedrooms: filters.bedrooms || '',
+      furnishing_type: filters.furnishing_type || '',
+      pet_friendly: filters.pet_friendly || false,
     })
   }, [filters])
 
@@ -165,6 +173,51 @@ export const Search = () => {
         </div>
       </div>
 
+      {/* BHK / Bedrooms */}
+      <div>
+        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">Bedrooms</h4>
+        <div className="flex flex-wrap gap-2">
+          {['', '1', '2', '3', '4+'].map(n => (
+            <button
+              key={n}
+              onClick={() => setLocalFilters(prev => ({ ...prev, bedrooms: n }))}
+              className={`px-4 py-2 rounded-xl text-[12px] font-semibold transition-all border ${(localFilters.bedrooms || '') === n ? 'bg-[#fdf2f2] text-[#CA3433] border-[#fbe1e1] shadow-sm' : 'border-gray-100 text-gray-600 hover:bg-gray-50'}`}
+            >
+              {n || 'Any'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Furnishing */}
+      <div>
+        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">Furnishing</h4>
+        <div className="flex flex-wrap gap-2">
+          {[{ value: '', label: 'Any' }, { value: 'full', label: 'Fully' }, { value: 'semi', label: 'Semi' }, { value: 'none', label: 'Unfurnished' }].map(f => (
+            <button
+              key={f.value}
+              onClick={() => setLocalFilters(prev => ({ ...prev, furnishing_type: f.value }))}
+              className={`px-4 py-2 rounded-xl text-[12px] font-semibold transition-all border ${(localFilters.furnishing_type || '') === f.value ? 'bg-[#fdf2f2] text-[#CA3433] border-[#fbe1e1] shadow-sm' : 'border-gray-100 text-gray-600 hover:bg-gray-50'}`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Pet Friendly Toggle */}
+      <div>
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={localFilters.pet_friendly}
+            onChange={e => setLocalFilters(prev => ({ ...prev, pet_friendly: e.target.checked }))}
+            className="w-4 h-4 rounded border-gray-300 text-[#CA3433] focus:ring-[#CA3433]"
+          />
+          <span className="text-sm font-semibold text-gray-700">Pet Friendly Only</span>
+        </label>
+      </div>
+
       <div className="pt-4 flex gap-3 border-t border-gray-100">
         <Button variant="secondary" className="flex-1 bg-white hover:bg-gray-50 border border-gray-100 rounded-xl font-bold py-2.5" onClick={() => { dispatch(resetFilters()); setShowFilters(false); }}>Reset All</Button>
         <Button variant="primary" className="flex-1 rounded-xl shadow-lg shadow-brand-500/10 font-bold py-2.5" onClick={applyFilters}>Show Results</Button>
@@ -194,6 +247,30 @@ export const Search = () => {
                     type: filters.type ? t(`property.types.${filters.type}`) : t('search.properties') 
                   })}
                 </p>
+                <div className="flex items-center gap-3 mt-1 sm:mt-2 pl-4 sm:pl-8">
+                  {compareIds.length > 0 && (
+                    <button
+                      onClick={() => navigate('/compare')}
+                      className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors"
+                    >
+                      <BarChart3 size={14} />
+                      Compare ({compareIds.length})
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      dispatch(addSavedSearch({
+                        name: filters.city ? `${filters.type || 'All'} in ${filters.city}` : `${filters.type || 'All Properties'}`,
+                        filters: { ...filters },
+                      }))
+                      toast.success(t('search.savedSearchSuccess'))
+                    }}
+                    className="flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-gray-800 transition-colors"
+                  >
+                    <Save size={14} />
+                    {t('search.saveSearch')}
+                  </button>
+                </div>
               </div>
 
               {/* Mobile Actions (View Toggles + Filter) */}

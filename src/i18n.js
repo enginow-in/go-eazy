@@ -15,7 +15,9 @@ const resources = {
         dashboard: 'Dashboard',
         settings: 'Settings',
         signOut: 'Sign Out',
-        state: 'Uttarakhand'
+        state: 'Uttarakhand',
+        messages: 'Messages',
+        compare: 'Compare'
       },
       cities: {
         Dehradun: 'Dehradun',
@@ -42,7 +44,7 @@ const resources = {
         }
       },
       search: {
-        quoteStart: '"Less searching, more living — that’s',
+        quoteStart: '"Less searching, more living — that\'s',
         quoteEnd: 'Eazy Living',
         resultsFound: 'Explore {{count}} {{type}} ready for you',
         properties: 'Properties',
@@ -53,6 +55,12 @@ const resources = {
         priceRange: 'Rent Range (₹ / mo)',
         cityArea: 'City & Area',
         allTypes: 'All Types',
+        bedrooms: 'Bedrooms',
+        furnishing: 'Furnishing',
+        petFriendly: 'Pet Friendly Only',
+        compare: 'Compare',
+        saveSearch: 'Save Search',
+        savedSearchSuccess: 'Search saved!',
         sort: {
           created_at_desc: 'Newest First',
           created_at_asc: 'Oldest First',
@@ -262,6 +270,37 @@ const resources = {
         section2Text: "We realized there had to be a better way, and that's how GoEazy was born. We built the exact platform we desperately needed back then. Today, we personally verify every listing and connect you directly with genuine owners, so no other student or professional has to go through that exhausting door-to-door hunt ever again.",
         thankYouNote: '"Thank you for trusting GoEazy. We are constantly working to bring you better homes, better experiences, and complete peace of mind."',
         back: 'Back to Search'
+      },
+      messages: {
+        title: 'Messages',
+        conversations: 'Conversations',
+        noConversations: 'No conversations yet',
+        noConversationsDesc: 'Contact a landlord to start chatting',
+        selectConversation: 'Select a conversation',
+        selectConversationDesc: 'Choose a chat from the left to start messaging',
+        typeMessage: 'Type a message...',
+        send: 'Send',
+        viewProperty: 'View Property',
+        chatWith: 'Chat with'
+      },
+      compare: {
+        title: 'Compare Properties',
+        noProperties: 'No properties to compare',
+        noPropertiesDesc: 'Add properties from the search page to compare them side by side.',
+        browse: 'Browse Properties',
+        clearAll: 'Clear All',
+        viewDetails: 'View Details',
+        maxReached: 'Maximum 4 properties can be compared'
+      },
+      savedSearches: {
+        title: 'Saved Searches',
+        saveCurrent: 'Save Current Search',
+        savedSearchSuccess: 'Search saved! You\'ll be notified of new matches.',
+        noSearches: 'No saved searches yet',
+        noSearchesDesc: 'Save your filter criteria to get notified when matching properties are listed.',
+        notifyOnMatch: 'Notify on match',
+        remove: 'Remove',
+        newMatch: 'New property match found!'
       }
     }
   },
@@ -277,7 +316,9 @@ const resources = {
         dashboard: 'डैशबोर्ड',
         settings: 'सेटिंग्स',
         signOut: 'लॉग आउट',
-        state: 'उत्तराखंड'
+        state: 'उत्तराखंड',
+        messages: 'संदेश',
+        compare: 'तुलना करें'
       },
       cities: {
         Dehradun: 'देहरादून',
@@ -315,6 +356,12 @@ const resources = {
         priceRange: 'किराया सीमा (₹ / माह)',
         cityArea: 'शहर और क्षेत्र',
         allTypes: 'सभी प्रकार',
+        bedrooms: 'बेडरूम',
+        furnishing: 'फर्निशिंग',
+        petFriendly: 'केवल पेट फ्रेंडली',
+        compare: 'तुलना',
+        saveSearch: 'खोज सहेजें',
+        savedSearchSuccess: 'खोज सहेजी गई!',
         sort: {
           created_at_desc: 'नवीनतम पहले',
           created_at_asc: 'पुराना पहले',
@@ -524,6 +571,37 @@ const resources = {
         section2Text: 'हमें एहसास हुआ कि इसका एक बेहतर तरीका होना चाहिए, और यहीं से GoEazy का जन्म हुआ। हमने वह प्लेटफ़ॉर्म बनाया जिसकी हमें उस समय सबसे ज्यादा ज़रूरत थी। आज, हम खुद हर प्रॉपर्टी की जांच करते हैं और आपको सीधे असली मालिकों से जोड़ते हैं, ताकि किसी और छात्र या पेशेवर को कभी भी दर-दर न भटकना पड़े।',
         thankYouNote: '"GoEazy पर भरोसा करने के लिए आपका धन्यवाद। हम आपके लिए बेहतर घर, शानदार अनुभव और मन की पूर्ण शांति लाने के लिए लगातार काम कर रहे हैं।"',
         back: 'खोज पर वापस जाएं'
+      },
+      messages: {
+        title: 'संदेश',
+        conversations: 'बातचीत',
+        noConversations: 'अभी तक कोई बातचीत नहीं',
+        noConversationsDesc: 'चैट शुरू करने के लिए मकान मालिक से संपर्क करें',
+        selectConversation: 'कोई बातचीत चुनें',
+        selectConversationDesc: 'मैसेज करने के लिए बाईं ओर से चैट चुनें',
+        typeMessage: 'एक संदेश लिखें...',
+        send: 'भेजें',
+        viewProperty: 'प्रॉपर्टी देखें',
+        chatWith: 'से चैट करें'
+      },
+      compare: {
+        title: 'प्रॉपर्टीज़ की तुलना',
+        noProperties: 'तुलना के लिए कोई प्रॉपर्टी नहीं',
+        noPropertiesDesc: 'तुलना करने के लिए खोज पेज से प्रॉपर्टीज़ जोड़ें।',
+        browse: 'प्रॉपर्टीज़ देखें',
+        clearAll: 'सब साफ़ करें',
+        viewDetails: 'विवरण देखें',
+        maxReached: 'अधिकतम 4 प्रॉपर्टीज़ की तुलना की जा सकती है'
+      },
+      savedSearches: {
+        title: 'सहेजी गई खोजें',
+        saveCurrent: 'वर्तमान खोज सहेजें',
+        savedSearchSuccess: 'खोज सहेजी गई! नए मैचों की सूचना दी जाएगी।',
+        noSearches: 'अभी तक कोई सहेजी गई खोज नहीं',
+        noSearchesDesc: 'मैच होने पर सूचना पाने के लिए अपने फ़िल्टर सेव करें।',
+        notifyOnMatch: 'मैच पर सूचित करें',
+        remove: 'हटाएं',
+        newMatch: 'नया प्रॉपर्टी मैच मिला!'
       }
     }
   }

@@ -55,6 +55,23 @@ export const LandlordDashboard = () => {
     }
   }
 
+  const toggleAvailability = async (property) => {
+    try {
+      const newStatus = !property.availability
+      const { error } = await supabase
+        .from('properties')
+        .update({ availability: newStatus })
+        .eq('id', property.id)
+        .eq('landlord_id', user.id)
+      if (error) throw error
+      setProperties(prev => prev.map(p => p.id === property.id ? { ...p, availability: newStatus } : p))
+      toast.success(newStatus ? 'Marked as Available' : 'Marked as Rented')
+    } catch (err) {
+      console.error('Failed to toggle status:', err)
+      toast.error('Failed to update status')
+    }
+  }
+
   const loadSiteVisits = async () => {
     try {
       const { data, error } = await supabase
@@ -273,15 +290,22 @@ export const LandlordDashboard = () => {
                 <PropertyCard property={p} layout="grid" />
                 {/* Management Action Bar */}
                 <div className="mt-2 flex items-center justify-between px-1">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleAvailability(p) }}
+                      className={`transition-colors flex items-center gap-1 text-xs font-bold ${p.availability ? 'text-orange-500 hover:text-orange-700' : 'text-green-500 hover:text-green-700'}`}
+                    >
+                      {p.availability ? <X size={12} /> : <CheckCircle2 size={12} />}
+                      {p.availability ? 'Mark Rented' : 'Mark Available'}
+                    </button>
                     <button 
-                      onClick={() => navigate(`/landlord/properties/${p.id}/edit`)}
+                      onClick={(e) => { e.stopPropagation(); navigate(`/landlord/properties/${p.id}/edit`)}}
                       className="text-blue-500 hover:text-blue-700 transition-colors flex items-center gap-1.5 text-xs font-bold"
                     >
                       <Edit size={14} /> Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(p.id)}
+                      onClick={(e) => { e.stopPropagation(); handleDelete(p.id)}}
                       className="text-red-500 hover:text-red-700 transition-colors flex items-center gap-1.5 text-xs font-bold"
                     >
                       <Trash2 size={14} /> Delete
@@ -343,7 +367,15 @@ export const LandlordDashboard = () => {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleAvailability(p) }}
+                        className={`transition-colors text-xs font-bold flex items-center gap-1 ${p.availability ? 'text-orange-500 hover:text-orange-700' : 'text-green-500 hover:text-green-700'}`}
+                        title={p.availability ? 'Mark as Rented' : 'Mark as Available'}
+                      >
+                        {p.availability ? <X size={14} /> : <CheckCircle2 size={14} />}
+                        <span className="hidden sm:inline">{p.availability ? 'Rented' : 'Available'}</span>
+                      </button>
                       <button 
                         onClick={(e) => { e.stopPropagation(); navigate(`/property/${p.id}`) }}
                         className="text-gray-500 hover:text-gray-900 transition-colors text-xs font-bold flex items-center gap-1.5"
