@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { Search, ChevronDown, User, LogOut, Home, Building, Tent, MapPin, Grid, PlusCircle, LayoutDashboard, Menu, X, MessageCircle, BarChart3, Bell } from 'lucide-react'
+import { Search, ChevronDown, User, LogOut, Home, Building, Tent, MapPin, Grid, PlusCircle, LayoutDashboard, Menu, X, MessageCircle, BarChart3, Bell, Globe, Phone, BookMarked, Settings, ShieldAlert } from 'lucide-react'
 import { openAuthModal } from '../../store/authSlice'
 import { toggleMobileMenu, closeMobileMenu } from '../../store/uiSlice'
 import { useAuth } from '../../hooks/useAuth'
@@ -402,70 +402,84 @@ export const Navbar = () => {
       )}
       
        {/* Mobile Menu */}
-       {mobileMenuOpen && (
-        <div className="md:hidden absolute top-20 left-0 right-0 bg-white border-b border-gray-100 shadow-xl overflow-y-auto max-h-[80vh] z-50">
-          <div className="px-4 py-4 space-y-4">
-            
-            <Link to="/search" onClick={() => dispatch(closeMobileMenu())} className="block font-semibold text-gray-700 py-2">{t('nav.home')}</Link>
-            <Link to="/nearby" onClick={() => dispatch(closeMobileMenu())} className="block w-full text-left font-semibold text-gray-700 py-2">{t('nav.nearby')}</Link>
-            <button onClick={() => { dispatch(closeMobileMenu()); user ? navigate(role === 'landlord' ? '/landlord' : role === 'service_provider' ? '/service-provider' : '/landlord') : dispatch(openAuthModal('login')) }} className="block w-full text-left font-semibold text-gray-700 py-2">{t('nav.list')}</button>
-            <Link to="/about" onClick={() => dispatch(closeMobileMenu())} className="block w-full text-left font-semibold text-gray-700 py-2">{t('nav.about')}</Link>
-            
-            <div className="w-full h-px bg-gray-100 my-4" />
-            
-            {user ? (
-               <>
-                <div className="py-2">
-                  <ThemeToggle />
-                </div>
-                <Link to="/notifications"
-                  className="block font-semibold text-gray-700 py-2"
-                  onClick={() => dispatch(closeMobileMenu())}
-                >
-                  Notifications
-                </Link>
-                <Link to="/messages"
-                  className="block font-semibold text-gray-700 py-2"
-                  onClick={() => dispatch(closeMobileMenu())}
-                >
-                  Messages {totalUnread > 0 && <span className="text-[#CA3433]">({totalUnread})</span>}
-                </Link>
-                <Link to={role === 'admin' ? '/systemadmin' : role === 'landlord' ? '/landlord' : role === 'service_provider' ? '/service-provider' : '/dashboard'}
-                  className="block font-semibold text-gray-700 py-2"
-                  onClick={() => dispatch(closeMobileMenu())}
-                >
-                  {role === 'admin' ? 'Admin Panel' : t('nav.dashboard')}
-                </Link>
-                <Link to="/unlocked"
-                  className="block font-semibold text-gray-700 py-2"
-                  onClick={() => dispatch(closeMobileMenu())}
-                >
-                  Unlocked Properties
-                </Link>
-                <Link to="/settings"
-                  className="block font-semibold text-gray-700 py-2"
-                  onClick={() => dispatch(closeMobileMenu())}
-                >
-                  {t('nav.settings')}
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="block font-semibold text-red-500 py-2"
-                >
-                  {t('nav.signOut')}
-                </button>
-               </>
-            ) : (
-              <button 
-                onClick={() => { dispatch(openAuthModal('login')); dispatch(closeMobileMenu()); }}
-                className="w-full py-3 rounded-full bg-[#0B0F19] text-white text-sm font-semibold hover:bg-[#CA3433] transition-all active:scale-95"
-              >
-                {t('nav.login')}
-              </button>
-            )}
-          </div>
-        </div>
-       )}
+        {mobileMenuOpen && (
+         <div className="md:hidden absolute top-20 left-0 right-0 bg-white border-b border-gray-100 shadow-xl overflow-y-auto max-h-[80vh] z-50">
+           <div className="px-4 py-4 space-y-1">
+             
+             <Link to="/search" onClick={() => dispatch(closeMobileMenu())} className="flex items-center gap-3 font-semibold text-gray-700 py-3 px-3 rounded-xl hover:bg-gray-50 transition-colors">
+               <Home size={18} className="text-gray-400 shrink-0" />{t('nav.home')}
+             </Link>
+             <Link to="/nearby" onClick={() => dispatch(closeMobileMenu())} className="flex items-center gap-3 w-full text-left font-semibold text-gray-700 py-3 px-3 rounded-xl hover:bg-gray-50 transition-colors">
+               <MapPin size={18} className="text-gray-400 shrink-0" />{t('nav.nearby')}
+             </Link>
+             <button onClick={() => { dispatch(closeMobileMenu()); user ? navigate(role === 'landlord' ? '/landlord' : role === 'service_provider' ? '/service-provider' : '/landlord') : dispatch(openAuthModal('login')) }} className="flex items-center gap-3 w-full text-left font-semibold text-gray-700 py-3 px-3 rounded-xl hover:bg-gray-50 transition-colors">
+               <PlusCircle size={18} className="text-gray-400 shrink-0" />{t('nav.list')}
+             </button>
+             <Link to="/about" onClick={() => dispatch(closeMobileMenu())} className="flex items-center gap-3 w-full text-left font-semibold text-gray-700 py-3 px-3 rounded-xl hover:bg-gray-50 transition-colors">
+               <Globe size={18} className="text-gray-400 shrink-0" />{t('nav.about')}
+             </Link>
+             
+             <div className="w-full h-px bg-gray-100 my-3" />
+             
+             {user ? (
+                <>
+                 <div className="py-2 px-3">
+                   <ThemeToggle />
+                 </div>
+                 <Link to="/notifications"
+                   className="flex items-center gap-3 font-semibold text-gray-700 py-3 px-3 rounded-xl hover:bg-gray-50 transition-colors"
+                   onClick={() => dispatch(closeMobileMenu())}
+                 >
+                   <Bell size={18} className="text-gray-400 shrink-0" />
+                   Notifications
+                 </Link>
+                 <Link to="/messages"
+                   className="flex items-center gap-3 font-semibold text-gray-700 py-3 px-3 rounded-xl hover:bg-gray-50 transition-colors"
+                   onClick={() => dispatch(closeMobileMenu())}
+                 >
+                   <MessageCircle size={18} className="text-gray-400 shrink-0" />
+                   Messages {totalUnread > 0 && <span className="text-[#CA3433]">({totalUnread})</span>}
+                 </Link>
+                 <Link to={role === 'admin' ? '/systemadmin' : role === 'landlord' ? '/landlord' : role === 'service_provider' ? '/service-provider' : '/dashboard'}
+                   className="flex items-center gap-3 font-semibold text-gray-700 py-3 px-3 rounded-xl hover:bg-gray-50 transition-colors"
+                   onClick={() => dispatch(closeMobileMenu())}
+                 >
+                   {role === 'admin' ? <ShieldAlert size={18} className="text-gray-400 shrink-0" /> : <LayoutDashboard size={18} className="text-gray-400 shrink-0" />}
+                   {role === 'admin' ? 'Admin Panel' : t('nav.dashboard')}
+                 </Link>
+                 <Link to="/unlocked"
+                   className="flex items-center gap-3 font-semibold text-gray-700 py-3 px-3 rounded-xl hover:bg-gray-50 transition-colors"
+                   onClick={() => dispatch(closeMobileMenu())}
+                 >
+                   <BookMarked size={18} className="text-gray-400 shrink-0" />
+                   Unlocked Properties
+                 </Link>
+                 <Link to="/settings"
+                   className="flex items-center gap-3 font-semibold text-gray-700 py-3 px-3 rounded-xl hover:bg-gray-50 transition-colors"
+                   onClick={() => dispatch(closeMobileMenu())}
+                 >
+                   <Settings size={18} className="text-gray-400 shrink-0" />
+                   {t('nav.settings')}
+                 </Link>
+                 <button
+                   onClick={handleSignOut}
+                   className="flex items-center gap-3 w-full text-left font-semibold text-red-500 py-3 px-3 rounded-xl hover:bg-red-50 transition-colors"
+                 >
+                   <LogOut size={18} className="text-red-400 shrink-0" />
+                   {t('nav.signOut')}
+                 </button>
+                </>
+             ) : (
+               <button 
+                 onClick={() => { dispatch(openAuthModal('login')); dispatch(closeMobileMenu()); }}
+                 className="w-full py-3 rounded-full bg-[#0B0F19] text-white text-sm font-semibold hover:bg-[#CA3433] transition-all active:scale-95"
+               >
+                 {t('nav.login')}
+               </button>
+             )}
+           </div>
+         </div>
+        )}
     </nav>
   )
 }
