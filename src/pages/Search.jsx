@@ -8,10 +8,12 @@ import { PropertyCard } from '../components/property/PropertyCard'
 import { Button } from '../components/ui/Button'
 import { resetFilters } from '../store/propertySlice'
 import { addSavedSearch } from '../store/savedSearchSlice'
+import { addNotification } from '../store/notificationSlice'
 import { AMENITIES, SORT_OPTIONS } from '../utils/constants'
 import { cn } from '../utils/helpers'
 import { Skeleton } from '../components/ui/Skeleton'
 import { RecommendedSection } from '../components/property/RecommendedSection'
+import { SEOHead } from '../components/common/SEOHead'
 import toast from 'react-hot-toast'
 
 export const Search = () => {
@@ -229,7 +231,9 @@ export const Search = () => {
   const filterContent = useMemo(() => renderFilterContent(), [localFilters, t, dispatch, showFilters])
 
   return (
-    <div className="pt-4 pb-12 min-h-screen bg-gray-50/50">
+    <>
+      <SEOHead title={filters.type ? `${filters.type} in ${filters.city || 'Uttarakhand'}` : 'Search Properties'} description={`Find ${filters.type || 'rooms, flats, hostels & PGs'} in ${filters.city || 'Uttarakhand'}. Browse verified rental properties on GoEazy.`} />
+      <div className="pt-4 pb-12 min-h-screen bg-gray-50/50">
       <div className="w-full px-2 sm:px-4">
         
         {/* Header Area */}
@@ -259,9 +263,18 @@ export const Search = () => {
                   )}
                   <button
                     onClick={() => {
+                      const searchName = filters.city ? `${filters.type || 'All'} in ${filters.city}` : `${filters.type || 'All Properties'}`
                       dispatch(addSavedSearch({
-                        name: filters.city ? `${filters.type || 'All'} in ${filters.city}` : `${filters.type || 'All Properties'}`,
+                        name: searchName,
                         filters: { ...filters },
+                      }))
+                      dispatch(addNotification({
+                        id: `notif-ss-${Date.now()}`,
+                        message: `Search "${searchName}" saved! You'll be notified of new matches.`,
+                        is_read: false,
+                        created_at: new Date().toISOString(),
+                        type: 'search_match',
+                        link: '/dashboard/saved',
                       }))
                       toast.success(t('search.savedSearchSuccess'))
                     }}
@@ -393,7 +406,8 @@ export const Search = () => {
             </Button>
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </>
   )
 }

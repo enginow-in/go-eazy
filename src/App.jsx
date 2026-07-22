@@ -13,6 +13,8 @@ import { RoleSelectionModal } from './components/auth/RoleSelectionModal'
 import { OnboardingQuiz } from './components/common/OnboardingQuiz'
 import { useSelector } from 'react-redux'
 import { useAuth } from './hooks/useAuth'
+import { useDarkMode } from './hooks/useDarkMode'
+import { SEOHead } from './components/common/SEOHead'
 import ScrollToTop from './components/common/ScrollToTop'
 
 // Heavy pages: lazy-loaded into separate chunks to prevent
@@ -27,6 +29,7 @@ const LandlordDashboard       = lazy(() => import('./pages/LandlordDashboard').t
 const PropertyNew             = lazy(() => import('./pages/PropertyNew').then(m => ({ default: m.PropertyNew })))
 const PropertyEdit            = lazy(() => import('./pages/PropertyEdit').then(m => ({ default: m.PropertyEdit })))
 const Settings                = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })))
+const UnlockedProperties     = lazy(() => import('./pages/UnlockedProperties').then(m => ({ default: m.UnlockedProperties })))
 const ServiceDetail           = lazy(() => import('./pages/ServiceDetail').then(m => ({ default: m.ServiceDetail })))
 const ServiceProviderDashboard = lazy(() => import('./pages/ServiceProviderDashboard').then(m => ({ default: m.ServiceProviderDashboard })))
 const ServiceNew              = lazy(() => import('./pages/ServiceNew').then(m => ({ default: m.ServiceNew })))
@@ -45,7 +48,8 @@ const PageSpinner = () => (
 )
 
 function App() {
-  useAuth() 
+  useAuth()
+  useDarkMode()
   const { loading } = useSelector(s => s.auth)
 
   if (loading) {
@@ -63,6 +67,7 @@ function App() {
       <OnboardingQuiz />
       <RoleSelectionModal />
       <Layout>
+        <SEOHead />
         <Suspense fallback={<PageSpinner />}>
           <Routes>
           <Route path="/" element={<ErrorBoundary><Navigate to="/search" replace /></ErrorBoundary>} />
@@ -70,6 +75,7 @@ function App() {
           <Route path="/property/:id" element={<ErrorBoundary><PropertyDetail /></ErrorBoundary>} />
           <Route path="/messages" element={<ErrorBoundary><Messages /></ErrorBoundary>} />
           <Route path="/notifications" element={<ErrorBoundary><Notifications /></ErrorBoundary>} />
+          <Route path="/unlocked" element={<ErrorBoundary><UnlockedProperties /></ErrorBoundary>} />
           <Route path="/compare" element={<ErrorBoundary><PropertyCompare /></ErrorBoundary>} />
           
           {/* Legal Routes */}

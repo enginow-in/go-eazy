@@ -12,6 +12,7 @@ import { Skeleton } from '../ui/Skeleton'
 import { CITIES } from '../../utils/constants'
 import { BannerSlider } from './BannerSlider'
 import { NotificationBell } from '../common/NotificationBell'
+import { ThemeToggle } from '../common/ThemeToggle'
 
 export const Navbar = () => {
   const dispatch = useDispatch()
@@ -150,6 +151,7 @@ export const Navbar = () => {
             <div className="flex items-center space-x-6 text-sm font-medium text-gray-500">
               <Link to="/search" className="px-3 py-1 bg-brand-lime text-gray-900 rounded-md font-semibold hover:bg-lime-400 transition-colors">{t('nav.home')}</Link>
               <Link to="/nearby" className="hover:text-gray-900 transition-colors py-2">{t('nav.nearby')}</Link>
+              <ThemeToggle />
               {user && (
                 <>
                 <NotificationBell />
@@ -413,6 +415,9 @@ export const Navbar = () => {
             
             {user ? (
                <>
+                <div className="py-2">
+                  <ThemeToggle />
+                </div>
                 <Link to="/notifications"
                   className="block font-semibold text-gray-700 py-2"
                   onClick={() => dispatch(closeMobileMenu())}
@@ -430,6 +435,12 @@ export const Navbar = () => {
                   onClick={() => dispatch(closeMobileMenu())}
                 >
                   {role === 'admin' ? 'Admin Panel' : t('nav.dashboard')}
+                </Link>
+                <Link to="/unlocked"
+                  className="block font-semibold text-gray-700 py-2"
+                  onClick={() => dispatch(closeMobileMenu())}
+                >
+                  Unlocked Properties
                 </Link>
                 <Link to="/settings"
                   className="block font-semibold text-gray-700 py-2"

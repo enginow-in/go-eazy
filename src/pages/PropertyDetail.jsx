@@ -14,6 +14,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { openAuthModal } from '../store/authSlice'
 import { useProperties } from '../hooks/useProperties'
 import { TypeBadge } from '../components/ui/Badge'
+import { SEOHead } from '../components/common/SEOHead'
 import { Button } from '../components/ui/Button'
 import { formatPrice, AMENITY_ICONS } from '../utils/helpers'
 import { supabase } from '../lib/supabase'
@@ -124,6 +125,10 @@ export const PropertyDetail = () => {
 
   if (loading || !currentProperty) {
     return (
+    <>
+      {currentProperty && (
+        <SEOHead title={currentProperty.title} description={currentProperty.description?.slice(0, 160) || `Rental property in ${currentProperty.city || 'Uttarakhand'}`} />
+      )}
       <div className="pt-8 pb-20 bg-[#F9F8F6] min-h-screen">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <Skeleton className="h-6 w-24 mb-6" />
@@ -145,6 +150,7 @@ export const PropertyDetail = () => {
           </div>
         </div>
       </div>
+    </>
     )
   }
 
@@ -377,11 +383,13 @@ export const PropertyDetail = () => {
   )
 
   return (
-    <div className="pt-8 pb-20 bg-[#F9F8F6] min-h-screen">
-      <div className="w-full px-4 sm:px-10 md:px-16 lg:px-20">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900 mb-6 transition-colors">
-          <ArrowLeft size={16} /> {t('property.labels.back')}
-        </button>
+    <>
+      <SEOHead title={p ? `${p.title}` : 'Property Detail'} description={p ? `${p.title} in ${p.city}` : 'Property details'} />
+      <div className="pt-8 pb-20 bg-[#F9F8F6] min-h-screen">
+        <div className="w-full px-4 sm:px-10 md:px-16 lg:px-20">
+          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900 mb-6 transition-colors">
+            <ArrowLeft size={16} /> {t('property.labels.back')}
+          </button>
 
         {/* MOBILE SLIDER - Top of page */}
         <div className="block lg:hidden w-full mb-6">
@@ -764,5 +772,6 @@ export const PropertyDetail = () => {
         </div>
       )}
     </div>
+    </>
   )
 }

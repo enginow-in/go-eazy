@@ -10,8 +10,12 @@ import { formatPriceShort, cn } from '../utils/helpers'
 import toast from 'react-hot-toast'
 import { Skeleton } from '../components/ui/Skeleton'
 import { supabase } from '../lib/supabase'
+import { AnalyticsChart } from '../components/landlord/AnalyticsChart'
+import { SEOHead } from '../components/common/SEOHead'
+import { useTranslation } from 'react-i18next'
 
 export const LandlordDashboard = () => {
+  const { t } = useTranslation()
   const { user, profile } = useAuth()
   const { getLandlordProperties, deleteProperty } = useProperties()
   const navigate = useNavigate()
@@ -127,17 +131,26 @@ export const LandlordDashboard = () => {
   const displayProperties = showAll ? properties : previewProperties
 
   return (
-    <div className="pt-12 lg:pt-0 pb-20 bg-gray-50 min-h-screen">
-      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Top Actions */}
-        <div className="flex items-center justify-between mb-4">
-          <button 
-            onClick={() => navigate('/')}
-            className="flex items-center gap-1.5 text-sm font-bold text-gray-400 hover:text-[#CA3433] transition-colors group"
-          >
-            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> 
-            <span>Back to Home</span>
+    <>
+      <SEOHead title={t('landlord.analytics')} />
+      <div className="pt-12 lg:pt-0 pb-20 bg-gray-50 min-h-screen">
+        <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
+          
+          {/* Analytics Section */}
+          {!loading && properties.length > 0 && (
+            <div className="mb-10">
+              <AnalyticsChart totalViews={totalViews} />
+            </div>
+          )}
+
+          {/* Top Actions */}
+          <div className="flex items-center justify-between mb-4">
+            <button 
+              onClick={() => navigate('/')}
+              className="flex items-center gap-1.5 text-sm font-bold text-gray-400 hover:text-[#CA3433] transition-colors group"
+            >
+              <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> 
+              <span>{t('landlord.viewAll')}</span>
           </button>
         </div>
 
@@ -153,9 +166,9 @@ export const LandlordDashboard = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900 font-display">
-                {profile ? `Welcome, ${profile?.full_name?.split(' ')[0] || 'Landlord'}!` : <Skeleton className="h-8 w-40" />}
+                {profile ? t('landlord.welcome', { name: profile?.full_name?.split(' ')[0] || 'Landlord' }) : <Skeleton className="h-8 w-40" />}
               </h1>
-              <p className="text-gray-500">Manage your properties and track views.</p>
+              <p className="text-gray-500">{t('landlord.manage')}</p>
             </div>
           </div>
           <Button onClick={() => navigate('/landlord/properties/new')} variant="primary" leftIcon={<Plus size={18} />}>
@@ -170,7 +183,7 @@ export const LandlordDashboard = () => {
               <Home size={32} />
             </div>
             <div className="flex-1">
-              <p className="text-gray-500 text-sm font-medium">Total Listings</p>
+              <p className="text-gray-500 text-sm font-medium">{t('landlord.totalListings')}</p>
               {loading ? <Skeleton className="h-8 w-12 mt-1" /> : <h3 className="text-3xl font-bold text-gray-900">{totalListings}</h3>}
             </div>
           </div>
@@ -179,7 +192,7 @@ export const LandlordDashboard = () => {
               <Eye size={32} />
             </div>
             <div className="flex-1">
-              <p className="text-gray-500 text-sm font-medium">Total Profile Views</p>
+              <p className="text-gray-500 text-sm font-medium">{t('landlord.totalViews')}</p>
               {loading ? <Skeleton className="h-8 w-12 mt-1" /> : <h3 className="text-3xl font-bold text-gray-900">{totalViews}</h3>}
             </div>
           </div>
@@ -190,7 +203,7 @@ export const LandlordDashboard = () => {
           <div className="mb-10">
             <h2 className="text-xl font-bold text-gray-900 font-display mb-4 flex items-center gap-2">
               <Calendar size={20} className="text-[#CA3433]" />
-              Visit Requests
+              {t('landlord.visitRequests')}
               <span className="bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full font-bold">{siteVisits.length}</span>
             </h2>
             <div className="grid gap-3">
@@ -409,5 +422,6 @@ export const LandlordDashboard = () => {
 
       </div>
     </div>
+    </>
   )
 }
