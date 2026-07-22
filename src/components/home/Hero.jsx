@@ -2,7 +2,7 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { Search, TrendingUp, Shield, Star } from 'lucide-react'
-import { setFilters } from '../../store/propertySlice'
+import { setFilters, resetFilters } from '../../store/propertySlice'
 import { Button } from '../ui/Button'
 import { CITIES } from '../../utils/constants'
 import { useTranslation } from 'react-i18next'
@@ -15,6 +15,7 @@ export const Hero = () => {
 
   const handleSearch = (e) => {
     e.preventDefault()
+    dispatch(resetFilters())
     dispatch(setFilters({ city: searchVal }))
     navigate('/search')
   }
@@ -56,7 +57,7 @@ export const Hero = () => {
               id="hero-search"
               name="hero-search"
               placeholder={t('hero.searchPlaceholder')}
-              className="w-full pl-11 pr-4 py-4 rounded-xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-100 text-gray-900 text-sm transition-all"
+              className="w-full pl-11 pr-4 py-4 rounded-xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:border-[#CA3433] focus:ring-4 focus:ring-[#CA3433]/10 text-gray-900 text-sm transition-all"
             />
           </div>
           <Button type="submit" variant="primary" size="lg" className="px-7 rounded-xl shadow-md">
@@ -69,7 +70,11 @@ export const Hero = () => {
           {CITIES.slice(0, 8).map(city => (
             <button
               key={city.name}
-              onClick={() => { dispatch(setFilters({ city: city.name })); navigate('/search') }}
+              onClick={() => {
+                dispatch(resetFilters())
+                dispatch(setFilters({ city: city.name }))
+                navigate('/search')
+              }}
               className="flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-200 rounded-full text-sm font-medium text-gray-600 hover:border-brand-400 hover:text-brand-700 hover:bg-brand-50 transition-all shadow-sm hover:shadow-md"
             >
               {city.name}

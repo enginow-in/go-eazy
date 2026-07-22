@@ -1,7 +1,7 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
-import { setFilters } from '../../store/propertySlice'
+import { setFilters, resetFilters } from '../../store/propertySlice'
 import { CITIES } from '../../utils/constants'
 
 export const CityChips = () => {
@@ -9,6 +9,7 @@ export const CityChips = () => {
   const dispatch = useDispatch()
 
   const handleCity = (city) => {
+    dispatch(resetFilters())
     dispatch(setFilters({ city }))
     navigate('/search')
   }
