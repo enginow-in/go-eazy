@@ -8,10 +8,11 @@ import { useAuth } from '../hooks/useAuth'
 import toast from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 
+// Bug Fix 1: Removed hardcoded text color classes from icons so they correctly inherit dynamic selected state styles
 const ROLE_OPTIONS = [
-  { value: 'user',             label: 'Student / Professional', icon: <GraduationCap size={20} className="text-brand-500" />, desc: 'Find PGs, Hostels & Flats' },
-  { value: 'landlord',         label: 'Landlord / Owner',        icon: <Home size={20} className="text-brand-500" />, desc: 'List & Manage Properties' },
-  { value: 'service_provider', label: 'Service Provider 🍱',    icon: <Utensils size={20} className="text-brand-500" />, desc: 'Offer Tiffin or Laundry' },
+  { value: 'user', label: 'Student / Professional', icon: <GraduationCap size={20} />, desc: 'Find PGs, Hostels & Flats' },
+  { value: 'landlord', label: 'Landlord / Owner', icon: <Home size={20} />, desc: 'List & Manage Properties' },
+  { value: 'service_provider', label: 'Service Provider 🍱', icon: <Utensils size={20} />, desc: 'Offer Tiffin or Laundry' },
 ]
 
 export const AuthHome = () => {
@@ -36,6 +37,13 @@ export const AuthHome = () => {
     return !Object.keys(e).length
   }
 
+  // Bug Fix 2: Clean form state resets when switching authentication tabs
+  const handleTabChange = (targetTab) => {
+    setTab(targetTab)
+    setErrors({})
+    setForm({ name: '', email: '', password: '' })
+  }
+
   const handleSubmit = async (e) => {
     if (e) e.preventDefault()
     if (!validate()) return
@@ -53,7 +61,7 @@ export const AuthHome = () => {
         else navigate('/search')
       }
     } catch (err) {
-      toast.error(err.message || 'Something went wrong')
+      toast.error(err?.message || 'Something went wrong')
     } finally {
       setLoading(false)
     }
@@ -64,7 +72,7 @@ export const AuthHome = () => {
     try {
       await signInWithGoogle()
     } catch (err) {
-      toast.error(err.message || 'Google sign-in failed')
+      toast.error(err?.message || 'Google sign-in failed')
       setGoogleLoading(false)
     }
   }
@@ -95,7 +103,7 @@ export const AuthHome = () => {
             Everything you need for <span className="text-[#CA3433] italic">Easy</span> living.
           </h1>
           <p className="text-lg text-gray-500 font-medium max-w-md leading-relaxed">
-            Simplifying your hunt for PGs, hostles, and service providers in your city. One account, endless ease.
+            Simplifying your hunt for PGs, hostels, and service providers in your city. One account, endless ease.
           </p>
         </motion.div>
 
@@ -133,7 +141,8 @@ export const AuthHome = () => {
             {['login', 'signup'].map(t => (
               <button
                 key={t}
-                onClick={() => { setTab(t); setErrors({}) }}
+                type="button"
+                onClick={() => handleTabChange(t)}
                 className={`flex-1 py-3.5 rounded-xl text-sm font-bold transition-all ${
                   tab === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:bg-white/50'
                 }`}
@@ -209,7 +218,9 @@ export const AuthHome = () => {
                             selectedRole === opt.value ? 'border-[#CA3433] bg-red-50/50' : 'border-gray-100 hover:border-gray-200'
                           }`}
                         >
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${selectedRole === opt.value ? 'bg-[#CA3433] text-white' : 'bg-gray-50 text-gray-400'}`}>
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+                            selectedRole === opt.value ? 'bg-[#CA3433] text-white' : 'bg-gray-50 text-gray-400'
+                          }`}>
                             {opt.icon}
                           </div>
                           <div>
