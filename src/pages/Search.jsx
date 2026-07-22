@@ -77,7 +77,7 @@ export const Search = () => {
         <div className="grid grid-cols-2 gap-3">
            <div className="flex flex-col gap-1.5 focus-within:text-brand-600 transition-colors">
              <label htmlFor="filter-city" className="sr-only">City</label>
-             <div className="flex bg-gray-50 rounded-xl overflow-hidden border border-gray-200 focus-within:border-brand-50-focus transition-colors pr-2">
+             <div className="flex bg-gray-50 rounded-xl overflow-hidden border border-gray-200 focus-within:border-[#CA3433] focus-within:ring-4 focus-within:ring-[#CA3433]/10 transition-all pr-2">
                <input 
                  type="text" 
                  id="filter-city"
@@ -91,7 +91,7 @@ export const Search = () => {
            </div>
            <div className="flex flex-col gap-1.5 focus-within:text-brand-600 transition-colors">
              <label htmlFor="filter-area" className="sr-only">Area</label>
-             <div className="flex bg-gray-50 rounded-xl overflow-hidden border border-gray-200 focus-within:border-brand-50-focus transition-colors pr-2">
+             <div className="flex bg-gray-50 rounded-xl overflow-hidden border border-gray-200 focus-within:border-[#CA3433] focus-within:ring-4 focus-within:ring-[#CA3433]/10 transition-all pr-2">
                <input 
                  type="text" 
                  id="filter-area"
