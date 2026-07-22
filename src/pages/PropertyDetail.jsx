@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { 
-  MapPin, Heart, Share2, Phone, Mail, ArrowLeft, 
+  MapPin, Heart, Share2, Phone, Mail, ArrowLeft, ArrowRight,
   CheckCircle2, ChevronDown, ChevronUp, Lock, EyeOff, X, 
   Star, Trash2, Sparkles, Calendar 
 } from 'lucide-react'
@@ -162,9 +162,23 @@ export const PropertyDetail = () => {
     toggleFavorite(p.id)
   }
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href)
-    toast.success(t('property.sections.linkCopied'))
+  const handleShare = async () => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(window.location.href)
+      } else {
+        const input = document.createElement('input')
+        input.value = window.location.href
+        document.body.appendChild(input)
+        input.select()
+        document.execCommand('copy')
+        document.body.removeChild(input)
+      }
+      toast.success(t('property.sections.linkCopied') || 'Link copied to clipboard!')
+    } catch (err) {
+      console.error('Failed to copy link:', err)
+      toast.error('Failed to copy link')
+    }
   }
 
   const submitSiteVisit = async () => {
@@ -744,7 +758,7 @@ export const PropertyDetail = () => {
                 <ArrowLeft size={24} />
               </button>
               <button ref={setGalleryNextEl} className="absolute right-6 top-1/2 -translate-y-1/2 z-50 p-4 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white">
-                <Share2 size={24} className="rotate-90" />
+                <ArrowRight size={24} />
               </button>
             </Swiper>
           </div>
