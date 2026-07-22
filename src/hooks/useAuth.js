@@ -8,20 +8,8 @@ export const useAuth = () => {
   const { user, profile, role, loading, authModalOpen, authModalTab } = useSelector(s => s.auth)
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-
-      if (error) console.error('Auth: Session error', error)
-      
-      dispatch(setUser(session?.user ?? null))
-      if (session?.user) fetchProfile(session.user.id)
-      else dispatch(setLoading(false))
-    })
-
-    // Listen for auth changes
+    // Listen for auth changes (onAuthStateChange fires INITIAL_SESSION automatically on mount)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-
-      
       dispatch(setUser(session?.user ?? null))
       if (session?.user) {
         fetchProfile(session.user.id)
