@@ -25,8 +25,8 @@ export const Search = () => {
   const [localFilters, setLocalFilters] = useState({
     city: filters.city || '', 
     area: filters.area || '', 
-    priceMin: filters.priceMin || 0, 
-    priceMax: filters.priceMax || 100000, 
+    priceMin: filters.priceMin ?? 0, 
+    priceMax: filters.priceMax ?? 100000, 
     amenities: [...(filters.amenities || [])], 
     sortBy: filters.sortBy || 'created_at', 
     sortOrder: filters.sortOrder || 'desc'
@@ -49,8 +49,8 @@ export const Search = () => {
     setLocalFilters({
       city: filters.city || '', 
       area: filters.area || '', 
-      priceMin: filters.priceMin || 0, 
-      priceMax: filters.priceMax || 100000, 
+      priceMin: filters.priceMin ?? 0, 
+      priceMax: filters.priceMax ?? 100000, 
       amenities: [...(filters.amenities || [])], 
       sortBy: filters.sortBy || 'created_at', 
       sortOrder: filters.sortOrder || 'desc'
