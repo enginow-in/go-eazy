@@ -50,10 +50,12 @@ export const NearbyServices = () => {
   // Read ?category= from URL
   useEffect(() => {
     const cat = searchParams.get('category')
-    if (cat && ['tiffin', 'laundry', 'cleaning'].includes(cat) && filters.category !== cat) {
-      updateFilters({ category: cat })
+    if (cat && ['tiffin', 'laundry', 'cleaning'].includes(cat)) {
+      if (filters.category !== cat) updateFilters({ category: cat })
+    } else {
+      if (filters.category) updateFilters({ category: '' })
     }
-  }, [searchParams])
+  }, [searchParams, updateFilters, filters.category])
 
   // Fetch whenever filters change
   useEffect(() => {
