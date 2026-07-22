@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Heart, Clock, User as UserIcon, ChevronLeft, Bell, Calendar, MapPin } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useProperties } from '../hooks/useProperties'
@@ -9,6 +9,7 @@ import { MOCK_PROPERTIES } from '../utils/constants'
 import { Skeleton } from '../components/ui/Skeleton'
 
 export const UserDashboard = () => {
+  const navigate = useNavigate()
   const { user, profile } = useAuth()
   const { favorites, recentlyViewed } = useProperties()
   const [favProps, setFavProps] = useState([])
@@ -273,7 +274,7 @@ export const UserDashboard = () => {
                  <div key={visit.id} className="bg-white border border-gray-100 rounded-xl p-4 flex flex-col gap-3 shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:shadow-[0_4px_16px_rgb(0,0,0,0.05)] transition-all cursor-pointer" onClick={() => navigate(`/property/${visit.property_id}`)}>
                    <div className="flex justify-between items-start">
                      <div className="pr-2">
-                       <h3 className="font-bold text-gray-900 line-clamp-1 text-[15px] hover:text-[#CA3433] transition-colors">{visit.property?.title || 'Property Unavaliable'}</h3>
+                       <h3 className="font-bold text-gray-900 line-clamp-1 text-[15px] hover:text-[#CA3433] transition-colors">{visit.property?.title || 'Property Unavailable'}</h3>
                        <p className="text-[13px] text-gray-500 mt-1 flex items-center gap-1"><MapPin size={12} className="text-gray-400"/>{visit.property?.city || 'Unknown'}</p>
                      </div>
                      <span className={`text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-widest border ${visit.status === 'approved' ? 'bg-green-50 text-green-700 border-green-200' : visit.status === 'declined' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
