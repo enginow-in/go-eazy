@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useRef, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import {
@@ -21,11 +21,17 @@ export const useServices = () => {
   } = useSelector(s => s.service)
   const { user } = useSelector(s => s.auth)
 
+  const pageRef = useRef(page)
+  useEffect(() => {
+    pageRef.current = page
+  }, [page])
+
   // ── Fetch Services List ─────────────────────────────────────────────
   const fetchServices = useCallback(async (reset = false) => {
     dispatch(setServiceLoading(true))
     try {
-      const from = reset ? 0 : page * PAGE_SIZE
+      const currentPage = pageRef.current
+      const from = reset ? 0 : currentPage * PAGE_SIZE
 
       let query = supabase
         .from('service_providers')
@@ -53,14 +59,16 @@ export const useServices = () => {
       else dispatch(appendServices(data || []))
 
       dispatch(setServiceHasMore((data || []).length === PAGE_SIZE))
-      dispatch(setServicePage(reset ? 1 : page + 1))
+      const nextPage = reset ? 1 : currentPage + 1
+      dispatch(setServicePage(nextPage))
+      pageRef.current = nextPage
     } catch (err) {
       console.error('fetchServices error:', err)
       dispatch(setServices([]))
     } finally {
       dispatch(setServiceLoading(false))
     }
-  }, [filters, page, dispatch])
+  }, [filters, dispatch])
 
   // ── Fetch Single Service ────────────────────────────────────────────
   // Clears stale data first, then fetches. Providers can view their own
