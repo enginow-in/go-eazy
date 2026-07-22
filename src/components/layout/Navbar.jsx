@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { Search, ChevronDown, User, LogOut, Home, Building, Tent, MapPin, Grid, PlusCircle, LayoutDashboard, Menu, X } from 'lucide-react'
+import { Search, ChevronDown, User, Home, Building, Tent, MapPin, Grid, Menu, X } from 'lucide-react'
 import { openAuthModal } from '../../store/authSlice'
 import { toggleMobileMenu, closeMobileMenu } from '../../store/uiSlice'
 import { useAuth } from '../../hooks/useAuth'
@@ -25,6 +25,7 @@ export const Navbar = () => {
   const [langMenuOpen, setLangMenuOpen] = useState(false)
   const [selectedCity, setSelectedCity] = useState(filters.city || 'All Cities')
   const [searchQuery, setSearchQuery] = useState(filters.query || '')
+  const [showSuggestions, setShowSuggestions] = useState(false)
   // Tracks if the user is actively typing in the Navbar's own search bar.
   // Without this guard, the debounce effect fires on any re-render where
   // searchQuery !== filters.query, causing rogue /search redirects (e.g. while
@@ -32,19 +33,25 @@ export const Navbar = () => {
   const userTypedInNavSearch = React.useRef(false)
   
   // Debounce effect for search — only navigate if user actually typed here
-  React.useEffect(() => {
-    if (!userTypedInNavSearch.current) return
-    const timer = setTimeout(() => {
-      if (searchQuery !== (filters.query || '')) {
-        updateFilters({ query: searchQuery })
-        if (!location.pathname.startsWith('/search') && searchQuery.length > 0) {
-          navigate('/search')
-        }
-      }
-    }, 400) // 400ms debounce
-    return () => clearTimeout(timer)
-  }, [searchQuery, updateFilters, navigate, location.pathname, filters.query])
+    React.useEffect(() => {
+      if (!userTypedInNavSearch.current) return
 
+      const timer = setTimeout(() => {
+        updateFilters({
+          query: searchQuery
+        })
+
+        if (
+          searchQuery.trim() &&
+          !location.pathname.startsWith("/search")
+        ) {
+          navigate("/search")
+        }
+      }, 400)
+
+      return () => clearTimeout(timer)
+    }, [searchQuery])
+    
   const languages = [
     { code: 'en', label: 'English', short: 'EN' },
     { code: 'hi', label: 'हिंदी', short: 'HI' }
@@ -64,9 +71,25 @@ export const Navbar = () => {
   }
 
   const handleLiveSearch = (e) => {
-    userTypedInNavSearch.current = true // user is actively typing in navbar
+    userTypedInNavSearch.current = true
     setSearchQuery(e.target.value)
-    if (mobileMenuOpen && e.target.value.length > 3) dispatch(closeMobileMenu())
+    setShowSuggestions(true)
+
+    if (mobileMenuOpen && e.target.value.length > 3)
+      dispatch(closeMobileMenu())
+  }
+
+const handleSuggestionClick = (item) => {
+
+      setSearchQuery(item.value)
+
+      updateFilters({
+          query: item.value
+      })
+
+      setShowSuggestions(false)
+
+      navigate("/search")
   }
 
   const categoryTabs = [
@@ -75,6 +98,28 @@ export const Navbar = () => {
     { name: t('property.types.Hostel'), value: 'Hostel', icon: <Tent size={18} /> },
     { name: t('property.types.PG'), value: 'PG', icon: <Building size={18} /> },
   ]
+
+  const searchSuggestions = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+
+    if (!q) return []
+
+    const citySuggestions = CITIES
+      .filter(city => city.toLowerCase().includes(q))
+      .map(city => ({
+        type: "city",
+        value: city
+      }))
+
+    const propertySuggestions = categoryTabs
+      .filter(tab => tab.value.toLowerCase().includes(q))
+      .map(tab => ({
+        type: "type",
+        value: tab.value
+      }))
+
+    return [...citySuggestions, ...propertySuggestions].slice(0, 6)
+  }, [searchQuery, categoryTabs])
 
   return (
     <nav className="relative z-40 bg-white">
@@ -137,8 +182,38 @@ export const Navbar = () => {
                 value={searchQuery}
                 placeholder={t('hero.searchPlaceholder')}
                 onChange={handleLiveSearch}
+                onFocus={() => {
+                    if (searchQuery)
+                        setShowSuggestions(true)
+                }}
+
+                onBlur={() => {
+                    setTimeout(() => setShowSuggestions(false), 150)
+                }}
                 className="w-full bg-gray-50 border border-transparent focus:border-[#CA3433] focus:ring-2 focus:ring-[#CA3433]/10 rounded-full py-2.5 pl-12 pr-4 text-sm font-medium focus:outline-none transition-all"
               />
+              {showSuggestions && searchSuggestions.length > 0 && (
+              <div className="absolute top-full mt-2 left-0 right-0 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
+
+                {searchSuggestions.map((item, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleSuggestionClick(item)}
+                    className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 text-left transition-colors"
+                  >
+                    {item.type === "city" ? (
+                      <MapPin size={18} className="text-brand-500" />
+                    ) : (
+                      <Home size={18} className="text-brand-500" />
+                    )}
+
+                    <span className="font-medium text-gray-700">
+                      {item.value}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
             </div>
           </div>
 
@@ -290,6 +365,8 @@ export const Navbar = () => {
                         onClick={() => {
                           setSelectedCity('All Cities')
                           updateFilters({ city: '' })
+                          navigate("/search")
+                          setShowSuggestions(false)
                           setCityMenuOpen(false)
                         }}
                         className={`w-full text-left px-5 py-2.5 text-sm font-bold transition-colors ${selectedCity === 'All Cities' ? 'bg-[#fff5f5] text-[#CA3433]' : 'text-gray-700 hover:bg-gray-50'}`}
@@ -302,6 +379,8 @@ export const Navbar = () => {
                           onClick={() => {
                             setSelectedCity(city)
                             updateFilters({ city })
+                            navigate("/search")
+                            setShowSuggestions(false)
                             setCityMenuOpen(false)
                           }}
                           className={`w-full text-left px-5 py-2.5 text-sm font-semibold transition-colors ${selectedCity === city ? 'bg-[#fff5f5] text-[#CA3433]' : 'text-gray-700 hover:bg-gray-50'}`}
@@ -376,8 +455,43 @@ export const Navbar = () => {
                 value={searchQuery}
                 placeholder={t('hero.searchPlaceholder')}
                 onChange={handleLiveSearch}
+                onFocus={() => {
+                    if (searchQuery)
+                        setShowSuggestions(true)
+                }}
+
+                onBlur={() => {
+                    setTimeout(() => setShowSuggestions(false), 150)
+                }}
                 className="w-full bg-gray-50 border border-[#CA3433] rounded-full py-2.5 pl-12 pr-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#CA3433]/20 shadow-sm transition-all"
               />
+              {showSuggestions && searchSuggestions.length > 0 && (
+                <div className="absolute top-full mt-2 left-0 right-0 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
+
+                  {searchSuggestions.map((item, index) => (
+
+                    <button
+                      key={`${item.type}-${item.value}`}
+                      onClick={() => handleSuggestionClick(item)}
+                      className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 text-left transition-colors"
+                    >
+
+                      {item.type === "city" ? (
+                        <MapPin size={18} className="text-brand-500" />
+                      ) : (
+                        <Home size={18} className="text-brand-500" />
+                      )}
+
+                      <span className="font-medium text-gray-700">
+                        {item.value}
+                      </span>
+
+                    </button>
+
+                  ))}
+
+                </div>
+              )}
             </div>
           </div>
         </>
