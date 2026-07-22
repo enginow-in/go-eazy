@@ -8,6 +8,8 @@ export const useAuth = () => {
   const { user, profile, role, loading, authModalOpen, authModalTab } = useSelector(s => s.auth)
 
   useEffect(() => {
+    // AUTH BYPASS FOR OPEN SOURCE
+    /*
     // Get initial session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
 
@@ -33,6 +35,7 @@ export const useAuth = () => {
     })
 
     return () => subscription.unsubscribe()
+    */
   }, [])
 
   const fetchProfile = async (userId) => {

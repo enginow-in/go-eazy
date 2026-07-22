@@ -25,6 +25,7 @@ const propertySlice = createSlice({
     totalCount: 0,
     reviews: [],
     reviewsLoading: false,
+    compareIds: [],
   },
   reducers: {
     setListings: (state, action) => {
@@ -88,6 +89,20 @@ const propertySlice = createSlice({
     setReviewsLoading: (state, action) => {
       state.reviewsLoading = action.payload
     },
+    toggleCompare: (state, action) => {
+      const id = action.payload
+      const idx = state.compareIds.indexOf(id)
+      if (idx >= 0) {
+        state.compareIds.splice(idx, 1)
+      } else {
+        if (state.compareIds.length < 4) {
+          state.compareIds.push(id)
+        }
+      }
+    },
+    clearCompare: (state) => {
+      state.compareIds = []
+    },
   },
 })
 
@@ -95,6 +110,7 @@ export const {
   setListings, appendListings, setFeatured, setCurrentProperty,
   setFavorites, toggleFavorite, setRecentlyViewed, addRecentlyViewed,
   setFilters, resetFilters, setLoading, setHasMore, setPage, setTotalCount,
-  setReviews, addReview, removeReview, setReviewsLoading
+  setReviews, addReview, removeReview, setReviewsLoading,
+  toggleCompare, clearCompare,
 } = propertySlice.actions
 export default propertySlice.reducer

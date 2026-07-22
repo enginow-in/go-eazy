@@ -3,20 +3,24 @@ import { Home as HomeIcon, Building, Tent } from 'lucide-react'
 import { Hero } from '../components/home/Hero'
 import { HeroCarousel } from '../components/home/HeroCarousel'
 import { FeaturedSection, PropertySection } from '../components/home/PropertySection'
+import { SEOHead } from '../components/common/SEOHead'
 
 export const Home = () => {
   return (
-    <div className="bg-white">
-      <Hero />
-      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="mb-16">
-          <HeroCarousel />
+    <>
+      <SEOHead />
+      <div className="bg-white dark:bg-gray-950">
+        <Hero />
+        <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="mb-16">
+            <HeroCarousel />
+          </div>
+          <FeaturedSection />
+          <PropertySection title="Premium Rooms" type="Room" icon={<HomeIcon className="text-brand-500" />} />
+          <PropertySection title="Spacious Flats" type="Flat" icon={<Building className="text-brand-500" />} />
+          <PropertySection title="Affordable PGs" type="PG" icon={<Tent className="text-brand-500" />} />
         </div>
-        <FeaturedSection />
-        <PropertySection title="Premium Rooms" type="Room" icon={<HomeIcon className="text-brand-500" />} />
-        <PropertySection title="Spacious Flats" type="Flat" icon={<Building className="text-brand-500" />} />
-        <PropertySection title="Affordable PGs" type="PG" icon={<Tent className="text-brand-500" />} />
       </div>
-    </div>
+    </>
   )
 }

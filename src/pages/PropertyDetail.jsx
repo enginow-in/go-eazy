@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { 
   MapPin, Heart, Share2, Phone, Mail, ArrowLeft, 
   CheckCircle2, ChevronDown, ChevronUp, Lock, EyeOff, X, 
-  Star, Trash2, Sparkles, Calendar 
+  Star, Trash2, Sparkles, Calendar, BadgeCheck 
 } from 'lucide-react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay, Pagination, Navigation } from 'swiper/modules'
@@ -14,9 +14,11 @@ import { useSelector, useDispatch } from 'react-redux'
 import { openAuthModal } from '../store/authSlice'
 import { useProperties } from '../hooks/useProperties'
 import { TypeBadge } from '../components/ui/Badge'
+import { SEOHead } from '../components/common/SEOHead'
 import { Button } from '../components/ui/Button'
 import { formatPrice, AMENITY_ICONS } from '../utils/helpers'
 import { supabase } from '../lib/supabase'
+import { bookVisit } from '../store/visitSlice'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { Skeleton } from '../components/ui/Skeleton'
@@ -123,6 +125,10 @@ export const PropertyDetail = () => {
 
   if (loading || !currentProperty) {
     return (
+    <>
+      {currentProperty && (
+        <SEOHead title={currentProperty.title} description={currentProperty.description?.slice(0, 160) || `Rental property in ${currentProperty.city || 'Uttarakhand'}`} />
+      )}
       <div className="pt-8 pb-20 bg-[#F9F8F6] min-h-screen">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <Skeleton className="h-6 w-24 mb-6" />
@@ -144,6 +150,7 @@ export const PropertyDetail = () => {
           </div>
         </div>
       </div>
+    </>
     )
   }
 
@@ -162,9 +169,25 @@ export const PropertyDetail = () => {
     toggleFavorite(p.id)
   }
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href)
+  const handleShare = async () => {
+    const url = window.location.href
+    const text = `Check out this property: ${p?.title || ''} - ${formatPrice(p?.price || 0)}/mo`
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'GoEazy', text, url })
+        return
+      } catch { /* user cancelled */ }
+    }
+    
+    navigator.clipboard.writeText(url)
     toast.success(t('property.sections.linkCopied'))
+  }
+
+  const handleWhatsAppShare = () => {
+    const url = window.location.href
+    const text = `Check out this property on GoEazy: ${p?.title || ''} - ${formatPrice(p?.price || 0)}/mo`
+    window.open(`https://wa.me/?text=${encodeURIComponent(text + '\n' + url)}`, '_blank')
   }
 
   const submitSiteVisit = async () => {
@@ -183,14 +206,13 @@ export const PropertyDetail = () => {
     
     setBookingVisit(true)
     try {
-      const { error } = await supabase.from('site_visits').insert({
+      dispatch(bookVisit({
         property_id: p.id,
-        user_id: user.id,
+        property_title: p.title,
         landlord_id: p.landlord_id,
+        landlord_name: p.landlord?.name || p.profiles?.full_name || 'Owner',
         visit_date: visitDate,
-        status: 'pending'
-      })
-      if (error) throw error
+      }))
       toast.success('Visit Request Sent! Track it in your dashboard.')
       setVisitDate('')
     } catch (err) {
@@ -268,17 +290,15 @@ export const PropertyDetail = () => {
             setHasUnlocked(true)
             checkUnlockStatus() 
             if (visitDateRef.current) {
-              const { error: visitErr } = await supabase.from('site_visits').insert({
-                 property_id: p.id,
-                 user_id: user.id,
-                 landlord_id: p.landlord_id,
-                 visit_date: visitDateRef.current,
-                 status: 'pending'
-              });
-              if (!visitErr) {
-                 toast.success('Visit Request Sent! Track it in your dashboard.')
-                 setVisitDate('')
-              }
+              dispatch(bookVisit({
+                property_id: p.id,
+                property_title: p.title,
+                landlord_id: p.landlord_id,
+                landlord_name: p.landlord?.name || p.profiles?.full_name || 'Owner',
+                visit_date: visitDateRef.current,
+              }))
+              toast.success('Visit Request Sent! Track it in your dashboard.')
+              setVisitDate('')
             }
           } catch (vErr) {
             toast.error('Payment verification failed')
@@ -349,6 +369,9 @@ export const PropertyDetail = () => {
       </button>
       
       <div className="absolute top-4 right-4 flex gap-2 z-10">
+        <button className="bg-white/90 backdrop-blur-sm border-0 rounded-full w-10 h-10 p-0 flex items-center justify-center hover:bg-white text-green-600 transition-colors shadow-sm cursor-pointer" onClick={handleWhatsAppShare} title="Share on WhatsApp">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        </button>
         <button className="bg-white/90 backdrop-blur-sm border-0 rounded-full w-10 h-10 p-0 flex items-center justify-center hover:bg-white text-gray-900 transition-colors shadow-sm cursor-pointer" onClick={handleShare}>
           <Share2 size={18} />
         </button>
@@ -360,11 +383,13 @@ export const PropertyDetail = () => {
   )
 
   return (
-    <div className="pt-8 pb-20 bg-[#F9F8F6] min-h-screen">
-      <div className="w-full px-4 sm:px-10 md:px-16 lg:px-20">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900 mb-6 transition-colors">
-          <ArrowLeft size={16} /> {t('property.labels.back')}
-        </button>
+    <>
+      <SEOHead title={p ? `${p.title}` : 'Property Detail'} description={p ? `${p.title} in ${p.city}` : 'Property details'} />
+      <div className="pt-8 pb-20 bg-[#F9F8F6] min-h-screen">
+        <div className="w-full px-4 sm:px-10 md:px-16 lg:px-20">
+          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900 mb-6 transition-colors">
+            <ArrowLeft size={16} /> {t('property.labels.back')}
+          </button>
 
         {/* MOBILE SLIDER - Top of page */}
         <div className="block lg:hidden w-full mb-6">
@@ -527,7 +552,19 @@ export const PropertyDetail = () => {
               <div className="space-y-4 mb-8">
                 <div className="p-4 bg-[#F9F8F6] rounded-xl border border-gray-100">
                    <p className="text-xs text-gray-500 font-bold mb-1 uppercase tracking-wider">{t('property.sections.owner')}</p>
-                   <p className="font-semibold text-gray-900">{p.profiles?.full_name || 'Listing Owner'}</p>
+                   <div className="flex items-center gap-2">
+                     <p className="font-semibold text-gray-900">{p.landlord?.name || p.profiles?.full_name || 'Listing Owner'}</p>
+                     {p.landlord_verified && (
+                       <span className="flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                         <BadgeCheck size={12} /> Verified
+                       </span>
+                     )}
+                   </div>
+                   {!p.availability && (
+                     <span className="mt-1 inline-block text-xs font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">
+                       Currently Rented
+                     </span>
+                   )}
                 </div>
 
                 {user ? (
@@ -735,5 +772,6 @@ export const PropertyDetail = () => {
         </div>
       )}
     </div>
+    </>
   )
 }

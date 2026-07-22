@@ -13,8 +13,10 @@ export const AMENITIES = [
   { id: 'water', label: '24h Water' },
 ]
 
+export const FURNISHING_TYPES = ['full', 'semi', 'none']
+
 export const CITIES = [
-  'Dehradun', 'Srinagar', 'Rishikesh', 'Haldwani', 'Nainital', 'Haridwar', 'Roorkee', 'Rudrapur'
+  'Dehradun', 'Srinagar', 'Rishikesh', 'Haldwani', 'Nainital', 'Haridwar', 'Roorkee', 'Rudrapur', 'Pune', 'Delhi'
 ]
 
 export const SORT_OPTIONS = [
@@ -37,6 +39,11 @@ export const MOCK_PROPERTIES = [
     type: 'Flat',
     amenities: ['wifi', 'ac', 'parking', 'security', 'cctv'],
     availability: true,
+    bedrooms: 1,
+    furnishing_type: 'full',
+    pet_friendly: false,
+    balcony: true,
+    landlord_verified: true,
     nearby_landmarks: 'Near Pacific Mall, 2km from Clock Tower',
     views: 342,
     images: [
@@ -57,6 +64,11 @@ export const MOCK_PROPERTIES = [
     type: 'PG',
     amenities: ['wifi', 'food', 'laundry', 'security'],
     availability: true,
+    bedrooms: 1,
+    furnishing_type: 'full',
+    pet_friendly: false,
+    balcony: false,
+    landlord_verified: true,
     nearby_landmarks: 'HNBGU Campus 500m, Srinagar Market 1km',
     views: 218,
     images: [
@@ -77,6 +89,11 @@ export const MOCK_PROPERTIES = [
     type: 'Flat',
     amenities: ['wifi', 'ac', 'gym', 'parking', 'security', 'cctv'],
     availability: true,
+    bedrooms: 1,
+    furnishing_type: 'full',
+    pet_friendly: false,
+    balcony: true,
+    landlord_verified: true,
     nearby_landmarks: 'Laxman Jhula 1km, Ganga Aarti Ghat 10 min walk',
     views: 567,
     images: [
@@ -97,6 +114,11 @@ export const MOCK_PROPERTIES = [
     type: 'Hostel',
     amenities: ['wifi', 'security', 'power', 'water', 'laundry'],
     availability: true,
+    bedrooms: 1,
+    furnishing_type: 'semi',
+    pet_friendly: false,
+    balcony: false,
+    landlord_verified: false,
     nearby_landmarks: 'MB Post Graduate College 200m, Nainital Road 2km',
     views: 389,
     images: [
@@ -117,6 +139,11 @@ export const MOCK_PROPERTIES = [
     type: 'Room',
     amenities: ['wifi', 'ac', 'parking', 'security'],
     availability: true,
+    bedrooms: 1,
+    furnishing_type: 'semi',
+    pet_friendly: true,
+    balcony: true,
+    landlord_verified: true,
     nearby_landmarks: 'ISBT 1km, Race Course 2km',
     views: 145,
     images: [
@@ -137,6 +164,11 @@ export const MOCK_PROPERTIES = [
     type: 'PG',
     amenities: ['wifi', 'food', 'security', 'cctv', 'laundry', 'water'],
     availability: true,
+    bedrooms: 1,
+    furnishing_type: 'full',
+    pet_friendly: false,
+    balcony: false,
+    landlord_verified: true,
     nearby_landmarks: 'UPES Campus 3km, Selakui 2km',
     views: 276,
     images: [
@@ -157,6 +189,11 @@ export const MOCK_PROPERTIES = [
     type: 'Flat',
     amenities: ['wifi', 'ac', 'gym', 'parking', 'security', 'cctv', 'power'],
     availability: true,
+    bedrooms: 2,
+    furnishing_type: 'full',
+    pet_friendly: false,
+    balcony: true,
+    landlord_verified: true,
     nearby_landmarks: 'Infosys Campus 1km, Wipro 2km, Hinjewadi Phase 2',
     views: 498,
     images: [
@@ -177,6 +214,11 @@ export const MOCK_PROPERTIES = [
     type: 'Room',
     amenities: ['wifi', 'security', 'power', 'water'],
     availability: true,
+    bedrooms: 1,
+    furnishing_type: 'semi',
+    pet_friendly: false,
+    balcony: false,
+    landlord_verified: false,
     nearby_landmarks: 'North Campus 300m, Civil Lines Metro 1km',
     views: 203,
     images: [
@@ -186,6 +228,61 @@ export const MOCK_PROPERTIES = [
     landlord: { name: 'Anand Gupta', phone: '+91 21098 76543', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Anand' },
     created_at: '2026-02-10',
   },
+]
+
+export const MOCK_CONVERSATIONS = [
+  {
+    id: 'conv-1',
+    participantId: 'landlord-rajesh',
+    participantName: 'Rajesh Negi',
+    participantAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rajesh',
+    propertyId: 'e2fa5154-1506-4b47-9dc4-142f1f582d9f',
+    propertyTitle: 'Premium Studio near IT Park',
+    lastMessage: 'Yes, the studio is still available. Would you like to schedule a visit?',
+    lastMessageTime: '2026-07-20T14:30:00Z',
+    unreadCount: 2,
+    messages: [
+      { id: 'm1', senderId: 'dummy-user-123', text: 'Hi, is the premium studio still available?', timestamp: '2026-07-20T12:00:00Z' },
+      { id: 'm2', senderId: 'landlord-rajesh', text: 'Hello! Yes, it is still available for rent.', timestamp: '2026-07-20T12:30:00Z' },
+      { id: 'm3', senderId: 'dummy-user-123', text: 'Great! Can I come see it this weekend?', timestamp: '2026-07-20T13:00:00Z' },
+      { id: 'm4', senderId: 'landlord-rajesh', text: 'Yes, the studio is still available. Would you like to schedule a visit?', timestamp: '2026-07-20T14:30:00Z' },
+    ],
+  },
+  {
+    id: 'conv-2',
+    participantId: 'landlord-aisha',
+    participantName: 'Aisha Bisht',
+    participantAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aisha',
+    propertyId: 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
+    propertyTitle: 'Modern 1BHK in Rishikesh',
+    lastMessage: 'The rent is ₹35,000 per month including maintenance.',
+    lastMessageTime: '2026-07-19T10:15:00Z',
+    unreadCount: 0,
+    messages: [
+      { id: 'm5', senderId: 'dummy-user-123', text: 'Hi Aisha, what is the monthly rent for this apartment?', timestamp: '2026-07-19T09:00:00Z' },
+      { id: 'm6', senderId: 'landlord-aisha', text: 'The rent is ₹35,000 per month including maintenance.', timestamp: '2026-07-19T10:15:00Z' },
+    ],
+  },
+  {
+    id: 'conv-3',
+    participantId: 'landlord-sunita',
+    participantName: 'Sunita Chauhan',
+    participantAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sunita',
+    propertyId: 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e',
+    propertyTitle: 'Spacious Room in Dharampur',
+    lastMessage: 'Yes, pet-friendly accommodation is available!',
+    lastMessageTime: '2026-07-18T16:45:00Z',
+    unreadCount: 1,
+    messages: [
+      { id: 'm7', senderId: 'dummy-user-123', text: 'Is the room pet-friendly? I have a small cat.', timestamp: '2026-07-18T16:00:00Z' },
+      { id: 'm8', senderId: 'landlord-sunita', text: 'Yes, pet-friendly accommodation is available!', timestamp: '2026-07-18T16:45:00Z' },
+    ],
+  },
+]
+
+export const MOCK_SAVED_SEARCHES = [
+  { id: 'ss-1', name: 'Flats in Dehradun', filters: { city: 'Dehradun', type: 'Flat', priceMax: 20000 }, createdAt: '2026-07-15', notifyOnMatch: true },
+  { id: 'ss-2', name: 'Rooms under ₹10K', filters: { type: 'Room', priceMax: 10000 }, createdAt: '2026-07-10', notifyOnMatch: false },
 ]
 
 export const CAROUSEL_SLIDES = [
