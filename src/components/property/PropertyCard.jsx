@@ -19,6 +19,12 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   const images = property.images || []
   const mainImage = images[0]
 
+  const externalBadge = property.is_external ? (
+    <div className="bg-orange-500 text-white text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg shadow-sm">
+      External Listing
+    </div>
+  ) : null
+
   const handleFav = (e) => {
     e.stopPropagation()
     if (!user) { dispatch(openAuthModal('signup')); return }
@@ -54,7 +60,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
             loading="lazy"
           />
           {!imgLoaded && <div className="skeleton absolute inset-0" />}
-          {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
+          {(badge || externalBadge) && <div className="absolute bottom-2 left-2 z-20">{badge || externalBadge}</div>}
           <button
             onClick={handleFav}
             className={cn(
@@ -116,7 +122,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           <div className="absolute top-2 right-2 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-lg text-[8px] font-black text-brand-600 uppercase tracking-wider">
              {t(`property.types.${property.type}`) || property.type}
           </div>
-          {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
+          {(badge || externalBadge) && <div className="absolute bottom-2 left-2 z-20">{badge || externalBadge}</div>}
         </div>
         <div className="px-3 py-2">
           <h3 className={cn(
@@ -156,7 +162,7 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           loading="lazy"
         />
         {!imgLoaded && <div className="skeleton absolute inset-0" />}
-        {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
+        {(badge || externalBadge) && <div className="absolute bottom-2 left-2 z-20">{badge || externalBadge}</div>}
         <button
           onClick={handleFav}
           className={cn(

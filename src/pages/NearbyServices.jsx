@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import { useDispatch } from 'react-redux'
-import { useSearchParams } from 'react-router-dom'
-import { Search, Filter, ChevronDown, Grid, List as ListIcon, RefreshCw, MapPin, ArrowLeft } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
+import { Search, Filter, ChevronDown, Grid, List as ListIcon, MapPin, ArrowLeft } from 'lucide-react'
 import { useServices } from '../hooks/useServices'
 import { ServiceCard } from '../components/services/ServiceCard'
 import { Button } from '../components/ui/Button'
@@ -60,8 +59,8 @@ export const NearbyServices = () => {
     fetchServices(true)
   }, [filters, fetchServices])
 
+  // Keep local filter state synchronized with store filters
   useEffect(() => {
-    // eslint-disable-next-line
     setLocalFilters({
       city: filters.city || '', 
       area: filters.area || '', 
@@ -76,80 +75,18 @@ export const NearbyServices = () => {
     setShowFilters(false)
   }
 
-  const renderFilterContent = () => (
-    <div className="space-y-6">
-      {/* Location Selection */}
-      <div>
-        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">{t('nearby.locationSel')}</h4>
-        <div className="grid grid-cols-2 gap-3">
-           <div className="flex flex-col gap-1.5">
-             <div className="flex bg-gray-50 rounded-xl overflow-hidden border border-gray-200 focus-within:border-[#CA3433]/50 transition-colors pr-2">
-               <input 
-                 type="text" 
-                 placeholder={t('nearby.cityPlaceholder')} 
-                 className="w-full bg-transparent border-none text-sm py-2.5 px-3 focus:ring-0 outline-none" 
-                 value={localFilters.city} 
-                 onChange={e => setLocalFilters(prev => ({...prev, city: e.target.value}))} 
-               />
-             </div>
-           </div>
-           <div className="flex flex-col gap-1.5">
-             <div className="flex bg-gray-50 rounded-xl overflow-hidden border border-gray-200 focus-within:border-[#CA3433]/50 transition-colors pr-2">
-               <input 
-                 type="text" 
-                 placeholder={t('nearby.areaPlaceholder')} 
-                 className="w-full bg-transparent border-none text-sm py-2.5 px-3 focus:ring-0 outline-none" 
-                 value={localFilters.area} 
-                 onChange={e => setLocalFilters(prev => ({...prev, area: e.target.value}))} 
-               />
-             </div>
-           </div>
-        </div>
-      </div>
-
-      {/* Sort By */}
-      <div>
-        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">{t('nearby.sortBy')}</h4>
-        <div className="grid grid-cols-3 gap-2">
-          {serviceSortOptions.map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => {
-                const [by, ord] = opt.value.split(':');
-                setLocalFilters(prev => ({ ...prev, sortBy: by, sortOrder: ord }));
-              }}
-              className={`px-2 py-2 rounded-xl text-[10px] font-bold transition-all border ${localFilters.sortBy + ':' + localFilters.sortOrder === opt.value ? 'bg-red-50 text-[#CA3433] border-[#CA3433]/30 shadow-sm' : 'border-gray-100 text-gray-600 hover:bg-gray-50'}`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Service Type */}
-      <div>
-        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">{t('nearby.category')}</h4>
-        <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat.value}
-              onClick={() => setLocalFilters(prev => ({ ...prev, category: cat.value }))}
-              className={`px-4 py-2 rounded-xl text-[12px] font-bold transition-all border ${localFilters.category === cat.value ? 'bg-[#fdf2f2] text-[#CA3433] border-[#CA3433]/30 shadow-sm' : 'border-gray-100 text-gray-600 hover:bg-gray-50'}`}
-            >
-              {cat.emoji} {cat.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="pt-4 flex gap-3 border-t border-gray-100">
-        <Button variant="secondary" className="flex-1 bg-white hover:bg-gray-50 border border-gray-100 rounded-xl font-bold py-2.5 text-xs" onClick={() => { dispatch(resetServiceFilters()); setShowFilters(false); }}>{t('nearby.reset')}</Button>
-        <Button variant="primary" className="flex-1 rounded-xl shadow-lg shadow-[#CA3433]/10 font-bold py-2.5 text-xs" onClick={applyFilters}>{t('nearby.showResults')}</Button>
-      </div>
-    </div>
-  )
-  // eslint-disable-next-line
-  const filterContent = useMemo(() => renderFilterContent(), [localFilters, showFilters, dispatch, t, CATEGORIES, serviceSortOptions])
+  const handleResetFilters = () => {
+    const defaultFilters = {
+      city: '',
+      area: '',
+      category: '',
+      sortBy: 'created_at',
+      sortOrder: 'desc'
+    }
+    setLocalFilters(defaultFilters)
+    dispatch(resetServiceFilters())
+    setShowFilters(false)
+  }
 
   // Live search handler
   const handleSearch = (e) => {
@@ -180,7 +117,6 @@ export const NearbyServices = () => {
         </div>
 
         {/* ── Search Bar + State Filter Row ────────────────── */}
-        {/* ── Search + Filter Section (Synced with Search Page padding) ────────────────────── */}
         <div className="mb-4 px-2 sm:px-4 flex flex-col gap-4">
           <div className="flex flex-row gap-3 items-center w-full">
             {/* City selector (Compact on mobile, height-matched with search bar) */}
@@ -243,7 +179,7 @@ export const NearbyServices = () => {
           </div>
 
           <div className="flex items-center gap-3 w-full">
-            {/* Area input (Full width to match row above) */}
+            {/* Area input */}
             <div className="relative flex-1">
               <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
@@ -270,7 +206,76 @@ export const NearbyServices = () => {
                 <>
                   <div className="fixed inset-0 z-[40] bg-black/5 backdrop-blur-[1px]" onClick={() => setShowFilters(false)}></div>
                   <div className="absolute right-0 top-full mt-3 w-[calc(100vw-2rem)] sm:w-[460px] bg-white rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] border border-gray-100 p-6 z-[50] cursor-default overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                    {filterContent}
+                    <div className="space-y-6">
+                      {/* Location Selection */}
+                      <div>
+                        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">{t('nearby.locationSel')}</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                           <div className="flex flex-col gap-1.5">
+                             <div className="flex bg-gray-50 rounded-xl overflow-hidden border border-gray-200 focus-within:border-[#CA3433]/50 transition-colors pr-2">
+                               <input 
+                                 type="text" 
+                                 placeholder={t('nearby.cityPlaceholder')} 
+                                 className="w-full bg-transparent border-none text-sm py-2.5 px-3 focus:ring-0 outline-none" 
+                                 value={localFilters.city} 
+                                 onChange={e => setLocalFilters(prev => ({...prev, city: e.target.value}))} 
+                               />
+                             </div>
+                           </div>
+                           <div className="flex flex-col gap-1.5">
+                             <div className="flex bg-gray-50 rounded-xl overflow-hidden border border-gray-200 focus-within:border-[#CA3433]/50 transition-colors pr-2">
+                               <input 
+                                 type="text" 
+                                 placeholder={t('nearby.areaPlaceholder')} 
+                                 className="w-full bg-transparent border-none text-sm py-2.5 px-3 focus:ring-0 outline-none" 
+                                 value={localFilters.area} 
+                                 onChange={e => setLocalFilters(prev => ({...prev, area: e.target.value}))} 
+                               />
+                             </div>
+                           </div>
+                        </div>
+                      </div>
+
+                      {/* Sort By */}
+                      <div>
+                        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">{t('nearby.sortBy')}</h4>
+                        <div className="grid grid-cols-3 gap-2">
+                          {serviceSortOptions.map(opt => (
+                            <button
+                              key={opt.value}
+                              onClick={() => {
+                                const [by, ord] = opt.value.split(':');
+                                setLocalFilters(prev => ({ ...prev, sortBy: by, sortOrder: ord }));
+                              }}
+                              className={`px-2 py-2 rounded-xl text-[10px] font-bold transition-all border ${localFilters.sortBy + ':' + localFilters.sortOrder === opt.value ? 'bg-red-50 text-[#CA3433] border-[#CA3433]/30 shadow-sm' : 'border-gray-100 text-gray-600 hover:bg-gray-50'}`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Service Type */}
+                      <div>
+                        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">{t('nearby.category')}</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {CATEGORIES.map(cat => (
+                            <button
+                              key={cat.value}
+                              onClick={() => setLocalFilters(prev => ({ ...prev, category: cat.value }))}
+                              className={`px-4 py-2 rounded-xl text-[12px] font-bold transition-all border ${localFilters.category === cat.value ? 'bg-[#fdf2f2] text-[#CA3433] border-[#CA3433]/30 shadow-sm' : 'border-gray-100 text-gray-600 hover:bg-gray-50'}`}
+                            >
+                              {cat.emoji} {cat.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="pt-4 flex gap-3 border-t border-gray-100">
+                        <Button variant="secondary" className="flex-1 bg-white hover:bg-gray-50 border border-gray-100 rounded-xl font-bold py-2.5 text-xs" onClick={handleResetFilters}>{t('nearby.reset')}</Button>
+                        <Button variant="primary" className="flex-1 rounded-xl shadow-lg shadow-[#CA3433]/10 font-bold py-2.5 text-xs" onClick={applyFilters}>{t('nearby.showResults')}</Button>
+                      </div>
+                    </div>
                   </div>
                 </>
               )}
@@ -317,7 +322,7 @@ export const NearbyServices = () => {
           </div>
         </div>
 
-        {/* ── Results Count & Layout Switch (Synced with Search Page padding) ─────────────────────────────────── */}
+        {/* ── Results Count & Layout Switch ─────────────────────────────────── */}
         <div className="px-2 sm:px-4 mb-4 flex items-center justify-between gap-4">
           <p className="text-[10px] sm:text-sm text-gray-400 font-bold uppercase tracking-widest leading-none">
             {loading ? t('nearby.searching') : t('nearby.providersFound', { count: services.length })}
@@ -342,7 +347,7 @@ export const NearbyServices = () => {
           </div>
         </div>
 
-        {/* ── Results Grid (Synced with Search Page padding) ─────────────────────────────────── */}
+        {/* ── Results Grid ─────────────────────────────────── */}
         <div className="px-2 sm:px-4">
           {loading && services.length === 0 ? (
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-5">
@@ -384,7 +389,7 @@ export const NearbyServices = () => {
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">{t('nearby.noFound')}</h3>
             <p className="text-gray-500 max-w-xs mx-auto mb-8">{t('nearby.noFoundDesc')}</p>
-            <Button variant="secondary" onClick={() => { dispatch(resetServiceFilters()); setSearchInput('') }} className="rounded-xl border-gray-200">
+            <Button variant="secondary" onClick={() => { handleResetFilters(); setSearchInput('') }} className="rounded-xl border-gray-200">
               {t('nearby.reset')}
             </Button>
           </div>

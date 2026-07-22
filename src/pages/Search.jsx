@@ -29,7 +29,8 @@ export const Search = () => {
     priceMax: filters.priceMax || 100000, 
     amenities: [...(filters.amenities || [])], 
     sortBy: filters.sortBy || 'created_at', 
-    sortOrder: filters.sortOrder || 'desc'
+    sortOrder: filters.sortOrder || 'desc',
+    listingType: filters.listingType || 'all'
   })
 
   // Read ?type= from URL and apply as filter
@@ -53,7 +54,8 @@ export const Search = () => {
       priceMax: filters.priceMax || 100000, 
       amenities: [...(filters.amenities || [])], 
       sortBy: filters.sortBy || 'created_at', 
-      sortOrder: filters.sortOrder || 'desc'
+      sortOrder: filters.sortOrder || 'desc',
+      listingType: filters.listingType || 'all'
     })
   }, [filters])
 
@@ -160,6 +162,22 @@ export const Search = () => {
               className={`px-5 py-2 rounded-xl text-[13px] font-semibold transition-all border ${localFilters.type === type ? 'bg-[#fdf2f2] text-[#CA3433] border-[#fbe1e1] shadow-sm' : 'border-gray-100 text-gray-600 hover:bg-gray-50'}`}
             >
               {t(`property.types.${type}`)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Listing Type */}
+      <div>
+        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">Listing Type</h4>
+        <div className="flex flex-wrap gap-2">
+          {['all', 'verified', 'external'].map(type => (
+            <button
+              key={type}
+              onClick={() => setLocalFilters(prev => ({ ...prev, listingType: type }))}
+              className={`px-4 py-2 rounded-xl text-[13px] font-semibold transition-all border ${localFilters.listingType === type ? 'bg-[#fdf2f2] text-[#CA3433] border-[#fbe1e1] shadow-sm' : 'border-gray-100 text-gray-600 hover:bg-gray-50'}`}
+            >
+              {type === 'all' ? 'All Listings' : type === 'verified' ? 'Verified Only' : 'External Only'}
             </button>
           ))}
         </div>

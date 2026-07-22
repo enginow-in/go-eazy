@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { 
-  MapPin, Heart, Share2, Phone, Mail, ArrowLeft, 
+  MapPin, Heart, Share2, Phone, Mail, ArrowLeft, ArrowRight,
   CheckCircle2, ChevronDown, ChevronUp, Lock, EyeOff, X, 
   Star, Trash2, Sparkles, Calendar 
 } from 'lucide-react'
@@ -162,9 +162,23 @@ export const PropertyDetail = () => {
     toggleFavorite(p.id)
   }
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href)
-    toast.success(t('property.sections.linkCopied'))
+  const handleShare = async () => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(window.location.href)
+      } else {
+        const input = document.createElement('input')
+        input.value = window.location.href
+        document.body.appendChild(input)
+        input.select()
+        document.execCommand('copy')
+        document.body.removeChild(input)
+      }
+      toast.success(t('property.sections.linkCopied') || 'Link copied to clipboard!')
+    } catch (err) {
+      console.error('Failed to copy link:', err)
+      toast.error('Failed to copy link')
+    }
   }
 
   const submitSiteVisit = async () => {
@@ -392,8 +406,15 @@ export const PropertyDetail = () => {
                      <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">• {reviews.length} {t('property.labels.reviews')}</span>
                    </div>
                  </div>
-                 <div className="bg-[#E6FF80] px-4 py-1.5 rounded-full text-[#1A1C14] font-bold text-sm tracking-wide">
-                   {isAvailable ? t('property.labels.active') : t('property.labels.inactive')}
+                 <div className="flex gap-2">
+                   {p.is_external && (
+                     <div className="bg-orange-500 px-4 py-1.5 rounded-full text-white font-bold text-sm tracking-wide">
+                       External Listing
+                     </div>
+                   )}
+                   <div className="bg-[#E6FF80] px-4 py-1.5 rounded-full text-[#1A1C14] font-bold text-sm tracking-wide">
+                     {isAvailable ? t('property.labels.active') : t('property.labels.inactive')}
+                   </div>
                  </div>
               </div>
               <div className="flex items-center gap-2 text-sm font-semibold text-gray-800 mb-2 whitespace-nowrap overflow-x-auto scrollbar-hide py-1">
@@ -485,112 +506,121 @@ export const PropertyDetail = () => {
             <div id="contact-section" className="bg-white rounded-lg sm:rounded-xl p-6 sm:p-8 shadow-[0_2px_24px_rgb(0,0,0,0.04)] border border-gray-100/50">
               <h3 className="text-xl font-bold text-gray-900 mb-6 tracking-tight font-display">{t('property.sections.requestContact')}</h3>
               
-              <div className="mb-8 p-6 bg-[#FEF2F2] rounded-2xl border border-red-100 shadow-sm relative overflow-hidden group">
-                <div className="absolute top-0 left-0 w-1.5 h-full bg-[#CA3433]"></div>
-                <h4 className="font-extrabold text-[#CA3433] mb-4 text-[13px] uppercase tracking-wider flex items-center gap-2">
-                  <Calendar size={16} />
-                  {t('property.sections.bookVisit')}
-                </h4>
-                <div className="flex flex-col gap-4">
-                  <div className="relative w-full">
-                    {!visitDate && (
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-sm font-bold flex items-center gap-2">
-                         <Calendar size={14} />
-                         <span>dd / mm / yyyy</span>
-                      </div>
-                    )}
-                    <input 
-                      type="date" 
-                      min={new Date().toISOString().split('T')[0]}
-                      value={visitDate}
-                      onChange={(e) => setVisitDate(e.target.value)}
-                      className={`w-full bg-white border border-red-100 rounded-xl px-4 py-3.5 text-sm focus:ring-4 focus:ring-[#CA3433]/10 focus:border-[#CA3433] outline-none transition-all cursor-pointer font-bold shadow-sm appearance-none min-h-[50px] ${visitDate ? 'text-gray-900' : 'text-transparent'}`}
-                      style={{ colorScheme: 'light' }}
-                    />
-                  </div>
-                  <Button 
-                    variant="primary" 
-                    className="w-full rounded-xl py-4 bg-[#CA3433] shadow-lg shadow-[#CA3433]/20 hover:shadow-[#CA3433]/30 transition-all active:scale-[0.97] font-bold text-sm"
-                    onClick={submitSiteVisit}
-                    disabled={bookingVisit}
-                  >
-                    {bookingVisit ? (
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    ) : t('property.sections.book')}
-                  </Button>
+              {p.is_external ? (
+                <div className="mb-8 p-6 bg-orange-50 rounded-2xl border border-orange-200 text-center shadow-sm">
+                  <h4 className="font-extrabold text-orange-600 mb-2 uppercase tracking-wide">External Listing</h4>
+                  <p className="text-sm text-gray-700">Inquiries and transactions for this property are handled entirely outside of the GoEazy platform.</p>
                 </div>
-                <p className="mt-4 text-[11px] text-gray-500 font-medium">
-                  * Direct visit coordinate sharing is available for verified users.
-                </p>
-              </div>
-
-              <div className="space-y-4 mb-8">
-                <div className="p-4 bg-[#F9F8F6] rounded-xl border border-gray-100">
-                   <p className="text-xs text-gray-500 font-bold mb-1 uppercase tracking-wider">{t('property.sections.owner')}</p>
-                   <p className="font-semibold text-gray-900">{p.profiles?.full_name || 'Listing Owner'}</p>
-                </div>
-
-                {user ? (
-                    (hasUnlocked || p.landlord_id === user.id) ? (
-                      <div className="space-y-3">
-                        <a
-                          href={`tel:${gatedData?.contact_phone || ''}`}
-                          className="flex items-center justify-center gap-3 w-full px-5 py-3.5 rounded-full bg-[#CA3433] text-white font-bold hover:bg-[#ac2d2c] transition-colors text-[15px]"
-                        >
-                          <Phone size={18} />
-                          <span className="tracking-wide">
-                            {gatedData?.contact_phone
-                              ? gatedData.contact_phone
-                              : t('property.sections.callNow')}
-                          </span>
-                        </a>
-                        <a href={`mailto:${gatedData?.contact_email || ''}`} className="flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-full bg-white border border-gray-200 text-gray-900 font-bold hover:bg-gray-50 transition-colors shadow-sm text-[15px]">
-                          <Mail size={18} /> {t('property.sections.sendEmail')}
-                        </a>
-                      </div>
-                    ) : (
-                      <div className="border border-red-50 rounded-xl p-6 text-center bg-red-50/10 relative overflow-hidden h-48 flex flex-col items-center justify-center shadow-sm">
-                        <div className="absolute inset-0 backdrop-blur-[15px]" />
-                        <div className="relative z-10 flex flex-col items-center">
-                          <div className="w-12 h-12 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center mx-auto mb-3 border border-red-100 shadow-sm text-[#CA3433]">
-                            <EyeOff size={24} />
+              ) : (
+                <>
+                  <div className="mb-8 p-6 bg-[#FEF2F2] rounded-2xl border border-red-100 shadow-sm relative overflow-hidden group">
+                    <div className="absolute top-0 left-0 w-1.5 h-full bg-[#CA3433]"></div>
+                    <h4 className="font-extrabold text-[#CA3433] mb-4 text-[13px] uppercase tracking-wider flex items-center gap-2">
+                      <Calendar size={16} />
+                      {t('property.sections.bookVisit')}
+                    </h4>
+                    <div className="flex flex-col gap-4">
+                      <div className="relative w-full">
+                        {!visitDate && (
+                          <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-sm font-bold flex items-center gap-2">
+                             <Calendar size={14} />
+                             <span>dd / mm / yyyy</span>
                           </div>
-                          <p className="font-bold text-gray-900 mb-2 font-display text-lg">{t('property.sections.detailsLocked')}</p>
-                          <p className="text-[13px] text-gray-500 leading-relaxed max-w-xs mx-auto px-4">{t('property.sections.lockDesc')}</p>
-                        </div>
+                        )}
+                        <input 
+                          type="date" 
+                          min={new Date().toISOString().split('T')[0]}
+                          value={visitDate}
+                          onChange={(e) => setVisitDate(e.target.value)}
+                          className={`w-full bg-white border border-red-100 rounded-xl px-4 py-3.5 text-sm focus:ring-4 focus:ring-[#CA3433]/10 focus:border-[#CA3433] outline-none transition-all cursor-pointer font-bold shadow-sm appearance-none min-h-[50px] ${visitDate ? 'text-gray-900' : 'text-transparent'}`}
+                          style={{ colorScheme: 'light' }}
+                        />
                       </div>
-                    )
-                  ) : (
-                    <div className="border border-gray-100 rounded-xl p-6 text-center bg-[#fcfbf9]">
-                      <p className="text-sm text-gray-600 mb-4 font-medium">{t('property.sections.signinPrompt')}</p>
-                      <Button variant="secondary" className="w-full rounded-full font-bold bg-white" onClick={() => dispatch(openAuthModal('login'))}>
-                        {t('nav.login')}
+                      <Button 
+                        variant="primary" 
+                        className="w-full rounded-xl py-4 bg-[#CA3433] shadow-lg shadow-[#CA3433]/20 hover:shadow-[#CA3433]/30 transition-all active:scale-[0.97] font-bold text-sm"
+                        onClick={submitSiteVisit}
+                        disabled={bookingVisit}
+                      >
+                        {bookingVisit ? (
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : t('property.sections.book')}
                       </Button>
                     </div>
-                  )}
-              </div>
+                    <p className="mt-4 text-[11px] text-gray-500 font-medium">
+                      * Direct visit coordinate sharing is available for verified users.
+                    </p>
+                  </div>
 
-              {((user && !(hasUnlocked || p.landlord_id === user.id)) || !user) && (
-                <button 
-                  id="unlock-button"
-                  onClick={handleUnlock} 
-                  disabled={unlocking}
-                  className={`w-full bg-gray-900 text-white font-bold text-[15px] py-4 rounded-full hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-gray-900/20 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed ${pulseUnlock ? 'ring-4 ring-[#CA3433] bg-[#CA3433] scale-105 transition-all duration-300' : ''}`}
-                >
-                  {unlocking ? (
-                    <span className="flex items-center gap-2">
-                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                       {t('property.sections.processing')}
-                    </span>
-                  ) : (
-                    <>
-                      <Lock size={18} />
-                      <span>{t('property.labels.pay')}</span>
-                      <span className="bg-white/20 px-2 py-0.5 rounded-md text-[13px] font-black">₹9</span>
-                      <span>{t('property.labels.toUnlock')}</span>
-                    </>
+                  <div className="space-y-4 mb-8">
+                    <div className="p-4 bg-[#F9F8F6] rounded-xl border border-gray-100">
+                       <p className="text-xs text-gray-500 font-bold mb-1 uppercase tracking-wider">{t('property.sections.owner')}</p>
+                       <p className="font-semibold text-gray-900">{p.profiles?.full_name || 'Listing Owner'}</p>
+                    </div>
+
+                    {user ? (
+                        (hasUnlocked || p.landlord_id === user.id) ? (
+                          <div className="space-y-3">
+                            <a
+                              href={`tel:${gatedData?.contact_phone || ''}`}
+                              className="flex items-center justify-center gap-3 w-full px-5 py-3.5 rounded-full bg-[#CA3433] text-white font-bold hover:bg-[#ac2d2c] transition-colors text-[15px]"
+                            >
+                              <Phone size={18} />
+                              <span className="tracking-wide">
+                                {gatedData?.contact_phone
+                                  ? gatedData.contact_phone
+                                  : t('property.sections.callNow')}
+                              </span>
+                            </a>
+                            <a href={`mailto:${gatedData?.contact_email || ''}`} className="flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-full bg-white border border-gray-200 text-gray-900 font-bold hover:bg-gray-50 transition-colors shadow-sm text-[15px]">
+                              <Mail size={18} /> {t('property.sections.sendEmail')}
+                            </a>
+                          </div>
+                        ) : (
+                          <div className="border border-red-50 rounded-xl p-6 text-center bg-red-50/10 relative overflow-hidden h-48 flex flex-col items-center justify-center shadow-sm">
+                            <div className="absolute inset-0 backdrop-blur-[15px]" />
+                            <div className="relative z-10 flex flex-col items-center">
+                              <div className="w-12 h-12 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center mx-auto mb-3 border border-red-100 shadow-sm text-[#CA3433]">
+                                <EyeOff size={24} />
+                              </div>
+                              <p className="font-bold text-gray-900 mb-2 font-display text-lg">{t('property.sections.detailsLocked')}</p>
+                              <p className="text-[13px] text-gray-500 leading-relaxed max-w-xs mx-auto px-4">{t('property.sections.lockDesc')}</p>
+                            </div>
+                          </div>
+                        )
+                      ) : (
+                        <div className="border border-gray-100 rounded-xl p-6 text-center bg-[#fcfbf9]">
+                          <p className="text-sm text-gray-600 mb-4 font-medium">{t('property.sections.signinPrompt')}</p>
+                          <Button variant="secondary" className="w-full rounded-full font-bold bg-white" onClick={() => dispatch(openAuthModal('login'))}>
+                            {t('nav.login')}
+                          </Button>
+                        </div>
+                      )}
+                  </div>
+
+                  {((user && !(hasUnlocked || p.landlord_id === user.id)) || !user) && (
+                    <button 
+                      id="unlock-button"
+                      onClick={handleUnlock} 
+                      disabled={unlocking}
+                      className={`w-full bg-gray-900 text-white font-bold text-[15px] py-4 rounded-full hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-gray-900/20 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed ${pulseUnlock ? 'ring-4 ring-[#CA3433] bg-[#CA3433] scale-105 transition-all duration-300' : ''}`}
+                    >
+                      {unlocking ? (
+                        <span className="flex items-center gap-2">
+                           <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                           {t('property.sections.processing')}
+                        </span>
+                      ) : (
+                        <>
+                          <Lock size={18} />
+                          <span>{t('property.labels.pay')}</span>
+                          <span className="bg-white/20 px-2 py-0.5 rounded-md text-[13px] font-black">₹9</span>
+                          <span>{t('property.labels.toUnlock')}</span>
+                        </>
+                      )}
+                    </button>
                   )}
-                </button>
+                </>
               )}
             </div>
           </div>
@@ -728,7 +758,7 @@ export const PropertyDetail = () => {
                 <ArrowLeft size={24} />
               </button>
               <button ref={setGalleryNextEl} className="absolute right-6 top-1/2 -translate-y-1/2 z-50 p-4 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white">
-                <Share2 size={24} className="rotate-90" />
+                <ArrowRight size={24} />
               </button>
             </Swiper>
           </div>
