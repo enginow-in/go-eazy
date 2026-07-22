@@ -9,7 +9,7 @@ import { PropertyCard } from '../components/property/PropertyCard'
 import { formatPriceShort, cn } from '../utils/helpers'
 import toast from 'react-hot-toast'
 import { Skeleton } from '../components/ui/Skeleton'
-import { supabase } from '../lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 export const LandlordDashboard = () => {
   const { user, profile } = useAuth()
@@ -24,23 +24,51 @@ export const LandlordDashboard = () => {
   const [actioningVisitId, setActioningVisitId] = useState(null)
 
   useEffect(() => {
+    let isMounted = true
+
+    const loadProperties = async () => {
+      try {
+        const data = await getLandlordProperties()
+        if (isMounted) setProperties(data)
+      } catch (err) {
+        console.error('Failed to load properties:', err)
+        toast.error('Failed to load listings')
+      } finally {
+        if (isMounted) setLoading(false)
+      }
+    }
+
+    const loadSiteVisits = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('site_visits')
+          .select(`
+            *,
+            property:properties(id, title),
+            renter:profiles!user_id(full_name)
+          `)
+          .eq('landlord_id', user.id)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false })
+        
+        if (error) throw error
+        if (isMounted) setSiteVisits(data || [])
+      } catch (err) {
+        console.error('Failed to load visits:', err)
+      } finally {
+        if (isMounted) setLoadingVisits(false)
+      }
+    }
+
     if (user) {
       loadProperties()
       loadSiteVisits()
     }
-  }, [user])
 
-  const loadProperties = async () => {
-    try {
-      const data = await getLandlordProperties()
-      setProperties(data)
-    } catch (err) {
-      console.error('Failed to load properties:', err)
-      toast.error('Failed to load listings')
-    } finally {
-      setLoading(false)
+    return () => {
+      isMounted = false
     }
-  }
+  }, [user, getLandlordProperties])
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this listing?')) return
@@ -52,28 +80,6 @@ export const LandlordDashboard = () => {
     } catch (err) {
       console.error('Delete failed:', err)
       toast.error(err.message || 'Failed to delete property', { id: toastId })
-    }
-  }
-
-  const loadSiteVisits = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('site_visits')
-        .select(`
-          *,
-          property:properties(id, title),
-          renter:profiles!user_id(full_name)
-        `)
-        .eq('landlord_id', user.id)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false })
-      
-      if (error) throw error
-      setSiteVisits(data || [])
-    } catch (err) {
-      console.error('Failed to load visits:', err)
-    } finally {
-      setLoadingVisits(false)
     }
   }
 
