@@ -52,7 +52,7 @@ export const ServiceDetail = () => {
   const { user, profile } = useSelector(s => s.auth)
 
   const { 
-    currentService, reviews, reviewsLoading, 
+    currentService, reviews, 
     fetchServiceById, fetchReviews, submitReview, deleteReview,
     fetchServiceGatedData 
   } = useServices()
