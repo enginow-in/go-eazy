@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import { User, Lock, Save, AlertCircle, CheckCircle2, Sparkles } from 'lucide-react'
+import { NotificationPreferences } from '../components/notifications/NotificationPreferences'
 
 export const Settings = () => {
   const { user, profile, updateProfile } = useAuth()
@@ -516,6 +517,9 @@ export const Settings = () => {
               </div>
             </form>
           </div>
+
+          {/* Notification Preferences Section */}
+          <NotificationPreferences />
 
         </div>
       </div>

@@ -34,6 +34,7 @@ const TermsOfService          = lazy(() => import('./pages/legal/TermsOfService'
 const CookiePolicy            = lazy(() => import('./pages/legal/CookiePolicy'))
 const RefundPolicy            = lazy(() => import('./pages/legal/RefundPolicy'))
 const Messages                = lazy(() => import('./pages/Messages').then(m => ({ default: m.Messages })))
+const NotificationHistory     = lazy(() => import('./pages/NotificationHistory').then(m => ({ default: m.NotificationHistory })))
 
 
 const PageSpinner = () => (
@@ -106,6 +107,12 @@ function App() {
           <Route path="/messages" element={
             <ProtectedRoute allowedRoles={['user', 'landlord', 'service_provider']}>
               <Messages />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/notifications" element={
+            <ProtectedRoute>
+              <NotificationHistory />
             </ProtectedRoute>
           } />
           

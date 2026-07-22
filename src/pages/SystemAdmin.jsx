@@ -6,11 +6,13 @@ import { LogOut, ShieldAlert, ShieldCheck, Activity, Users, Building, AlertTrian
 import { supabase } from '../lib/supabase'
 import { Modal } from '../components/ui/Modal'
 import { Button } from '../components/ui/Button'
+import { useNotifications } from '../hooks/useNotifications'
 import toast from 'react-hot-toast'
 
 export const SystemAdmin = () => {
   const { user, role, loading, signInWithGoogle, signOut } = useAuth()
   const { getAdminPendingServices, updateServiceStatus } = useServices()
+  const { sendNotification } = useNotifications()
   const navigate = useNavigate()
   
   const [stats, setStats] = useState({ users: 0, properties: 0, services: 0 })
@@ -66,8 +68,20 @@ export const SystemAdmin = () => {
     const toastId = toast.loading(`Marking as ${newStatus}...`)
     try {
       await updateServiceStatus(id, newStatus)
+      const providerItem = providers.find(p => p.id === id)
       setProviders(prev => prev.map(p => p.id === id ? { ...p, verification_status: newStatus } : p))
       toast.success(`Service Provider ${newStatus}`, { id: toastId })
+
+      // Trigger Notification for Service Provider
+      sendNotification({
+        recipientId: providerItem?.user_id || 'service-provider-demo',
+        recipientRole: 'service_provider',
+        type: 'service_approval',
+        title: `Service Listing ${newStatus === 'approved' ? 'Approved' : 'Rejected'}`,
+        message: `Your service listing "${providerItem?.business_name || 'Listing'}" has been marked as ${newStatus} by GoEazy Admin.`,
+        actionUrl: '/service-provider',
+        metadata: { serviceId: id, status: newStatus }
+      })
     } catch {
       toast.error('Failed to update status', { id: toastId })
     }

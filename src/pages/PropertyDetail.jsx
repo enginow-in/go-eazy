@@ -14,6 +14,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { openAuthModal } from '../store/authSlice'
 import { useProperties } from '../hooks/useProperties'
 import { useMessages } from '../hooks/useMessages'
+import { useNotifications } from '../hooks/useNotifications'
 import { TypeBadge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { formatPrice, AMENITY_ICONS } from '../utils/helpers'
@@ -56,6 +57,7 @@ export const PropertyDetail = () => {
   } = useProperties()
 
   const { getOrCreateConversation } = useMessages()
+  const { sendNotification } = useNotifications()
 
   const [showScrollToTop, setShowScrollToTop] = useState(false)
   const [gatedData, setGatedData] = useState(null)
@@ -204,6 +206,18 @@ export const PropertyDetail = () => {
       })
       if (error) throw error
       toast.success('Visit Request Sent! Track it in your dashboard.')
+
+      // Trigger notification for Landlord & Tenant
+      sendNotification({
+        recipientId: p.landlord_id || 'landlord-demo',
+        recipientRole: 'landlord',
+        type: 'property_inquiry',
+        title: 'New Site Visit Booking',
+        message: `Visit requested for ${p.title} on ${visitDate}.`,
+        actionUrl: '/landlord',
+        metadata: { propertyId: p.id, visitDate }
+      })
+
       setVisitDate('')
     } catch (err) {
       console.error(err)
