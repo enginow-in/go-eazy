@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { MOCK_PROPERTIES } from '../utils/constants'
@@ -70,9 +70,54 @@ export const useProperties = () => {
 
       dispatch(setHasMore((data || []).length === PAGE_SIZE))
       dispatch(setPage(reset ? 1 : page + 1))
-    } catch (err) {
-      console.error('fetchProperties error:', err)
-      dispatch(setListings([]))
+    } catch {
+      console.warn('⚠️ fetchProperties failed. Falling back to local filtered MOCK_PROPERTIES.')
+      let filtered = [...MOCK_PROPERTIES]
+      if (filters.type) {
+        filtered = filtered.filter(p => p.type === filters.type)
+      }
+      if (filters.priceMin > 0) {
+        filtered = filtered.filter(p => p.price >= filters.priceMin)
+      }
+      if (filters.priceMax < 100000) {
+        filtered = filtered.filter(p => p.price <= filters.priceMax)
+      }
+      if (filters.amenities?.length > 0) {
+        filtered = filtered.filter(p => filters.amenities.every(amt => p.amenities?.includes(amt)))
+      }
+      if (filters.city) {
+        filtered = filtered.filter(p => p.city?.toLowerCase().includes(filters.city.toLowerCase()))
+      }
+      if (filters.area) {
+        filtered = filtered.filter(p => p.area?.toLowerCase().includes(filters.area.toLowerCase()))
+      }
+
+      // Sort
+      const sortBy = filters.sortBy || 'created_at'
+      const sortOrder = filters.sortOrder || 'desc'
+      filtered.sort((a, b) => {
+        let valA = a[sortBy]
+        let valB = b[sortBy]
+        if (sortBy === 'created_at') {
+          valA = new Date(valA).getTime()
+          valB = new Date(valB).getTime()
+        }
+        if (valA < valB) return sortOrder === 'asc' ? -1 : 1
+        if (valA > valB) return sortOrder === 'asc' ? 1 : -1
+        return 0
+      })
+
+      const from = reset ? 0 : page * PAGE_SIZE
+      const paginated = filtered.slice(from, from + PAGE_SIZE)
+      
+      if (reset) {
+        dispatch(setListings(paginated))
+        dispatch(setTotalCount(filtered.length))
+      } else {
+        dispatch(appendListings(paginated))
+      }
+      dispatch(setHasMore(from + PAGE_SIZE < filtered.length))
+      dispatch(setPage(reset ? 1 : page + 1))
     } finally {
       dispatch(setLoading(false))
     }
@@ -267,7 +312,7 @@ export const useProperties = () => {
       } else {
         await supabase.from('favorites').insert({ user_id: user.id, property_id: propertyId })
       }
-    } catch (err) {
+    } catch {
       dispatch(toggleFav(propertyId))
     }
   }
@@ -278,7 +323,9 @@ export const useProperties = () => {
       const seventyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString()
       const { data } = await supabase.from('recently_viewed').select('property_id').eq('user_id', user.id).gte('viewed_at', seventyTwoHoursAgo).order('viewed_at', { ascending: false }).limit(20)
       dispatch(setRecentlyViewed(data?.map(r => r.property_id) || []))
-    } catch {}
+    } catch {
+      /* ignore error */
+    }
   }, [user, dispatch])
 
   const getLandlordProperties = async () => {
@@ -287,7 +334,7 @@ export const useProperties = () => {
     return data || []
   }
 
-  const getRecommendedProperties = useCallback(() => {
+  const recommendedProperties = useMemo(() => {
     // If no listings or no quiz data, return empty
     if (!listings || listings.length === 0 || !profile?.onboarding_data) return []
 
@@ -333,7 +380,7 @@ export const useProperties = () => {
     fetchFavorites, toggleFavorite, fetchRecentlyViewed, getLandlordProperties,
     updateFilters: useCallback((f) => dispatch(setFilters(f)), [dispatch]),
     resetFilters: useCallback(() => dispatch(resetFilters()), [dispatch]),
-    getRecommendedProperties,
+    recommendedProperties,
     fetchGatedData,
     reviews, reviewsLoading,
     fetchReviews, submitReview, deleteReview
