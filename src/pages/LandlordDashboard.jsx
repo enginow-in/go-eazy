@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Home, Eye, Edit, Trash2, ArrowRight, ArrowLeft, List as ListIcon, Calendar, Check, X } from 'lucide-react'
+import { Plus, Home, Eye, Edit, Trash2, ArrowRight, ArrowLeft, Calendar, Check, X } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useProperties } from '../hooks/useProperties'
 import { Button } from '../components/ui/Button'
 import { Badge, TypeBadge } from '../components/ui/Badge'
 import { PropertyCard } from '../components/property/PropertyCard'
-import { formatPriceShort, cn } from '../utils/helpers'
+import { formatPriceShort } from '../utils/helpers'
 import toast from 'react-hot-toast'
 import { Skeleton } from '../components/ui/Skeleton'
-import { supabase } from '../lib/supabase'
+import { supabase } from '../utils/supabase'
 
 export const LandlordDashboard = () => {
   const { user, profile } = useAuth()
@@ -24,23 +24,50 @@ export const LandlordDashboard = () => {
   const [actioningVisitId, setActioningVisitId] = useState(null)
 
   useEffect(() => {
-    if (user) {
-      loadProperties()
-      loadSiteVisits()
-    }
-  }, [user])
+    let isMounted = true
 
-  const loadProperties = async () => {
-    try {
-      const data = await getLandlordProperties()
-      setProperties(data)
-    } catch (err) {
-      console.error('Failed to load properties:', err)
-      toast.error('Failed to load listings')
-    } finally {
-      setLoading(false)
+    const loadData = async () => {
+      if (!user) return
+
+      // Load properties
+      try {
+        const data = await getLandlordProperties()
+        if (isMounted) setProperties(data || [])
+      } catch (err) {
+        console.error('Failed to load properties:', err)
+        if (isMounted) toast.error('Failed to load listings')
+      } finally {
+        if (isMounted) setLoading(false)
+      }
+
+      // Load site visits
+      try {
+        const { data, error } = await supabase
+          .from('site_visits')
+          .select(`
+            *,
+            property:properties(id, title),
+            renter:profiles!user_id(full_name)
+          `)
+          .eq('landlord_id', user.id)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false })
+        
+        if (error) throw error
+        if (isMounted) setSiteVisits(data || [])
+      } catch (err) {
+        console.error('Failed to load visits:', err)
+      } finally {
+        if (isMounted) setLoadingVisits(false)
+      }
     }
-  }
+
+    loadData()
+
+    return () => {
+      isMounted = false
+    }
+  }, [user, getLandlordProperties])
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this listing?')) return
@@ -51,29 +78,7 @@ export const LandlordDashboard = () => {
       toast.success('Property deleted permanently', { id: toastId })
     } catch (err) {
       console.error('Delete failed:', err)
-      toast.error(err.message || 'Failed to delete property', { id: toastId })
-    }
-  }
-
-  const loadSiteVisits = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('site_visits')
-        .select(`
-          *,
-          property:properties(id, title),
-          renter:profiles!user_id(full_name)
-        `)
-        .eq('landlord_id', user.id)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false })
-      
-      if (error) throw error
-      setSiteVisits(data || [])
-    } catch (err) {
-      console.error('Failed to load visits:', err)
-    } finally {
-      setLoadingVisits(false)
+      toast.error(err?.message || 'Failed to delete property', { id: toastId })
     }
   }
 
@@ -105,7 +110,6 @@ export const LandlordDashboard = () => {
   const totalListings = properties.length
   const totalViews = properties.reduce((sum, p) => sum + (p.views || 0), 0)
 
-  // First 2 for preview, all for "view all" mode
   const previewProperties = properties.slice(0, 2)
   const displayProperties = showAll ? properties : previewProperties
 
@@ -117,7 +121,7 @@ export const LandlordDashboard = () => {
         <div className="flex items-center justify-between mb-4">
           <button 
             onClick={() => navigate('/')}
-            className="flex items-center gap-1.5 text-sm font-bold text-gray-400 hover:text-[#CA3433] transition-colors group"
+            className="flex items-center gap-1.5 text-sm font-bold text-gray-400 hover:text-[#CA3433] transition-colors group outline-none focus-visible:ring-2 focus-visible:ring-[#CA3433]/40 rounded px-1 py-0.5"
           >
             <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> 
             <span>Back to Home</span>
@@ -127,7 +131,7 @@ export const LandlordDashboard = () => {
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-[#ffc9c9] bg-gray-200">
+            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-[#ffc9c9] bg-gray-200 shrink-0">
                {profile ? (
                  <img src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`} alt="Avatar" className="w-full h-full object-cover"/>
                ) : (
@@ -185,7 +189,7 @@ export const LandlordDashboard = () => {
                       Requested by <span className="font-semibold text-gray-700">{visit.renter?.full_name || 'User'}</span> for <span className="font-semibold text-[#CA3433]">{new Date(visit.visit_date).toLocaleDateString()}</span>
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0 flex-shrink-0">
+                  <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0 shrink-0">
                     <Button 
                       variant="primary" 
                       size="sm" 
@@ -266,12 +270,11 @@ export const LandlordDashboard = () => {
           </div>
 
         ) : !showAll ? (
-          /* ── PREVIEW: standard PropertyCards in responsive grid ── */
+          /* PREVIEW MODE */
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6">
             {previewProperties.map(p => (
               <div key={p.id} className="relative">
                 <PropertyCard property={p} layout="grid" />
-                {/* Management Action Bar */}
                 <div className="mt-2 flex items-center justify-between px-1">
                   <div className="flex items-center gap-3">
                     <button 
@@ -293,15 +296,14 @@ export const LandlordDashboard = () => {
           </div>
 
         ) : (
-          /* ── VIEW ALL: Full list view with management controls ── */
+          /* VIEW ALL MODE */
           <div className="grid grid-cols-1 gap-4">
             {displayProperties.map(p => (
               <div 
                 key={p.id} 
                 className="group bg-white rounded-2xl border border-gray-100 flex gap-4 cursor-pointer shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
               >
-                {/* Image Section - Auto-fitting Height */}
-                <div className="relative w-32 sm:w-40 self-stretch flex-shrink-0 overflow-hidden bg-gray-50 rounded-r-2xl shadow-sm">
+                <div className="relative w-32 sm:w-40 self-stretch shrink-0 overflow-hidden bg-gray-50 rounded-r-2xl shadow-sm">
                   <img 
                     src={p.images?.[0] || ''} 
                     alt={p.title} 
@@ -312,7 +314,6 @@ export const LandlordDashboard = () => {
                   </div>
                 </div>
                 
-                {/* Info & Actions Section */}
                 <div className="flex-1 py-3 flex flex-col justify-between min-w-0 pr-4">
                   <div className="flex flex-col md:flex-row md:items-start justify-between gap-1 md:gap-4">
                     <div className="min-w-0">
@@ -372,8 +373,6 @@ export const LandlordDashboard = () => {
             ))}
           </div>
         )}
-
-        {/* View All CTA below cards when in preview mode */}
 
       </div>
     </div>
