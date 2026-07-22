@@ -5,6 +5,8 @@ import uiReducer from './uiSlice'
 import serviceReducer from './serviceSlice'
 import chatReducer from './chatSlice'
 import savedSearchReducer from './savedSearchSlice'
+import notificationReducer from './notificationSlice'
+import visitReducer from './visitSlice'
 
 export const store = configureStore({
   reducer: {
@@ -14,5 +16,7 @@ export const store = configureStore({
     service: serviceReducer,
     chat: chatReducer,
     savedSearch: savedSearchReducer,
+    notifications: notificationReducer,
+    visits: visitReducer,
   },
 })

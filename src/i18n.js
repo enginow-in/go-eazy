@@ -301,6 +301,21 @@ const resources = {
         notifyOnMatch: 'Notify on match',
         remove: 'Remove',
         newMatch: 'New property match found!'
+      },
+      notifications: {
+        title: 'Notifications',
+        empty: 'All caught up!',
+        emptyDesc: 'No notifications to show.',
+        markAllRead: 'Mark All Read',
+        clearAll: 'Clear All',
+        viewAll: 'View All Notifications',
+        noNotifs: 'No notifications yet',
+        types: {
+          visit_approved: 'Visit Approved',
+          new_message: 'New Message',
+          search_match: 'Search Match',
+          payment_success: 'Payment Successful'
+        }
       }
     }
   },
@@ -602,6 +617,21 @@ const resources = {
         notifyOnMatch: 'मैच पर सूचित करें',
         remove: 'हटाएं',
         newMatch: 'नया प्रॉपर्टी मैच मिला!'
+      },
+      notifications: {
+        title: 'सूचनाएं',
+        empty: 'सब पढ़ लिया!',
+        emptyDesc: 'दिखाने के लिए कोई सूचना नहीं।',
+        markAllRead: 'सभी पढ़ी हुई चिह्नित करें',
+        clearAll: 'सभी हटाएं',
+        viewAll: 'सभी सूचनाएं देखें',
+        noNotifs: 'अभी तक कोई सूचना नहीं',
+        types: {
+          visit_approved: 'विज़िट स्वीकृत',
+          new_message: 'नया संदेश',
+          search_match: 'खोज मिलान',
+          payment_success: 'भुगतान सफल'
+        }
       }
     }
   }

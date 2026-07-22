@@ -25,6 +25,6 @@ CREATE POLICY "Admins can update all service providers"
   USING (
     EXISTS (
       SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND email = 'prriiyansunegi@gmail.com'
+      WHERE id = auth.uid() AND role = 'admin'
     )
   );

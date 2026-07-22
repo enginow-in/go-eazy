@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { Search, ChevronDown, User, LogOut, Home, Building, Tent, MapPin, Grid, PlusCircle, LayoutDashboard, Menu, X, MessageCircle, BarChart3 } from 'lucide-react'
+import { Search, ChevronDown, User, LogOut, Home, Building, Tent, MapPin, Grid, PlusCircle, LayoutDashboard, Menu, X, MessageCircle, BarChart3, Bell } from 'lucide-react'
 import { openAuthModal } from '../../store/authSlice'
 import { toggleMobileMenu, closeMobileMenu } from '../../store/uiSlice'
 import { useAuth } from '../../hooks/useAuth'
@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { Skeleton } from '../ui/Skeleton'
 import { CITIES } from '../../utils/constants'
 import { BannerSlider } from './BannerSlider'
+import { NotificationBell } from '../common/NotificationBell'
 
 export const Navbar = () => {
   const dispatch = useDispatch()
@@ -150,6 +151,8 @@ export const Navbar = () => {
               <Link to="/search" className="px-3 py-1 bg-brand-lime text-gray-900 rounded-md font-semibold hover:bg-lime-400 transition-colors">{t('nav.home')}</Link>
               <Link to="/nearby" className="hover:text-gray-900 transition-colors py-2">{t('nav.nearby')}</Link>
               {user && (
+                <>
+                <NotificationBell />
                 <Link to="/messages" className="hover:text-gray-900 transition-colors py-2 relative">
                   <MessageCircle size={18} />
                   {totalUnread > 0 && (
@@ -158,6 +161,7 @@ export const Navbar = () => {
                     </span>
                   )}
                 </Link>
+                </>
               )}
               <button onClick={() => user ? navigate('/landlord') : dispatch(openAuthModal('login'))} className="hover:text-gray-900 transition-colors">{t('nav.list')}</button>
               <Link to="/about" className="hover:text-gray-900 transition-colors py-2">{t('nav.about')}</Link>
@@ -409,6 +413,12 @@ export const Navbar = () => {
             
             {user ? (
                <>
+                <Link to="/notifications"
+                  className="block font-semibold text-gray-700 py-2"
+                  onClick={() => dispatch(closeMobileMenu())}
+                >
+                  Notifications
+                </Link>
                 <Link to="/messages"
                   className="block font-semibold text-gray-700 py-2"
                   onClick={() => dispatch(closeMobileMenu())}

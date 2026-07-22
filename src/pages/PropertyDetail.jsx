@@ -17,6 +17,7 @@ import { TypeBadge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { formatPrice, AMENITY_ICONS } from '../utils/helpers'
 import { supabase } from '../lib/supabase'
+import { bookVisit } from '../store/visitSlice'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { Skeleton } from '../components/ui/Skeleton'
@@ -199,14 +200,13 @@ export const PropertyDetail = () => {
     
     setBookingVisit(true)
     try {
-      const { error } = await supabase.from('site_visits').insert({
+      dispatch(bookVisit({
         property_id: p.id,
-        user_id: user.id,
+        property_title: p.title,
         landlord_id: p.landlord_id,
+        landlord_name: p.landlord?.name || p.profiles?.full_name || 'Owner',
         visit_date: visitDate,
-        status: 'pending'
-      })
-      if (error) throw error
+      }))
       toast.success('Visit Request Sent! Track it in your dashboard.')
       setVisitDate('')
     } catch (err) {
@@ -284,17 +284,15 @@ export const PropertyDetail = () => {
             setHasUnlocked(true)
             checkUnlockStatus() 
             if (visitDateRef.current) {
-              const { error: visitErr } = await supabase.from('site_visits').insert({
-                 property_id: p.id,
-                 user_id: user.id,
-                 landlord_id: p.landlord_id,
-                 visit_date: visitDateRef.current,
-                 status: 'pending'
-              });
-              if (!visitErr) {
-                 toast.success('Visit Request Sent! Track it in your dashboard.')
-                 setVisitDate('')
-              }
+              dispatch(bookVisit({
+                property_id: p.id,
+                property_title: p.title,
+                landlord_id: p.landlord_id,
+                landlord_name: p.landlord?.name || p.profiles?.full_name || 'Owner',
+                visit_date: visitDateRef.current,
+              }))
+              toast.success('Visit Request Sent! Track it in your dashboard.')
+              setVisitDate('')
             }
           } catch (vErr) {
             toast.error('Payment verification failed')
