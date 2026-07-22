@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig, createLogger } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -49,5 +50,11 @@ export default defineConfig({
         pluginTimings: false,
       },
     },
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/test-setup.js'],
+    css: true,
   },
 })

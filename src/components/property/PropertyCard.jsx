@@ -1,21 +1,25 @@
 import React, { useState, useMemo, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { Bookmark, Star, Home, Eye } from 'lucide-react'
+import { Bookmark, Star, Home, Eye, BadgeCheck, CheckCircle2, BarChart3 } from 'lucide-react'
 import { openAuthModal } from '../../store/authSlice'
 import { useProperties } from '../../hooks/useProperties'
+import { toggleCompare } from '../../store/propertySlice'
 import { cn } from '../../utils/helpers'
 import { useTranslation } from 'react-i18next'
+import toast from 'react-hot-toast'
 
 const PropertyCardComponent = ({ property, layout = 'grid', compact = false, condensed = false, badge = null }) => {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const { user } = useSelector(s => s.auth)
+  const { compareIds } = useSelector(s => s.property)
   const { favorites, toggleFavorite } = useProperties()
   const [imgLoaded, setImgLoaded] = useState(false)
 
   const isFav = favorites.includes(property.id)
+  const isInCompare = compareIds.includes(property.id)
   const images = property.images || []
   const mainImage = images[0]
 
@@ -25,13 +29,17 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
     toggleFavorite(property.id)
   }
 
-  // Memoize values with deterministic calculation
-  const { rating, numBeds } = useMemo(() => {
-    return {
-      rating: property.rating || '0.0',
-      numBeds: property.bedrooms || 0,
+  const handleCompare = (e) => {
+    e.stopPropagation()
+    if (compareIds.length >= 4 && !isInCompare) {
+      toast.error('Maximum 4 properties can be compared')
+      return
     }
-  }, [property.rating, property.bedrooms])
+    dispatch(toggleCompare(property.id))
+    toast.success(isInCompare ? 'Removed from compare' : 'Added to compare')
+  }
+
+  const rating = useMemo(() => property.rating || '0.0', [property.rating])
 
   const formatPrice = (p) => {
     if (!p) return '0'
@@ -156,12 +164,26 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           loading="lazy"
         />
         {!imgLoaded && <div className="skeleton absolute inset-0" />}
-        {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
+        {property.landlord_verified && (
+          <div className="absolute bottom-2 left-2 z-20">
+            <div className="flex items-center gap-1 bg-blue-500 text-white text-[8px] font-bold px-2 py-0.5 rounded-full shadow-md">
+              <BadgeCheck size={10} />
+              Verified
+            </div>
+          </div>
+        )}
+        {!property.availability && (
+          <div className="absolute top-2 left-2 z-20">
+            <div className="bg-red-500 text-white text-[8px] font-bold px-2 py-0.5 rounded-full shadow-md">
+              Rented
+            </div>
+          </div>
+        )}
         <button
           onClick={handleFav}
           className={cn(
             'absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center z-10',
-            'transition-all duration-200 shadow-sm transition-opacity',
+            'transition-all duration-200 shadow-sm',
             isFav ? 'bg-brand-500 text-white' : 'bg-white/90 backdrop-blur-sm text-gray-600'
           )}
         >
@@ -199,9 +221,14 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
               condensed ? "text-sm" : "text-base"
             )}>₹{formatPrice(property.price)}</span>
           </p>
-          <button className="text-[#CA3433] hover:text-brand-800 transition-colors">
-            <Eye size={condensed ? 14 : 18} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button onClick={handleCompare} className={cn('p-1 rounded transition-colors', isInCompare ? 'text-blue-500 bg-blue-50' : 'text-gray-300 hover:text-gray-500')} title="Compare">
+              <BarChart3 size={condensed ? 12 : 16} />
+            </button>
+            <button className="text-[#CA3433] hover:text-brand-800 transition-colors">
+              <Eye size={condensed ? 14 : 18} />
+            </button>
+          </div>
         </div>
       </div>
     </div>

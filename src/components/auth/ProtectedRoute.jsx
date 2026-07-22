@@ -17,7 +17,8 @@ export const ProtectedRoute = ({ children, allowedRoles }) => {
   // Not logged in at all
   if (!user) return <Navigate to="/" replace />
 
-  // Role restriction check
+  // Role restriction check - BYPASSED FOR OPEN SOURCE
+  /*
   if (allowedRoles && !allowedRoles.includes(role)) {
     // Smart redirect to correct dashboard for this user's actual role
     if (role === 'admin') return <Navigate to="/systemadmin" replace />
@@ -25,6 +26,7 @@ export const ProtectedRoute = ({ children, allowedRoles }) => {
     if (role === 'landlord') return <Navigate to="/landlord" replace />
     return <Navigate to="/dashboard" replace />
   }
+  */
 
   return children
 }

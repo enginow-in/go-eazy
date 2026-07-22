@@ -4,11 +4,13 @@ import { Navbar } from '../layout/Navbar'
 import { Footer } from '../layout/Footer'
 import { AuthModal } from '../auth/AuthModal'
 import { AuthGateModal } from '../auth/AuthGateModal'
+import { ChatWidget } from '../common/ChatWidget'
 import { Toaster } from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export const Layout = ({ children }) => {
   const location = useLocation()
+  const hideChat = ['/systemadmin', '/messages', '/compare'].includes(location.pathname)
   
   return (
     <>
@@ -37,6 +39,7 @@ export const Layout = ({ children }) => {
         </motion.main>
       </AnimatePresence>
       {location.pathname === '/search' && <Footer />}
+      {!hideChat && <ChatWidget />}
       <AuthModal />
     </>
   )
