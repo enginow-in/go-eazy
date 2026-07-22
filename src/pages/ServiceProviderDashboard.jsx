@@ -60,7 +60,7 @@ export const ServiceProviderDashboard = () => {
       await deleteService(id)
       setMyServices(v => v.filter(s => s.id !== id))
       toast.success('Listing deleted')
-    } catch (err) {
+    } catch {
       toast.error('Failed to delete listing')
     }
   }
@@ -108,7 +108,7 @@ export const ServiceProviderDashboard = () => {
         name: 'GoEazy',
         description: 'Service Listing — Go Live',
         image: '/favicon.svg',
-        handler: async function(response) {
+        handler: async function() {
           try {
             // Mark payment as paid in DB
             await payServiceListing(serviceId)
@@ -117,7 +117,7 @@ export const ServiceProviderDashboard = () => {
               s.id === serviceId ? { ...s, payment_status: 'paid' } : s
             ))
             toast.success('🎉 Payment successful! Your listing is now LIVE on GoEazy.')
-          } catch (err) {
+          } catch {
             toast.error('Payment recorded but DB update failed. Contact support.')
           } finally { setPayingId(null) }
         },

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, X, Image as ImageIcon, Zap, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react'
 import { Input, Textarea, Select } from '../ui/Input'
@@ -131,11 +131,29 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
     setPreviewUrls(prev => [...prev, ...files.map(f => URL.createObjectURL(f))])
   }
 
-  const removeImage = (index) => {
-    setPreviewUrls(prev => prev.filter((_, i) => i !== index))
-    if (index >= (initialData?.images?.length || 0)) {
-      setImages(prev => prev.filter((_, i) => i !== index - (initialData?.images?.length || 0)))
+  const previewUrlsRef = useRef(previewUrls)
+  useEffect(() => {
+    previewUrlsRef.current = previewUrls
+  }, [previewUrls])
+
+  useEffect(() => {
+    return () => {
+      previewUrlsRef.current.forEach(url => {
+        if (url?.startsWith('blob:')) {
+          URL.revokeObjectURL(url)
+        }
+      })
     }
+  }, [])
+
+  const removeImage = (index) => {
+    const targetUrl = previewUrls[index]
+    if (targetUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(targetUrl)
+      const blobIndex = previewUrls.slice(0, index).filter(url => url?.startsWith('blob:')).length
+      setImages(prev => prev.filter((_, i) => i !== blobIndex))
+    }
+    setPreviewUrls(prev => prev.filter((_, i) => i !== index))
   }
 
   const toggleAmenity = (id) => {
@@ -211,7 +229,7 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
       })
       if (!orderResp.ok) {
         const errText = await orderResp.text()
-        let errJson = {}; try { errJson = JSON.parse(errText) } catch(e) {}
+        let errJson = {}; try { errJson = JSON.parse(errText) } catch { /* ignore error */ }
         const msg = [errJson.error, errJson.detail, `HTTP ${orderResp.status}`].filter(Boolean).join(' | ')
         toast.error(msg, { duration: 8000 }); throw new Error(msg)
       }
