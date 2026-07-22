@@ -33,6 +33,9 @@ const PrivacyPolicy           = lazy(() => import('./pages/legal/PrivacyPolicy')
 const TermsOfService          = lazy(() => import('./pages/legal/TermsOfService'))
 const CookiePolicy            = lazy(() => import('./pages/legal/CookiePolicy'))
 const RefundPolicy            = lazy(() => import('./pages/legal/RefundPolicy'))
+const Messages                = lazy(() => import('./pages/Messages').then(m => ({ default: m.Messages })))
+const NotificationHistory     = lazy(() => import('./pages/NotificationHistory').then(m => ({ default: m.NotificationHistory })))
+
 
 const PageSpinner = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -95,10 +98,21 @@ function App() {
             </ProtectedRoute>
           } />
           
-          {/* User Routes */}
           <Route path="/dashboard" element={
             <ProtectedRoute allowedRoles={['user', 'landlord', 'service_provider']}>
               <UserDashboard />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/messages" element={
+            <ProtectedRoute allowedRoles={['user', 'landlord', 'service_provider']}>
+              <Messages />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/notifications" element={
+            <ProtectedRoute>
+              <NotificationHistory />
             </ProtectedRoute>
           } />
           

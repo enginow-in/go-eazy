@@ -1,11 +1,13 @@
 import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { Search, ChevronDown, User, LogOut, Home, Building, Tent, MapPin, Grid, PlusCircle, LayoutDashboard, Menu, X } from 'lucide-react'
+import { Search, ChevronDown, User, LogOut, Home, Building, Tent, MapPin, Grid, PlusCircle, LayoutDashboard, Menu, X, MessageSquare, Bell } from 'lucide-react'
 import { openAuthModal } from '../../store/authSlice'
 import { toggleMobileMenu, closeMobileMenu } from '../../store/uiSlice'
 import { useAuth } from '../../hooks/useAuth'
 import { useProperties } from '../../hooks/useProperties'
+import { useNotifications } from '../../hooks/useNotifications'
+import { NotificationDrawer } from '../notifications/NotificationDrawer'
 import { cn } from '../../utils/helpers'
 import { useTranslation } from 'react-i18next'
 import { Skeleton } from '../ui/Skeleton'
@@ -19,10 +21,12 @@ export const Navbar = () => {
   const { t, i18n } = useTranslation()
   const { user, profile, role, signOut, loading } = useAuth()
   const { filters, updateFilters, resetFilters } = useProperties()
+  const { unreadCount } = useNotifications()
   const { mobileMenuOpen } = useSelector(s => s.ui)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [cityMenuOpen, setCityMenuOpen] = useState(false)
   const [langMenuOpen, setLangMenuOpen] = useState(false)
+  const [notifDrawerOpen, setNotifDrawerOpen] = useState(false)
   const [selectedCity, setSelectedCity] = useState(filters.city || 'All Cities')
   const [searchQuery, setSearchQuery] = useState(filters.query || '')
   // Tracks if the user is actively typing in the Navbar's own search bar.
@@ -163,11 +167,36 @@ export const Navbar = () => {
             {loading ? (
               <Skeleton className="h-10 w-28 rounded-full" />
             ) : user ? (
-              <div className="relative">
-                <button
-                  onClick={() => setUserMenuOpen(v => !v)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#0B0F19] text-white text-sm font-semibold hover:bg-[#CA3433] transition-all duration-300 transform hover:scale-105"
+              <div className="flex items-center gap-4">
+                <Link
+                  to="/messages"
+                  className="w-10 h-10 rounded-full hover:bg-gray-50 flex items-center justify-center text-gray-500 hover:text-[#CA3433] border border-gray-200 transition-colors relative"
+                  title="Messages"
                 >
+                  <MessageSquare size={18} />
+                </Link>
+
+                <div className="relative">
+                  <button
+                    onClick={() => setNotifDrawerOpen(v => !v)}
+                    className="w-10 h-10 rounded-full hover:bg-gray-50 flex items-center justify-center text-gray-500 hover:text-[#CA3433] border border-gray-200 transition-colors relative cursor-pointer"
+                    title="Notifications"
+                  >
+                    <Bell size={18} />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#CA3433] text-white text-[10px] font-black flex items-center justify-center border-2 border-white animate-pulse">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </button>
+                  <NotificationDrawer isOpen={notifDrawerOpen} onClose={() => setNotifDrawerOpen(false)} />
+                </div>
+
+                <div className="relative">
+                  <button
+                    onClick={() => setUserMenuOpen(v => !v)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#0B0F19] text-white text-sm font-semibold hover:bg-[#CA3433] transition-all duration-300 transform hover:scale-105"
+                  >
                   {profile?.avatar_url ? (
                     <img src={profile.avatar_url} alt="Avatar" className="w-5 h-5 rounded-full object-cover" />
                   ) : (
@@ -191,6 +220,17 @@ export const Navbar = () => {
                           {role === 'admin' ? 'Admin Panel' : t('nav.dashboard')}
                         </button>
                         <button
+                          onClick={() => { navigate('/notifications'); setUserMenuOpen(false) }}
+                          className="w-full flex flex-col items-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-between"
+                        >
+                          <span>Notifications</span>
+                          {unreadCount > 0 && (
+                            <span className="px-2 py-0.5 rounded-full bg-[#CA3433] text-white text-[10px] font-bold">
+                              {unreadCount}
+                            </span>
+                          )}
+                        </button>
+                        <button
                           onClick={() => { navigate('/settings'); setUserMenuOpen(false) }}
                           className="w-full flex flex-col items-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-100"
                         >
@@ -207,6 +247,7 @@ export const Navbar = () => {
                   </>
                 )}
               </div>
+            </div>
             ) : (
               <button 
                 onClick={() => dispatch(openAuthModal('login'))}
@@ -397,6 +438,23 @@ export const Navbar = () => {
             
             {user ? (
                <>
+                <Link to="/messages"
+                  className="block font-semibold text-gray-700 py-2"
+                  onClick={() => dispatch(closeMobileMenu())}
+                >
+                  Messages
+                </Link>
+                <Link to="/notifications"
+                  className="flex items-center justify-between font-semibold text-gray-700 py-2"
+                  onClick={() => dispatch(closeMobileMenu())}
+                >
+                  <span>Notifications</span>
+                  {unreadCount > 0 && (
+                    <span className="px-2 py-0.5 rounded-full bg-[#CA3433] text-white text-[10px] font-bold">
+                      {unreadCount}
+                    </span>
+                  )}
+                </Link>
                 <Link to={role === 'admin' ? '/systemadmin' : role === 'landlord' ? '/landlord' : role === 'service_provider' ? '/service-provider' : '/dashboard'}
                   className="block font-semibold text-gray-700 py-2"
                   onClick={() => dispatch(closeMobileMenu())}
