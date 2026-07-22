@@ -30,53 +30,114 @@ export const useProperties = () => {
   const { user, profile } = useSelector(s => s.auth)
 
   const fetchProperties = useCallback(async (reset = false) => {
-    dispatch(setLoading(true))
-    try {
-      let query = supabase
-        .from('properties')
-        .select(`${PUBLIC_PROPERTY_FIELDS}, profiles!properties_landlord_id_fkey(${PUBLIC_PROFILE_FIELDS})`, { count: 'exact' })
-        .eq('availability', true)
+  dispatch(setLoading(true))
 
-      if (filters.type) query = query.eq('type', filters.type)
-      if (filters.priceMin > 0) query = query.gte('price', filters.priceMin)
-      if (filters.priceMax < 100000) query = query.lte('price', filters.priceMax)
-      
-      if (filters.amenities?.length > 0) {
-        query = query.contains('amenities', filters.amenities)
-      }
+  try {
+    let query = supabase
+      .from('properties')
+      .select(
+        `${PUBLIC_PROPERTY_FIELDS},
+        profiles!properties_landlord_id_fkey(${PUBLIC_PROFILE_FIELDS})`,
+        { count: 'exact' }
+      )
+      .eq('availability', true)
 
-      if (filters.city) {
-        query = query.ilike('city', `%${filters.city}%`)
-      }
-
-      if (filters.area) {
-        const fuzzyPattern = '%' + filters.area.toLowerCase().split('').filter(c => c.trim()).join('%') + '%'
-        query = query.ilike('area', fuzzyPattern)
-      }
-
-      const from = reset ? 0 : page * PAGE_SIZE
-      const { data, error, count: dbCount } = await query
-        .order(filters.sortBy || 'created_at', { ascending: filters.sortOrder === 'asc' })
-        .range(from, from + PAGE_SIZE - 1)
-
-      if (error) throw error
-
-      if (reset) {
-        dispatch(setListings(data || []))
-        dispatch(setTotalCount(dbCount || 0))
-      } else {
-        dispatch(appendListings(data || []))
-      }
-
-      dispatch(setHasMore((data || []).length === PAGE_SIZE))
-      dispatch(setPage(reset ? 1 : page + 1))
-    } catch (err) {
-      console.error('fetchProperties error:', err)
-      dispatch(setListings([]))
-    } finally {
-      dispatch(setLoading(false))
+    // ---------- Existing Filters ----------
+    if (filters.type) {
+      query = query.eq('type', filters.type)
     }
-  }, [filters, page, dispatch])
+
+    if (filters.priceMin > 0) {
+      query = query.gte('price', filters.priceMin)
+    }
+
+    if (filters.priceMax < 100000) {
+      query = query.lte('price', filters.priceMax)
+    }
+
+    if (filters.city) {
+      query = query.ilike('city', `%${filters.city}%`)
+    }
+
+    if (filters.area) {
+      query = query.ilike('area', `%${filters.area}%`)
+    }
+
+    if (filters.amenities?.length > 0) {
+      query = query.contains('amenities', filters.amenities)
+    }
+
+    const from = reset ? 0 : page * PAGE_SIZE
+
+    const {
+      data,
+      error,
+      count
+    } = await query
+      .order(filters.sortBy || "created_at", {
+        ascending: filters.sortOrder === "asc"
+      })
+      .range(from, from + PAGE_SIZE - 1)
+
+    if (error) throw error
+
+    // =====================================================
+    // SEARCH BAR FILTER (Title, Description, City, Area...)
+    // =====================================================
+
+    let filteredData = data || []
+
+    if (filters.query && filters.query.trim() !== "") {
+
+      const keywords = filters.query
+        .toLowerCase()
+        .split(" ")
+        .filter(Boolean)
+
+      filteredData = filteredData.filter(property => {
+
+        const searchableText = [
+          property.title,
+          property.description,
+          property.city,
+          property.area,
+          property.type,
+          ...(property.amenities || [])
+        ]
+          .join(" ")
+          .toLowerCase()
+
+        return keywords.every(keyword =>
+          searchableText.includes(keyword)
+        )
+      })
+    }
+
+    // =====================================================
+
+    if (reset) {
+      dispatch(setListings(filteredData))
+      dispatch(setTotalCount(filteredData.length))
+    } else {
+      dispatch(appendListings(filteredData))
+    }
+
+    dispatch(setHasMore(filteredData.length === PAGE_SIZE))
+    dispatch(setPage(reset ? 1 : page + 1))
+
+  } catch (err) {
+
+    console.error(err)
+
+    dispatch(setListings([]))
+
+  } finally {
+
+    dispatch(setLoading(false))
+
+  }
+
+}, [filters, page, dispatch])
 
   const fetchFeatured = useCallback(async () => {
     try {
