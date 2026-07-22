@@ -123,29 +123,27 @@ serve(async (req: Request) => {
       })
     }
 
-    // 6. Rate limiting: max 5 order creation attempts per user per hour
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
-    const { count: recentOrders } = await supabaseAdmin
-      .from('payment_attempts')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .gte('created_at', oneHourAgo)
+    // 6. Rate limiting & Attempt logging (Atomic checks via Postgres RPC)
+    const { data: recentAttempts, error: rpcError } = await supabaseAdmin
+      .rpc('increment_payment_attempt', {
+        target_user_id: user.id,
+        target_property_id: property_id
+      })
 
-    if ((recentOrders || 0) >= 5) {
+    if (rpcError) {
+      console.error('Rate limit/logging check failed:', rpcError)
+      return new Response(JSON.stringify({ error: 'Failed to verify payment attempts limit' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      })
+    }
+
+    if ((recentAttempts || 0) > 5) {
       console.warn(`Rate limit hit for user ${user.id}`)
       return new Response(JSON.stringify({ error: 'Too many payment attempts. Please try again later.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 429,
       })
-    }
-
-    // 7. Log this attempt (for rate limiting)
-    const { error: insertError } = await supabaseAdmin
-      .from('payment_attempts')
-      .insert({ user_id: user.id, property_id })
-      
-    if (insertError) {
-      console.warn('Could not log payment attempt:', insertError.message)
     }
 
     // 8. Create Razorpay Order
