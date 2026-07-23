@@ -231,6 +231,12 @@ export const Navbar = () => {
                           )}
                         </button>
                         <button
+                          onClick={() => { navigate('/agreements/lease-101'); setUserMenuOpen(false) }}
+                          className="w-full flex flex-col items-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          Digital Leases
+                        </button>
+                        <button
                           onClick={() => { navigate('/settings'); setUserMenuOpen(false) }}
                           className="w-full flex flex-col items-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-100"
                         >

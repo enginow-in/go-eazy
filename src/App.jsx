@@ -35,6 +35,7 @@ const CookiePolicy            = lazy(() => import('./pages/legal/CookiePolicy'))
 const RefundPolicy            = lazy(() => import('./pages/legal/RefundPolicy'))
 const Messages                = lazy(() => import('./pages/Messages').then(m => ({ default: m.Messages })))
 const NotificationHistory     = lazy(() => import('./pages/NotificationHistory').then(m => ({ default: m.NotificationHistory })))
+const LeaseDetail             = lazy(() => import('./pages/LeaseDetail').then(m => ({ default: m.LeaseDetail })))
 
 
 const PageSpinner = () => (
@@ -113,6 +114,12 @@ function App() {
           <Route path="/notifications" element={
             <ProtectedRoute>
               <NotificationHistory />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/agreements/:id" element={
+            <ProtectedRoute>
+              <LeaseDetail />
             </ProtectedRoute>
           } />
           

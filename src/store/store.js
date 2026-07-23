@@ -4,6 +4,7 @@ import propertyReducer from './propertySlice'
 import uiReducer from './uiSlice'
 import serviceReducer from './serviceSlice'
 import notificationReducer from './notificationSlice'
+import leaseReducer from './leaseSlice'
 
 export const store = configureStore({
   reducer: {
@@ -12,5 +13,6 @@ export const store = configureStore({
     ui: uiReducer,
     service: serviceReducer,
     notifications: notificationReducer,
+    lease: leaseReducer,
   },
 })

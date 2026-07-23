@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useSelector } from 'react-redux'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Send, MessageSquare, ArrowLeft, Building, User } from 'lucide-react'
+import { Send, MessageSquare, ArrowLeft, Building, User, FileText } from 'lucide-react'
 import { useMessages } from '../hooks/useMessages'
+import { useLease } from '../hooks/useLease'
+import { LeaseBuilderModal } from '../components/lease/LeaseBuilderModal'
+import { SignatureModal } from '../components/lease/SignatureModal'
 import { supabase } from '../lib/supabase'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
@@ -10,6 +13,7 @@ import { Input } from '../components/ui/Input'
 export const Messages = () => {
   const { user } = useSelector(s => s.auth)
   const { conversations, loadingConversations, fetchConversations, fetchMessages, sendMessage } = useMessages()
+  const { openBuilder } = useLease()
   
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -273,6 +277,17 @@ export const Messages = () => {
                       </p>
                     )}
                   </div>
+
+                  <button
+                    onClick={() => openBuilder({
+                      propertyId: activeConv.property?.id,
+                      tenantName: activeParticipant.name
+                    })}
+                    className="px-3.5 py-1.5 bg-[#fff5f5] hover:bg-[#ffebeb] text-[#CA3433] rounded-xl text-xs font-bold flex items-center gap-1.5 border border-[#CA3433]/20 transition-all active:scale-95 cursor-pointer shrink-0"
+                    title="Draft Smart Lease Agreement"
+                  >
+                    <FileText size={14} /> Draft Lease
+                  </button>
                 </div>
 
                 {/* Message Log */}
@@ -335,6 +350,9 @@ export const Messages = () => {
 
         </div>
       </div>
+
+      <LeaseBuilderModal />
+      <SignatureModal />
     </div>
   )
 }
