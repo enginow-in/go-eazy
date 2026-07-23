@@ -36,6 +36,7 @@ const RefundPolicy            = lazy(() => import('./pages/legal/RefundPolicy'))
 const Messages                = lazy(() => import('./pages/Messages').then(m => ({ default: m.Messages })))
 const NotificationHistory     = lazy(() => import('./pages/NotificationHistory').then(m => ({ default: m.NotificationHistory })))
 const LeaseDetail             = lazy(() => import('./pages/LeaseDetail').then(m => ({ default: m.LeaseDetail })))
+const ComparePage             = lazy(() => import('./pages/ComparePage').then(m => ({ default: m.ComparePage })))
 
 
 const PageSpinner = () => (
@@ -86,6 +87,7 @@ function App() {
           {/* Nearby Services Routes */}
           <Route path="/nearby" element={<NearbyServices />} />
           <Route path="/services/:id" element={<ServiceDetail />} />
+          <Route path="/compare" element={<ComparePage />} />
 
           {/* Service Provider Routes */}
           <Route path="/service-provider" element={

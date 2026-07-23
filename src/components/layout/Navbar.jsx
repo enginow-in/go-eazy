@@ -1,12 +1,13 @@
 import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { Search, ChevronDown, User, LogOut, Home, Building, Tent, MapPin, Grid, PlusCircle, LayoutDashboard, Menu, X, MessageSquare, Bell, Sparkles } from 'lucide-react'
+import { Search, ChevronDown, User, LogOut, Home, Building, Tent, MapPin, Grid, PlusCircle, LayoutDashboard, Menu, X, MessageSquare, Bell, Sparkles, Layers } from 'lucide-react'
 import { openAuthModal } from '../../store/authSlice'
 import { toggleMobileMenu, closeMobileMenu } from '../../store/uiSlice'
 import { useAuth } from '../../hooks/useAuth'
 import { useProperties } from '../../hooks/useProperties'
 import { useNotifications } from '../../hooks/useNotifications'
+import { useCompare } from '../../hooks/useCompare'
 import { NotificationDrawer } from '../notifications/NotificationDrawer'
 import { cn } from '../../utils/helpers'
 import { useTranslation } from 'react-i18next'
@@ -22,6 +23,7 @@ export const Navbar = () => {
   const { user, profile, role, signOut, loading } = useAuth()
   const { filters, updateFilters, resetFilters } = useProperties()
   const { unreadCount } = useNotifications()
+  const { comparedIds } = useCompare()
   const { mobileMenuOpen } = useSelector(s => s.ui)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [cityMenuOpen, setCityMenuOpen] = useState(false)
@@ -243,6 +245,17 @@ export const Navbar = () => {
                           className="w-full flex flex-col items-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                         >
                           Digital Leases
+                        </button>
+                        <button
+                          onClick={() => { navigate('/compare'); setUserMenuOpen(false) }}
+                          className="w-full flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          <span>Compare Properties</span>
+                          {comparedIds.length > 0 && (
+                            <span className="px-2 py-0.5 rounded-full bg-[#CA3433] text-white text-[10px] font-bold">
+                              {comparedIds.length}
+                            </span>
+                          )}
                         </button>
                         <button
                           onClick={() => { navigate('/settings'); setUserMenuOpen(false) }}
