@@ -2,8 +2,8 @@ import React, { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { 
   MapPin, Heart, Share2, Phone, Mail, ArrowLeft, 
-  CheckCircle2, ChevronDown, ChevronUp, Lock, EyeOff, X, 
-  Star, Trash2, Sparkles, Calendar 
+  ChevronDown, ChevronUp, Lock, EyeOff, X, 
+  Star, Trash2, Calendar 
 } from 'lucide-react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay, Pagination, Navigation } from 'swiper/modules'
@@ -13,10 +13,9 @@ import 'swiper/css/navigation'
 import { useSelector, useDispatch } from 'react-redux'
 import { openAuthModal } from '../store/authSlice'
 import { useProperties } from '../hooks/useProperties'
-import { TypeBadge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { formatPrice, AMENITY_ICONS } from '../utils/helpers'
-import { supabase } from '../lib/supabase'
+import { supabase } from '../utils/supabase'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { Skeleton } from '../components/ui/Skeleton'
@@ -71,7 +70,6 @@ export const PropertyDetail = () => {
   const [isGalleryOpen, setIsGalleryOpen] = useState(false)
   const [initialSlideIndex, setInitialSlideIndex] = useState(0)
   
-  // State for gallery navigation elements
   const [galleryPrevEl, setGalleryPrevEl] = useState(null)
   const [galleryNextEl, setGalleryNextEl] = useState(null)
 
@@ -88,27 +86,38 @@ export const PropertyDetail = () => {
   }, [])
 
   useEffect(() => {
-    fetchPropertyById(id)
-    fetchReviews(id)
-    checkUnlockStatus()
-  }, [id, user, fetchPropertyById, fetchReviews])
+    let isMounted = true
 
-  const checkUnlockStatus = async () => {
-    if (!user || !id) return
-    const { data } = await supabase
-      .from('unlocked_properties')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('property_id', id)
-      .maybeSingle()
-    if (data) {
-      setHasUnlocked(true)
-      const gated = await fetchGatedData(id)
-      setGatedData(gated)
+    const loadPageData = async () => {
+      fetchPropertyById(id)
+      fetchReviews(id)
+
+      if (!user || !id) return
+      try {
+        const { data } = await supabase
+          .from('unlocked_properties')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('property_id', id)
+          .maybeSingle()
+
+        if (data && isMounted) {
+          setHasUnlocked(true)
+          const gated = await fetchGatedData(id)
+          if (isMounted) setGatedData(gated)
+        }
+      } catch (err) {
+        console.error('Error checking unlock status:', err)
+      }
     }
-  }
 
-  // Also fetch gated data if current user is the landlord
+    loadPageData()
+
+    return () => {
+      isMounted = false
+    }
+  }, [id, user, fetchPropertyById, fetchReviews, fetchGatedData])
+
   useEffect(() => {
     const isLandlord = currentProperty && user && currentProperty.landlord_id === user.id
     if (isLandlord && !gatedData) {
@@ -196,7 +205,7 @@ export const PropertyDetail = () => {
     } catch (err) {
       console.error(err)
       toast.error('Failed to book visit.')
-    } finally {
+    } fontally {
       setBookingVisit(false)
     }
   }
@@ -221,7 +230,8 @@ export const PropertyDetail = () => {
 
       if (response.status === 409) {
         setHasUnlocked(true)
-        await checkUnlockStatus()
+        const gated = await fetchGatedData(id)
+        setGatedData(gated)
         setUnlocking(false)
         return
       }
@@ -266,7 +276,9 @@ export const PropertyDetail = () => {
             if (!verifyResp.ok) throw new Error('Payment verification failed')
             toast.success('Payment verified! Contact details unlocked.')
             setHasUnlocked(true)
-            checkUnlockStatus() 
+            const gated = await fetchGatedData(id)
+            setGatedData(gated)
+            
             if (visitDateRef.current) {
               const { error: visitErr } = await supabase.from('site_visits').insert({
                  property_id: p.id,
@@ -308,7 +320,6 @@ export const PropertyDetail = () => {
   }
 
   const images = p.images || []
-  const otherImages = images.slice(1, 5)
 
   const renderSlider = (prefix) => (
     <div className="relative w-full aspect-square md:aspect-[4/3] bg-gray-100 rounded-xl sm:rounded-2xl overflow-hidden shadow-md group border border-gray-200/50">
@@ -366,7 +377,7 @@ export const PropertyDetail = () => {
           <ArrowLeft size={16} /> {t('property.labels.back')}
         </button>
 
-        {/* MOBILE SLIDER - Top of page */}
+        {/* MOBILE SLIDER */}
         <div className="block lg:hidden w-full mb-6">
           {renderSlider('mobile')}
         </div>
