@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { Bookmark, Star, Home, Eye } from 'lucide-react'
 import { openAuthModal } from '../../store/authSlice'
 import { useProperties } from '../../hooks/useProperties'
+import { AIMatchBadge } from '../ui/AIMatchBadge'
 import { cn } from '../../utils/helpers'
 import { useTranslation } from 'react-i18next'
 
@@ -156,7 +157,13 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           loading="lazy"
         />
         {!imgLoaded && <div className="skeleton absolute inset-0" />}
-        {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
+        {badge ? (
+          <div className="absolute bottom-2 left-2 z-20">{badge}</div>
+        ) : (
+          <div className="absolute top-2 left-2 z-20">
+            <AIMatchBadge property={property} compact />
+          </div>
+        )}
         <button
           onClick={handleFav}
           className={cn(

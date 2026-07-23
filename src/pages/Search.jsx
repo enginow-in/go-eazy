@@ -1,17 +1,19 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import { useDispatch } from 'react-redux'
 import { useSearchParams } from 'react-router-dom'
-import { Filter, Grid, List as ListIcon, ChevronDown } from 'lucide-react'
+import { Filter, Grid, List as ListIcon, ChevronDown, Sparkles, Users, Home } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useProperties } from '../hooks/useProperties'
 import { PropertyCard } from '../components/property/PropertyCard'
+import { RoommateCard } from '../components/property/RoommateCard'
+import { useRoommates } from '../hooks/useRoommates'
 import { Input, Select } from '../components/ui/Input'
 import { Button } from '../components/ui/Button'
 import { resetFilters } from '../store/propertySlice'
 import { PROPERTY_TYPES, AMENITIES, SORT_OPTIONS } from '../utils/constants'
 import { AMENITY_ICONS, cn } from '../utils/helpers'
 import { Skeleton } from '../components/ui/Skeleton'
-import { useAuth } from '../hooks/useAuth'
+
 import { RecommendedSection } from '../components/property/RecommendedSection'
 
 export const Search = () => {
@@ -20,6 +22,10 @@ export const Search = () => {
   const [searchParams] = useSearchParams()
   const { listings, filters, loading, hasMore, fetchProperties, updateFilters, totalCount } = useProperties()
   
+  // Roommate Finder integration
+  const [searchMode, setSearchMode] = useState('stays') // 'stays' or 'roommates'
+  const { roommates, loading: roommatesLoading, fetchRoommates } = useRoommates()
+
   const [viewMode, setViewMode] = useState('grid')
   const [showFilters, setShowFilters] = useState(false)
   const [localFilters, setLocalFilters] = useState({
@@ -29,7 +35,10 @@ export const Search = () => {
     priceMax: filters.priceMax || 100000, 
     amenities: [...(filters.amenities || [])], 
     sortBy: filters.sortBy || 'created_at', 
-    sortOrder: filters.sortOrder || 'desc'
+    sortOrder: filters.sortOrder || 'desc',
+    college_name: filters.college_name || '',
+    gender: filters.gender || 'Any',
+    food_preference: filters.food_preference || ''
   })
 
   // Read ?type= from URL and apply as filter
@@ -43,6 +52,19 @@ export const Search = () => {
     }
   }, [searchParams, updateFilters, filters.type])
 
+  // Fetch roommates when filters or searchMode changes
+  useEffect(() => {
+    if (searchMode === 'roommates') {
+      fetchRoommates({
+        city: filters.city,
+        college_name: filters.college_name,
+        gender: filters.gender,
+        priceMax: filters.priceMax,
+        food_preference: filters.food_preference
+      })
+    }
+  }, [searchMode, filters, fetchRoommates])
+
   // Sync local filters with global filters when global filters change
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -53,7 +75,10 @@ export const Search = () => {
       priceMax: filters.priceMax || 100000, 
       amenities: [...(filters.amenities || [])], 
       sortBy: filters.sortBy || 'created_at', 
-      sortOrder: filters.sortOrder || 'desc'
+      sortOrder: filters.sortOrder || 'desc',
+      college_name: filters.college_name || '',
+      gender: filters.gender || 'Any',
+      food_preference: filters.food_preference || ''
     })
   }, [filters])
 
@@ -194,6 +219,32 @@ export const Search = () => {
                     type: filters.type ? t(`property.types.${filters.type}`) : t('search.properties') 
                   })}
                 </p>
+                <div className="mt-4 flex items-center bg-gray-100/80 p-1 rounded-2xl border border-gray-200/50 backdrop-blur-sm w-fit ml-4 sm:ml-8">
+                  <button
+                    onClick={() => setSearchMode('stays')}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer",
+                      searchMode === 'stays'
+                        ? "bg-white text-[#CA3433] shadow-[0_4px_12px_rgba(0,0,0,0.05)] border border-gray-100"
+                        : "text-gray-500 hover:text-gray-800"
+                    )}
+                  >
+                    <Home size={14} />
+                    <span>Stays</span>
+                  </button>
+                  <button
+                    onClick={() => setSearchMode('roommates')}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer",
+                      searchMode === 'roommates'
+                        ? "bg-white text-[#CA3433] shadow-[0_4px_12px_rgba(0,0,0,0.05)] border border-gray-100"
+                        : "text-gray-500 hover:text-gray-800"
+                    )}
+                  >
+                    <Users size={14} />
+                    <span>Roommates</span>
+                  </button>
+                </div>
               </div>
 
               {/* Mobile Actions (View Toggles + Filter) */}
@@ -270,51 +321,85 @@ export const Search = () => {
         <RecommendedSection viewMode={viewMode} />
 
         {/* Results Area */}
-        {loading && listings.length === 0 ? (
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-6 xl:gap-8">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-              <div key={i} className="bg-white rounded-xl border border-gray-100/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-4 overflow-hidden">
-                <Skeleton className="aspect-[4/3] w-full rounded-b-2xl" />
-                <div className="space-y-3 p-4">
-                  <div className="flex justify-between">
-                    <Skeleton className="h-6 w-1/3" />
-                    <Skeleton className="h-6 w-1/4" />
+        {searchMode === 'roommates' ? (
+          roommatesLoading && roommates.length === 0 ? (
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-6 xl:gap-8">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="w-16 h-16 rounded-2xl shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-3/4 rounded" />
+                      <Skeleton className="h-3 w-1/2 rounded" />
+                    </div>
                   </div>
-                  <Skeleton className="h-4 w-3/4" />
-                  <div className="pt-2 flex gap-2">
-                    <Skeleton className="h-4 w-1/4 rounded-full" />
-                    <Skeleton className="h-4 w-1/4 rounded-full" />
-                  </div>
+                  <Skeleton className="h-16 w-full rounded-xl" />
+                  <Skeleton className="h-8 w-full rounded-xl" />
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : listings.length > 0 ? (
-          <>
+              ))}
+            </div>
+          ) : roommates.length > 0 ? (
             <div className={cn(
                "grid gap-3 sm:gap-6 xl:gap-8",
                viewMode === 'grid' ? "grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5" : "grid-cols-1"
             )}>
-              {listings.map(p => <PropertyCard key={p.id} property={p} layout={viewMode} />)}
+              {roommates.map(r => <RoommateCard key={r.id} roommate={r} />)}
             </div>
-            {hasMore && (
-              <div className="mt-10 text-center">
-                <Button variant="secondary" onClick={() => fetchProperties(false)} loading={loading}>
-                  Load More
-                </Button>
-              </div>
-            )}
-          </>
+          ) : (
+            <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">No roommates found</h3>
+              <p className="text-gray-500 max-w-sm mx-auto mb-6">
+                Try adjusting your filters or completing your preference profile in Settings to match with roommates.
+              </p>
+            </div>
+          )
         ) : (
-          <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">No properties found</h3>
-            <p className="text-gray-500 max-w-sm mx-auto mb-6">
-              We couldn't find any properties matching your current filters. Try adjusting your search criteria.
-            </p>
-            <Button variant="secondary" onClick={() => dispatch(resetFilters())}>
-              Clear all filters
-            </Button>
-          </div>
+          loading && listings.length === 0 ? (
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-6 xl:gap-8">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                <div key={i} className="bg-white rounded-xl border border-gray-100/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-4 overflow-hidden">
+                  <Skeleton className="aspect-[4/3] w-full rounded-b-2xl" />
+                  <div className="space-y-3 p-4">
+                    <div className="flex justify-between">
+                      <Skeleton className="h-6 w-1/3" />
+                      <Skeleton className="h-6 w-1/4" />
+                    </div>
+                    <Skeleton className="h-4 w-3/4" />
+                    <div className="pt-2 flex gap-2">
+                      <Skeleton className="h-4 w-1/4 rounded-full" />
+                      <Skeleton className="h-4 w-1/4 rounded-full" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : listings.length > 0 ? (
+            <>
+              <div className={cn(
+                 "grid gap-3 sm:gap-6 xl:gap-8",
+                 viewMode === 'grid' ? "grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5" : "grid-cols-1"
+              )}>
+                {listings.map(p => <PropertyCard key={p.id} property={p} layout={viewMode} />)}
+              </div>
+              {hasMore && (
+                <div className="mt-10 text-center">
+                  <Button variant="secondary" onClick={() => fetchProperties(false)} loading={loading}>
+                    Load More
+                  </Button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">No properties found</h3>
+              <p className="text-gray-500 max-w-sm mx-auto mb-6">
+                We couldn't find any properties matching your current filters. Try adjusting your search criteria.
+              </p>
+              <Button variant="secondary" onClick={() => dispatch(resetFilters())}>
+                Clear all filters
+              </Button>
+            </div>
+          )
         )}
       </div>
     </div>
