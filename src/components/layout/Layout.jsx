@@ -20,12 +20,21 @@ export const Layout = ({ children }) => {
         }}
       />
       
+      {/* Skip-to-content: visually hidden until focused — WCAG 2.4.1 */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[10000] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-[#CA3433] focus:text-white focus:font-semibold focus:text-sm focus:shadow-lg focus:outline-none"
+      >
+        Skip to main content
+      </a>
+      
       {/* Forced Auth Gate for Search page */}
       {location.pathname === '/search' && <AuthGateModal />}
       
       {location.pathname !== '/systemadmin' && <Navbar />}
       <AnimatePresence mode="wait">
         <motion.main
+          id="main-content"
           key={location.pathname}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
