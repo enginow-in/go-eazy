@@ -19,6 +19,7 @@ import { formatPrice, AMENITY_ICONS } from '../utils/helpers'
 import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
+import { usePageSEO } from '../hooks/usePageSEO'
 import { Skeleton } from '../components/ui/Skeleton'
 import { LocationViewer } from '../components/map/LocationViewer'
 
@@ -156,6 +157,58 @@ export const PropertyDetail = () => {
     : '0.0'
 
   const myReview = reviews.find(r => r.reviewer_id === user?.id)
+
+  // ── Dynamic SEO: title, OG tags, canonical URL, JSON-LD structured data ──
+  usePageSEO({
+    title: `${p.title || p.type} in ${p.area}, ${p.city} | GoEazy`,
+    description: `Find a ${p.type} in ${p.area}, ${p.city} at ₹${p.price?.toLocaleString('en-IN')}/month.${
+      p.amenities?.length ? ` Amenities: ${p.amenities.slice(0, 3).join(', ')}.` : ''
+    } Book a free site visit on GoEazy.`,
+    image: p.images?.[0] ?? undefined,
+    url: window.location.href,
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@type': 'RealEstateListing',
+      name: p.title || `${p.type} in ${p.area}`,
+      description: `${p.type} for rent in ${p.area}, ${p.city}, Uttarakhand.`,
+      url: window.location.href,
+      image: p.images || [],
+      offers: {
+        '@type': 'Offer',
+        price: p.price,
+        priceCurrency: 'INR',
+        availability: isAvailable
+          ? 'https://schema.org/InStock'
+          : 'https://schema.org/SoldOut',
+        priceSpecification: {
+          '@type': 'UnitPriceSpecification',
+          price: p.price,
+          priceCurrency: 'INR',
+          referenceQuantity: {
+            '@type': 'QuantitativeValue',
+            value: 1,
+            unitCode: 'MON',
+          },
+        },
+      },
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: p.area,
+        addressRegion: p.city,
+        postalCode: p.pincode,
+        addressCountry: 'IN',
+      },
+      ...(avgRating !== '0.0' && {
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: avgRating,
+          reviewCount: reviews.length,
+          bestRating: 5,
+          worstRating: 1,
+        },
+      }),
+    },
+  })
 
   const handleFav = () => {
     if (!user) { dispatch(openAuthModal('signup')); return }
