@@ -349,11 +349,19 @@ export const PropertyDetail = () => {
       </button>
       
       <div className="absolute top-4 right-4 flex gap-2 z-10">
-        <button className="bg-white/90 backdrop-blur-sm border-0 rounded-full w-10 h-10 p-0 flex items-center justify-center hover:bg-white text-gray-900 transition-colors shadow-sm cursor-pointer" onClick={handleShare}>
-          <Share2 size={18} />
+        <button
+          aria-label="Copy property link to clipboard"
+          className="bg-white/90 backdrop-blur-sm border-0 rounded-full w-10 h-10 p-0 flex items-center justify-center hover:bg-white text-gray-900 transition-colors shadow-sm cursor-pointer"
+          onClick={handleShare}
+        >
+          <Share2 size={18} aria-hidden="true" />
         </button>
-        <button className={`bg-white/90 backdrop-blur-sm border-0 rounded-full w-10 h-10 p-0 flex items-center justify-center hover:bg-white transition-colors shadow-sm cursor-pointer ${isFav ? 'text-red-500' : 'text-gray-900'}`} onClick={handleFav}>
-          <Heart size={18} fill={isFav ? 'currentColor' : 'none'} />
+        <button
+          aria-label={isFav ? 'Remove from favourites' : 'Save to favourites'}
+          className={`bg-white/90 backdrop-blur-sm border-0 rounded-full w-10 h-10 p-0 flex items-center justify-center hover:bg-white transition-colors shadow-sm cursor-pointer ${isFav ? 'text-red-500' : 'text-gray-900'}`}
+          onClick={handleFav}
+        >
+          <Heart size={18} fill={isFav ? 'currentColor' : 'none'} aria-hidden="true" />
         </button>
       </div>
     </div>

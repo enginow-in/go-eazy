@@ -57,12 +57,13 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
           <button
             onClick={handleFav}
+            aria-label={isFav ? `Remove ${property.title} from saved` : `Save ${property.title}`}
             className={cn(
               "absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center z-10 transition-all",
               isFav ? "bg-brand-500 text-white shadow-lg" : "bg-white/80 backdrop-blur-sm text-gray-600 hover:bg-white"
             )}
           >
-            <Bookmark size={14} fill={isFav ? "currentColor" : "none"} />
+            <Bookmark size={14} fill={isFav ? "currentColor" : "none"} aria-hidden="true" />
           </button>
         </div>
 
@@ -112,7 +113,13 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         onClick={() => navigate(`/property/${property.id}`)}
       >
         <div className="relative aspect-[4/3] overflow-hidden rounded-b-xl">
-          <img src={mainImage} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <img
+            src={mainImage}
+            alt={property.title}
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
           <div className="absolute top-2 right-2 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-lg text-[8px] font-black text-brand-600 uppercase tracking-wider">
              {t(`property.types.${property.type}`) || property.type}
           </div>
@@ -159,13 +166,14 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
         {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
         <button
           onClick={handleFav}
+          aria-label={isFav ? `Remove ${property.title} from saved` : `Save ${property.title}`}
           className={cn(
             'absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center z-10',
             'transition-all duration-200 shadow-sm transition-opacity',
             isFav ? 'bg-brand-500 text-white' : 'bg-white/90 backdrop-blur-sm text-gray-600'
           )}
         >
-          <Bookmark size={14} fill={isFav ? 'currentColor' : 'none'} />
+          <Bookmark size={14} fill={isFav ? 'currentColor' : 'none'} aria-hidden="true" />
         </button>
       </div>
 
@@ -199,8 +207,11 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
               condensed ? "text-sm" : "text-base"
             )}>₹{formatPrice(property.price)}</span>
           </p>
-          <button className="text-[#CA3433] hover:text-brand-800 transition-colors">
-            <Eye size={condensed ? 14 : 18} />
+          <button
+            aria-label={`View details for ${property.title}`}
+            className="text-[#CA3433] hover:text-brand-800 transition-colors"
+          >
+            <Eye size={condensed ? 14 : 18} aria-hidden="true" />
           </button>
         </div>
       </div>
