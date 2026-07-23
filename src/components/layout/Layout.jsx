@@ -4,6 +4,7 @@ import { Navbar } from '../layout/Navbar'
 import { Footer } from '../layout/Footer'
 import { AuthModal } from '../auth/AuthModal'
 import { AuthGateModal } from '../auth/AuthGateModal'
+import { OfflineBanner } from '../common/OfflineBanner'
 import { Toaster } from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -12,6 +13,8 @@ export const Layout = ({ children }) => {
   
   return (
     <>
+      {/* Network connectivity banner — slides in on offline, auto-hides on reconnect */}
+      <OfflineBanner />
       <Toaster
         position="top-center"
         toastOptions={{
