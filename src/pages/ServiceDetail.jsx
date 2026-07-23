@@ -127,9 +127,31 @@ export const ServiceDetail = () => {
     toast.success(t('services.reviews.contactUnlocked'))
   }
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href)
-    toast.success(t('property.sections.linkCopied'))
+  const handleShare = async () => {
+    const url = window.location.href
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url)
+      } else {
+        const textArea = document.createElement("textarea")
+        textArea.value = url
+        textArea.style.position = "fixed"
+        textArea.style.left = "-9999px"
+
+        document.body.appendChild(textArea)
+        textArea.focus()
+        textArea.select()
+
+        document.execCommand("copy")
+        document.body.removeChild(textArea)
+      }
+
+      toast.success(t("property.sections.linkCopied"))
+    } catch (err) {
+      console.error("Copy failed:", err)
+      toast.error("Unable to copy link")
+    }
   }
 
   const handleSubmitReview = async () => {
