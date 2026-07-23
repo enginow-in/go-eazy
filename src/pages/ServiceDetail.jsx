@@ -2,10 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import {
-  ArrowLeft, MapPin, Phone, Mail, Star, Clock,
-  CheckCircle, Lock, Send, Trash2, IndianRupee,
-  Calendar, Share2, Heart, ChevronDown, ChevronUp, CheckCircle2,
-  X, AlertCircle, EyeOff, Briefcase, Award
+  ArrowLeft, MapPin, Phone, Mail, Star, CheckCircle2, Lock, Send, Trash2, IndianRupee,
+  Share2, ChevronDown, ChevronUp, X, EyeOff, Briefcase, Award
 } from 'lucide-react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay, Pagination, Navigation } from 'swiper/modules'
@@ -21,8 +19,8 @@ import toast from 'react-hot-toast'
 import { LocationViewer } from '../components/map/LocationViewer'
 
 const getCategoryConfig = (t) => ({
-  tiffin:  { label: t('nearby.categories.tiffin'),  emoji: '🍱', color: 'bg-amber-100 text-amber-700', border: 'border-amber-200' },
-  laundry: { label: t('nearby.categories.laundry'), emoji: '🧺', color: 'bg-blue-100 text-blue-700', border: 'border-blue-200' },
+  tiffin:   { label: t('nearby.categories.tiffin'),   emoji: '🍱', color: 'bg-amber-100 text-amber-700', border: 'border-amber-200' },
+  laundry:  { label: t('nearby.categories.laundry'),  emoji: '🧺', color: 'bg-blue-100 text-blue-700', border: 'border-blue-200' },
   cleaning: { label: t('nearby.categories.cleaning'), emoji: '🧹', color: 'bg-green-100 text-green-700', border: 'border-green-200' },
 })
 
@@ -52,7 +50,7 @@ export const ServiceDetail = () => {
   const { user, profile } = useSelector(s => s.auth)
 
   const { 
-    currentService, reviews, reviewsLoading, 
+    currentService, reviews, 
     fetchServiceById, fetchReviews, submitReview, deleteReview,
     fetchServiceGatedData 
   } = useServices()
@@ -84,47 +82,61 @@ export const ServiceDetail = () => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // Bug Fix 1: Added isMounted flag to guard async state dispatch routines
   useEffect(() => {
-    const load = async () => {
+    let isMounted = true
+
+    const loadData = async () => {
+      if (!id) return
       setLoading(true)
       await fetchServiceById(id)
       await fetchReviews(id)
-      setLoading(false)
+      if (isMounted) setLoading(false)
     }
-    load()
-    // eslint-disable-next-line
-  }, [id])
 
-  // Check if current user is the provider or has unlocked (if we have unlock records for services)
+    loadData()
+
+    return () => {
+      isMounted = false
+    }
+  }, [id, fetchServiceById, fetchReviews])
+
   useEffect(() => {
+    let isMounted = true
+
     const checkStatus = async () => {
       if (!user || !service || !id) return
       
       const isProvider = service?.provider_id === user.id
       if (isProvider) {
-        setContactUnlocked(true)
+        if (isMounted) setContactUnlocked(true)
         const gated = await fetchServiceGatedData(id)
-        setGatedData(gated)
+        if (isMounted) setGatedData(gated)
       }
     }
+
     checkStatus()
+
+    return () => {
+      isMounted = false
+    }
   }, [service, user, id, fetchServiceGatedData])
 
-  // Check if current user has already reviewed
   const myReview = reviews.find(r => r.reviewer_id === user?.id)
 
   const avgRating = reviews.length > 0
     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
     : '0.0'
 
-  const handleUnlockContact = () => {
+  const handleUnlockContact = async () => {
     if (!user) {
       dispatch(openAuthModal('login'))
       return
     }
     setContactUnlocked(true)
-    fetchServiceGatedData(id).then(setGatedData)
-    toast.success(t('services.reviews.contactUnlocked'))
+    const gated = await fetchServiceGatedData(id)
+    setGatedData(gated)
+    toast.success(t('services.reviews.contactUnlocked') || 'Contact details unlocked!')
   }
 
   const handleShare = () => {
@@ -134,8 +146,8 @@ export const ServiceDetail = () => {
 
   const handleSubmitReview = async () => {
     if (!user) { dispatch(openAuthModal('login')); return }
-    if (reviewRating === 0) { toast.error(t('property.sections.yourRating')) || toast.error('Please select a rating'); return }
-    if (!reviewText.trim()) { toast.error(t('property.sections.yourFeedback')) || toast.error('Please write some feedback'); return }
+    if (reviewRating === 0) { toast.error(t('property.sections.yourRating') || 'Please select a rating'); return }
+    if (!reviewText.trim()) { toast.error(t('property.sections.yourFeedback') || 'Please write some feedback'); return }
 
     setSubmittingReview(true)
     try {
@@ -143,7 +155,7 @@ export const ServiceDetail = () => {
       setReviewRating(0); setReviewText('')
       toast.success(myReview ? t('services.reviews.reviewUpdated') : t('services.reviews.reviewSubmitted'))
     } catch (err) {
-      toast.error(err.message || t('property.sections.reviewError'))
+      toast.error(err?.message || t('property.sections.reviewError'))
     } finally {
       setSubmittingReview(false)
     }
@@ -288,7 +300,7 @@ export const ServiceDetail = () => {
               </div>
             </div>
 
-            {/* About & Provider Info (Combined) */}
+            {/* About & Provider Info */}
             <div className="bg-white rounded-xl p-6 sm:p-8 shadow-[0_2px_12px_rgb(0,0,0,0.03)] border border-gray-100/50">
               <h2 className="text-xl font-bold text-gray-900 mb-6 font-display">{t('services.labels.aboutProvider')}</h2>
               <p className="text-sm text-gray-600 leading-relaxed mb-8">
@@ -317,13 +329,13 @@ export const ServiceDetail = () => {
               </div>
             </div>
 
-            {/* Service & Pricing Box */}
+            {/* Bug Fix 2: Applied safe key reconciliation on list rendering loops */}
             {service.service_listings?.length > 0 && (
               <div className="bg-white rounded-xl p-6 sm:p-8 shadow-[0_2px_12px_rgb(0,0,0,0.03)] border border-gray-100/50">
                 <h2 className="text-xl font-bold text-gray-900 mb-6 font-display">{t('services.labels.pricing')}</h2>
                 <div className="space-y-4">
-                  {service.service_listings?.map(item => (
-                    <div key={item.id} className="flex justify-between items-center p-4 rounded-xl bg-gray-50 border border-gray-100 hover:border-brand-200 transition-colors">
+                  {service.service_listings?.map((item, idx) => (
+                    <div key={item.id || `srv-item-${idx}`} className="flex justify-between items-center p-4 rounded-xl bg-gray-50 border border-gray-100 hover:border-brand-200 transition-colors">
                       <div>
                         <p className="font-bold text-gray-900">{item.service_name}</p>
                         {item.description && <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>}
@@ -343,8 +355,8 @@ export const ServiceDetail = () => {
               <div className="bg-white rounded-xl p-6 sm:p-8 shadow-[0_2px_12px_rgb(0,0,0,0.03)] border border-gray-100/50">
                 <h2 className="text-xl font-bold text-gray-900 mb-6 font-display">{t('services.labels.plans')}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {service.service_plans.map(plan => (
-                    <div key={plan.id} className="p-5 rounded-xl border border-gray-100 bg-white hover:shadow-md transition-shadow">
+                  {service.service_plans.map((plan, idx) => (
+                    <div key={plan.id || `srv-plan-${idx}`} className="p-5 rounded-xl border border-gray-100 bg-white hover:shadow-md transition-shadow">
                       <div className="flex justify-between items-start mb-2">
                         <p className="font-bold text-gray-900">{plan.plan_name}</p>
                         <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center text-[#CA3433]">
@@ -378,7 +390,7 @@ export const ServiceDetail = () => {
               {renderSlider('desktop')}
             </div>
 
-            {/* CONTACT SIDEBAR (NO WORKING HOURS) */}
+            {/* CONTACT SIDEBAR */}
             <div id="contact-section" className="bg-white rounded-xl p-6 sm:p-8 shadow-[0_2px_24px_rgb(0,0,0,0.04)] border border-gray-100/50 sticky top-24">
               <h3 className="text-xl font-bold text-gray-900 mb-6 font-display">{t('services.labels.contact')}</h3>
 
@@ -430,7 +442,7 @@ export const ServiceDetail = () => {
                 ) : (
                   <div className="space-y-3">
                     {service.contact_phone && (
-                      <a href={`tel:${gatedData?.contact_phone || service.contact_phone}`} className="flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-full bg-brand-500 text-white font-bold hover:bg-brand-600 transition-colors text-[15px]">
+                      <a href={`tel:${gatedData?.contact_phone || service.contact_phone}`} className="flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-full bg-[#CA3433] text-white font-bold hover:bg-[#ac2d2c] transition-colors text-[15px]">
                         <Phone size={18} /> {gatedData?.contact_phone || service.contact_phone}
                       </a>
                     )}
@@ -446,7 +458,7 @@ export const ServiceDetail = () => {
           </div>
         </div>
 
-        {/* Customer Reviews (Moved to Bottom for Mobile Parity) */}
+        {/* Customer Reviews */}
         <div className="mt-8 lg:mt-12 bg-white rounded-xl p-6 sm:p-8 shadow-[0_2px_12px_rgb(0,0,0,0.03)] border border-gray-100/50">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 font-display">{t('services.reviews.header')}</h2>
 
@@ -559,7 +571,7 @@ export const ServiceDetail = () => {
           </button>
           <div className="w-full h-full sm:h-[90%] max-w-6xl mx-auto flex items-center justify-center">
             <Swiper
-              key={`gallery-${service.id}`}
+              key={`gallery-${service?.id}`}
               modules={[Navigation, Pagination]}
               initialSlide={initialSlideIndex}
               spaceBetween={20}
