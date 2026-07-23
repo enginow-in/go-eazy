@@ -108,3 +108,26 @@ button:active,
 
 /* Swiper overrides for premium aesthetic */
 .swiper-pagination-bullet-active { background: #CA3433 !important; }
+
+/* Dedicated Print Styles - Isolate Lease Document Only */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  nav, footer, header, button, .print-hide, .print\:hidden {
+    display: none !important;
+  }
+  .lease-document-print-target, .lease-document-print-target * {
+    visibility: visible;
+  }
+  .lease-document-print-target {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+}

@@ -1,9 +1,11 @@
 import React, { useState, useMemo, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { Bookmark, Star, Home, Eye } from 'lucide-react'
+import { Bookmark, Star, Home, Eye, Layers } from 'lucide-react'
 import { openAuthModal } from '../../store/authSlice'
 import { useProperties } from '../../hooks/useProperties'
+import { useCompare } from '../../hooks/useCompare'
+import { AIMatchBadge } from '../ui/AIMatchBadge'
 import { cn } from '../../utils/helpers'
 import { useTranslation } from 'react-i18next'
 
@@ -13,11 +15,18 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   const dispatch = useDispatch()
   const { user } = useSelector(s => s.auth)
   const { favorites, toggleFavorite } = useProperties()
+  const { toggleCompare, isCompared } = useCompare()
   const [imgLoaded, setImgLoaded] = useState(false)
 
   const isFav = favorites.includes(property.id)
+  const compared = isCompared(property.id)
   const images = property.images || []
   const mainImage = images[0]
+
+  const handleCompareToggle = (e) => {
+    e.stopPropagation()
+    toggleCompare(property.id)
+  }
 
   const handleFav = (e) => {
     e.stopPropagation()
@@ -156,17 +165,37 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
           loading="lazy"
         />
         {!imgLoaded && <div className="skeleton absolute inset-0" />}
-        {badge && <div className="absolute bottom-2 left-2 z-20">{badge}</div>}
-        <button
-          onClick={handleFav}
-          className={cn(
-            'absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center z-10',
-            'transition-all duration-200 shadow-sm transition-opacity',
-            isFav ? 'bg-brand-500 text-white' : 'bg-white/90 backdrop-blur-sm text-gray-600'
-          )}
-        >
-          <Bookmark size={14} fill={isFav ? 'currentColor' : 'none'} />
-        </button>
+        {badge ? (
+          <div className="absolute bottom-2 left-2 z-20">{badge}</div>
+        ) : (
+          <div className="absolute top-2 left-2 z-20">
+            <AIMatchBadge property={property} compact />
+          </div>
+        )}
+        <div className="absolute top-2 right-2 flex items-center gap-1.5 z-10">
+          <button
+            onClick={handleCompareToggle}
+            className={cn(
+              'h-8 px-2 rounded-full flex items-center gap-1 text-[10px] font-black transition-all shadow-sm cursor-pointer',
+              compared ? 'bg-[#CA3433] text-white' : 'bg-white/90 backdrop-blur-sm text-gray-700 hover:bg-white'
+            )}
+            title={compared ? 'Remove from Compare' : 'Add to Compare'}
+          >
+            <Layers size={12} />
+            <span>{compared ? 'Compared' : '+ Compare'}</span>
+          </button>
+
+          <button
+            onClick={handleFav}
+            className={cn(
+              'w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 shadow-sm cursor-pointer',
+              isFav ? 'bg-brand-500 text-white' : 'bg-white/90 backdrop-blur-sm text-gray-600 hover:bg-white'
+            )}
+            title="Save Property"
+          >
+            <Bookmark size={14} fill={isFav ? 'currentColor' : 'none'} />
+          </button>
+        </div>
       </div>
 
       <div className="px-3 py-2 flex-1 flex flex-col">
