@@ -1,0 +1,35 @@
+# GoEazy — robots.txt
+# https://goeazy.in/robots.txt
+
+User-agent: *
+
+# Allow public-facing routes
+Allow: /
+Allow: /search
+Allow: /property/
+Allow: /nearby
+Allow: /services/
+Allow: /about
+Allow: /privacy
+Allow: /terms
+Allow: /cookies
+Allow: /refund
+
+# Block authenticated / dashboard routes — no value for crawlers
+Disallow: /dashboard
+Disallow: /dashboard/saved
+Disallow: /landlord
+Disallow: /landlord/
+Disallow: /service-provider
+Disallow: /service-provider/
+Disallow: /settings
+Disallow: /systemadmin
+
+# Block common framework / tooling noise
+Disallow: /__vite_ping
+Disallow: /@vite/
+Disallow: /@fs/
+Disallow: /node_modules/
+
+# Sitemap location
+Sitemap: https://goeazy.in/sitemap.xml
