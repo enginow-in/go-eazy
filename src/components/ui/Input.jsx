@@ -1,15 +1,17 @@
-import React, { forwardRef, useId } from 'react'
+import React, { useId } from 'react'
 import { cn } from '../../utils/helpers'
 
-export const Input = forwardRef(({
+// React 19: 'ref' is destructured directly as a prop! No forwardRef needed.
+export const Input = ({
   label,
   error,
   leftIcon,
   rightIcon,
   className = '',
   wrapperClassName = '',
+  ref,
   ...props
-}, ref) => {
+}) => {
   const generatedId = useId()
   const id = props.id || generatedId
 
@@ -49,10 +51,9 @@ export const Input = forwardRef(({
       {error && <p className="text-xs text-[#CA3433] font-medium">{error}</p>}
     </div>
   )
-})
-Input.displayName = 'Input'
+}
 
-export const Textarea = forwardRef(({ label, error, className = '', ...props }, ref) => {
+export const Textarea = ({ label, error, className = '', ref, ...props }) => {
   const generatedId = useId()
   const id = props.id || generatedId
   
@@ -62,22 +63,22 @@ export const Textarea = forwardRef(({ label, error, className = '', ...props }, 
       <textarea
         ref={ref}
         id={id}
-      className={cn(
-        'w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900',
-        'placeholder:text-gray-400 outline-none resize-none',
-        'transition-all duration-200',
-        'border-gray-200 focus:border-brand-400 focus:ring-3 focus:ring-brand-100',
-        error && 'border-red-400',
-        className
-      )}
-      {...props}
-    />
-    {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
-  </div>
-)})
-Textarea.displayName = 'Textarea'
+        className={cn(
+          'w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900',
+          'placeholder:text-gray-400 outline-none resize-none',
+          'transition-all duration-200',
+          'border-gray-200 focus:border-brand-400 focus:ring-3 focus:ring-brand-100',
+          error && 'border-red-400',
+          className
+        )}
+        {...props}
+      />
+      {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
+    </div>
+  )
+}
 
-export const Select = forwardRef(({ label, error, children, className = '', ...props }, ref) => {
+export const Select = ({ label, error, children, className = '', ref, ...props }) => {
   const generatedId = useId()
   const id = props.id || generatedId
 
@@ -87,19 +88,19 @@ export const Select = forwardRef(({ label, error, children, className = '', ...p
       <select
         ref={ref}
         id={id}
-      className={cn(
-        'w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900',
-        'outline-none appearance-none cursor-pointer',
-        'transition-all duration-200',
-        'border-gray-200 focus:border-brand-400 focus:ring-3 focus:ring-brand-100',
-        error && 'border-red-400',
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </select>
-    {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
-  </div>
-)})
-Select.displayName = 'Select'
+        className={cn(
+          'w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900',
+          'outline-none appearance-none cursor-pointer',
+          'transition-all duration-200',
+          'border-gray-200 focus:border-brand-400 focus:ring-3 focus:ring-brand-100',
+          error && 'border-red-400',
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </select>
+      {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
+    </div>
+  )
+}
