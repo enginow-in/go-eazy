@@ -1,24 +1,53 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Sparkles } from 'lucide-react'
 import { useProperties } from '../../hooks/useProperties'
 import { PropertyCard } from './PropertyCard'
 import { cn } from '../../utils/helpers'
 
 export const RecommendedSection = ({ viewMode = 'grid' }) => {
-  const { getRecommendedProperties, loading } = useProperties()
+  const { getRecommendedProperties } = useProperties()
   const [recommendations, setRecommendations] = useState([])
   const isLocked = useRef(false)
 
-  // Lock recommendations once — prevents re-shuffle flicker on every re-render
-  useEffect(() => {
-    if (!loading && !isLocked.current) {
-      const recs = getRecommendedProperties()
-      if (recs.length > 0) {
+  const loadRecommendations = useCallback(async (force = false) => {
+    if (isLocked.current && !force) return
+    try {
+      const recs = await getRecommendedProperties()
+      if (recs && recs.length > 0) {
         setRecommendations(recs)
         isLocked.current = true
+      } else {
+        setRecommendations([])
       }
+    } catch (err) {
+      console.error('Error loading recommendations:', err)
     }
-  }, [loading, getRecommendedProperties])
+  }, [getRecommendedProperties])
+
+  // Initial fetch when component mounts
+  useEffect(() => {
+    loadRecommendations()
+  }, [loadRecommendations])
+
+  // Listen for dynamic updates (quiz completed or reset)
+  useEffect(() => {
+    const handleQuizUpdated = () => {
+      isLocked.current = false
+      loadRecommendations(true)
+    }
+    const handleQuizReset = () => {
+      isLocked.current = false
+      setRecommendations([])
+    }
+
+    window.addEventListener('goeazy_recommendations_updated', handleQuizUpdated)
+    window.addEventListener('goeazy_quiz_reset', handleQuizReset)
+
+    return () => {
+      window.removeEventListener('goeazy_recommendations_updated', handleQuizUpdated)
+      window.removeEventListener('goeazy_quiz_reset', handleQuizReset)
+    }
+  }, [loadRecommendations])
 
   if (!recommendations.length) return null
 
