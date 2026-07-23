@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { Search, ChevronDown, User, LogOut, Home, Building, Tent, MapPin, Grid, PlusCircle, LayoutDashboard, Menu, X, MessageSquare, Bell } from 'lucide-react'
+import { Search, ChevronDown, User, LogOut, Home, Building, Tent, MapPin, Grid, PlusCircle, LayoutDashboard, Menu, X, MessageSquare, Bell, Sparkles } from 'lucide-react'
 import { openAuthModal } from '../../store/authSlice'
 import { toggleMobileMenu, closeMobileMenu } from '../../store/uiSlice'
 import { useAuth } from '../../hooks/useAuth'
@@ -141,8 +141,16 @@ export const Navbar = () => {
                 value={searchQuery}
                 placeholder={t('hero.searchPlaceholder')}
                 onChange={handleLiveSearch}
-                className="w-full bg-gray-50 border border-transparent focus:border-[#CA3433] focus:ring-2 focus:ring-[#CA3433]/10 rounded-full py-2.5 pl-12 pr-4 text-sm font-medium focus:outline-none transition-all"
+                className="w-full bg-gray-50 border border-transparent focus:border-[#CA3433] focus:ring-2 focus:ring-[#CA3433]/10 rounded-full py-2.5 pl-12 pr-10 text-sm font-medium focus:outline-none transition-all"
               />
+              <button
+                type="button"
+                onClick={() => navigate('/search')}
+                className="absolute inset-y-0 right-3 flex items-center text-[#CA3433] hover:scale-110 transition-transform cursor-pointer"
+                title="AI Voice & Natural Language Search"
+              >
+                <Sparkles size={16} />
+              </button>
             </div>
           </div>
 
