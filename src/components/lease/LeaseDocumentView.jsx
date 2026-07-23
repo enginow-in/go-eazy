@@ -7,7 +7,7 @@ export const LeaseDocumentView = ({ lease, onSignClick }) => {
   const isExecuted = Boolean(lease.landlordSignature && lease.tenantSignature)
 
   return (
-    <div className="bg-white rounded-3xl border border-gray-200 shadow-xl overflow-hidden max-w-4xl mx-auto my-6 print:shadow-none print:border-none print:m-0 print:max-w-none print:w-full">
+    <div className="lease-document-print-target bg-white rounded-3xl border border-gray-200 shadow-xl overflow-hidden max-w-4xl mx-auto my-6 print:shadow-none print:border-none print:m-0 print:max-w-none print:w-full">
       
       {/* Official Header Banner */}
       <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-[#CA3433] text-white p-6 sm:p-8 flex items-center justify-between border-b-4 border-[#CA3433] print:bg-white print:text-black print:p-0 print:border-b-2 print:border-black">

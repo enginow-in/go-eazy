@@ -7,7 +7,7 @@ import { useAuth } from '../../hooks/useAuth'
 export const LeaseBuilderModal = () => {
   const { builderModalOpen, builderPrefillData, closeBuilder, createLease } = useLease()
   const { listings } = useProperties()
-  const { user, profile } = useSelectorState()
+  const { user, profile } = useAuth()
   
   const [propertyId, setPropertyId] = useState('')
   const [tenantName, setTenantName] = useState('')
@@ -322,10 +322,4 @@ export const LeaseBuilderModal = () => {
       </div>
     </div>
   )
-}
-
-// Helper selector
-const useSelectorState = () => {
-  const { user, profile } = require('react-redux').useSelector(s => s.auth)
-  return { user, profile }
 }
