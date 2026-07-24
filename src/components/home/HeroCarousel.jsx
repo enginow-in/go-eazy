@@ -1,18 +1,45 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { CAROUSEL_SLIDES } from '../../utils/constants'
 
+const INTERVAL_MS = 5000
+
 export const HeroCarousel = () => {
   const [current, setCurrent] = useState(0)
   const navigate = useNavigate()
+  const timerRef = useRef(null)
+  const slidesCount = CAROUSEL_SLIDES.length
+
+  // Start (or restart) the auto-play timer.
+  // Calling this on any manual interaction resets the 5-second cycle cleanly,
+  // preventing a double-advance when a click coincides with an interval tick.
+  const startTimer = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current)
+    timerRef.current = setInterval(() => {
+      setCurrent(c => (c + 1) % slidesCount)
+    }, INTERVAL_MS)
+  }, [slidesCount])
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrent(c => (c + 1) % CAROUSEL_SLIDES.length)
-    }, 5000)
-    return () => clearInterval(timer)
-  }, [])
+    startTimer()
+    return () => clearInterval(timerRef.current)
+  }, [startTimer])
+
+  const handlePrev = () => {
+    setCurrent(c => (c - 1 + slidesCount) % slidesCount)
+    startTimer()
+  }
+
+  const handleNext = () => {
+    setCurrent(c => (c + 1) % slidesCount)
+    startTimer()
+  }
+
+  const handleDot = (i) => {
+    setCurrent(i)
+    startTimer()
+  }
 
   const slide = CAROUSEL_SLIDES[current]
 
@@ -21,7 +48,12 @@ export const HeroCarousel = () => {
       {CAROUSEL_SLIDES.map((s, i) => (
         <div
           key={s.id}
-          className={`absolute inset-0 transition-opacity duration-700 ${i === current ? 'opacity-100' : 'opacity-0'}`}
+          // pointer-events-none on inactive slides prevents invisible layers
+          // from intercepting clicks/taps that belong to foreground elements.
+          className={`absolute inset-0 transition-opacity duration-700 ${
+            i === current ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
+          aria-hidden={i !== current}
         >
           <img
             src={s.image}
@@ -57,24 +89,29 @@ export const HeroCarousel = () => {
 
       {/* Controls */}
       <button
-        onClick={() => setCurrent(c => (c - 1 + CAROUSEL_SLIDES.length) % CAROUSEL_SLIDES.length)}
+        onClick={handlePrev}
+        aria-label="Previous slide"
         className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 shadow-lg flex items-center justify-center hover:bg-white transition-all z-10"
       >
         <ChevronLeft size={20} className="text-gray-700" />
       </button>
       <button
-        onClick={() => setCurrent(c => (c + 1) % CAROUSEL_SLIDES.length)}
+        onClick={handleNext}
+        aria-label="Next slide"
         className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 shadow-lg flex items-center justify-center hover:bg-white transition-all z-10"
       >
         <ChevronRight size={20} className="text-gray-700" />
       </button>
 
       {/* Dots */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-        {CAROUSEL_SLIDES.map((_, i) => (
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10" role="tablist" aria-label="Carousel slides">
+        {CAROUSEL_SLIDES.map((s, i) => (
           <button
             key={i}
-            onClick={() => setCurrent(i)}
+            role="tab"
+            aria-selected={i === current}
+            aria-label={`Go to slide ${i + 1}: ${s.title}`}
+            onClick={() => handleDot(i)}
             className={`transition-all duration-300 rounded-full ${
               i === current ? 'w-6 h-2 bg-white' : 'w-2 h-2 bg-white/50'
             }`}
