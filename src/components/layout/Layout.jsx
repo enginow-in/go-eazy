@@ -7,9 +7,17 @@ import { AuthGateModal } from '../auth/AuthGateModal'
 import { Toaster } from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 
+// Pages that require authentication before any content is shown
+const AUTH_GATED_PATHS = ['/search']
+
+// Helper — also gate /property/:id routes
+const isAuthGated = (pathname) =>
+  AUTH_GATED_PATHS.includes(pathname) ||
+  pathname.startsWith('/property/')
+
 export const Layout = ({ children }) => {
   const location = useLocation()
-  
+
   return (
     <>
       <Toaster
@@ -19,10 +27,10 @@ export const Layout = ({ children }) => {
           success: { iconTheme: { primary: '#CA3433', secondary: '#fff' } },
         }}
       />
-      
-      {/* Forced Auth Gate for Search page */}
-      {location.pathname === '/search' && <AuthGateModal />}
-      
+
+      {/* Forced Auth Gate for search and property detail pages */}
+      {isAuthGated(location.pathname) && <AuthGateModal />}
+
       {location.pathname !== '/systemadmin' && <Navbar />}
       <AnimatePresence mode="wait">
         <motion.main
@@ -30,13 +38,13 @@ export const Layout = ({ children }) => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
-          className={location.pathname === '/systemadmin' ? "" : "min-h-screen"}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          className={location.pathname === '/systemadmin' ? '' : 'min-h-screen'}
         >
           {children}
         </motion.main>
       </AnimatePresence>
-      {location.pathname === '/search' && <Footer />}
+      {(location.pathname === '/search' || location.pathname.startsWith('/property/')) && <Footer />}
       <AuthModal />
     </>
   )
