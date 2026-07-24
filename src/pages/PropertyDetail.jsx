@@ -24,6 +24,7 @@ import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { Skeleton } from '../components/ui/Skeleton'
 import { LocationViewer } from '../components/map/LocationViewer'
+import { LandlordTrustBadgeGroup } from '../components/safety/SafetyBadges'
 
 const StarRating = ({ value, onChange, readonly = false }) => (
   <div className="flex gap-1">
@@ -564,6 +565,7 @@ export const PropertyDetail = () => {
                 <div className="p-4 bg-[#F9F8F6] rounded-xl border border-gray-100">
                    <p className="text-xs text-gray-500 font-bold mb-1 uppercase tracking-wider">{t('property.sections.owner')}</p>
                    <p className="font-semibold text-gray-900">{p.profiles?.full_name || 'Listing Owner'}</p>
+                   <LandlordTrustBadgeGroup profile={p.profiles} photoStatus={p.photo_verification_status} />
                 </div>
 
                 {user ? (

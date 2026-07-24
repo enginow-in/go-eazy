@@ -3,9 +3,13 @@ import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import { User, Lock, Save, AlertCircle, CheckCircle2, Sparkles } from 'lucide-react'
 import { NotificationPreferences } from '../components/notifications/NotificationPreferences'
+import { useFraudSafety } from '../hooks/useFraudSafety'
+import { ShieldCheck, Smartphone, CheckCircle, AlertTriangle, Shield } from 'lucide-react'
+import { PhoneVerifiedBadge, IdVerifiedBadge } from '../components/safety/SafetyBadges'
 
 export const Settings = () => {
   const { user, profile, updateProfile } = useAuth()
+  const { openPhoneModal, openIdModal } = useFraudSafety()
   
   // Profile State
   const [fullName, setFullName] = useState('')
@@ -243,6 +247,93 @@ export const Settings = () => {
                 </button>
               </div>
             </form>
+          </div>
+
+          {/* ── TRUST & IDENTITY SAFETY CENTER ── */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-blue-50/50 to-indigo-50/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex justify-center items-center">
+                  <ShieldCheck size={22} />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900 font-display">Trust & Safety Verification</h2>
+                  <p className="text-sm text-gray-500">Verify your phone and government ID to boost your credibility score</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+              
+              {/* Phone Verification Status */}
+              <div className="p-5 rounded-xl border border-gray-100 bg-gray-50/60 flex flex-col justify-between gap-4">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Smartphone size={14} /> Phone Status
+                    </span>
+                    {profile?.phone_verified ? <PhoneVerifiedBadge /> : (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-800 uppercase">Unverified</span>
+                    )}
+                  </div>
+                  <p className="text-sm font-bold text-gray-900">
+                    {profile?.phone ? profile.phone : 'No phone number attached'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {profile?.phone_verified
+                      ? 'Verified via OTP code.'
+                      : 'Verify phone number to receive instant WhatsApp/SMS booking notifications.'}
+                  </p>
+                </div>
+
+                {!profile?.phone_verified && (
+                  <button
+                    type="button"
+                    onClick={openPhoneModal}
+                    className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5"
+                  >
+                    <Smartphone size={14} /> Verify Phone via OTP
+                  </button>
+                )}
+              </div>
+
+              {/* ID Verification Status (Aadhaar / PAN) */}
+              <div className="p-5 rounded-xl border border-gray-100 bg-gray-50/60 flex flex-col justify-between gap-4">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Shield size={14} /> Government ID
+                    </span>
+                    {profile?.id_verification_status === 'verified' ? (
+                      <IdVerifiedBadge idType={profile?.id_type} />
+                    ) : (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-800 uppercase">Unverified</span>
+                    )}
+                  </div>
+                  <p className="text-sm font-bold text-gray-900">
+                    {profile?.id_verification_status === 'verified'
+                      ? `${(profile.id_type || 'ID').toUpperCase()}: ${profile.id_number_masked || 'Verified'}`
+                      : 'No Government ID submitted'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {profile?.id_verification_status === 'verified'
+                      ? 'Government identity checksum verified.'
+                      : 'Submit Aadhaar or PAN card to earn the Verified Landlord/Tenant trust seal.'}
+                  </p>
+                </div>
+
+                {profile?.id_verification_status !== 'verified' && (
+                  <button
+                    type="button"
+                    onClick={openIdModal}
+                    className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5"
+                  >
+                    <ShieldCheck size={14} /> Verify Aadhaar / PAN
+                  </button>
+                )}
+              </div>
+
+            </div>
           </div>
 
           {profile?.role === 'user' && (

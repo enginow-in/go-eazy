@@ -6,6 +6,7 @@ import serviceReducer from './serviceSlice'
 import notificationReducer from './notificationSlice'
 import leaseReducer from './leaseSlice'
 import compareReducer from './compareSlice'
+import fraudReducer from './fraudSlice'
 
 export const store = configureStore({
   reducer: {
@@ -16,5 +17,7 @@ export const store = configureStore({
     notifications: notificationReducer,
     lease: leaseReducer,
     compare: compareReducer,
+    fraud: fraudReducer,
   },
 })
+

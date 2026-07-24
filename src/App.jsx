@@ -39,6 +39,9 @@ const LeaseDetail             = lazy(() => import('./pages/LeaseDetail').then(m 
 const ComparePage             = lazy(() => import('./pages/ComparePage').then(m => ({ default: m.ComparePage })))
 
 
+import { PhoneOtpModal } from './components/safety/PhoneOtpModal'
+import { IdVerificationModal } from './components/safety/IdVerificationModal'
+
 const PageSpinner = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
     <div className="w-10 h-10 border-4 border-[#CA3433] border-t-transparent rounded-full animate-spin" />
@@ -63,6 +66,8 @@ function App() {
       <AppInitializer />
       <OnboardingQuiz />
       <RoleSelectionModal />
+      <PhoneOtpModal />
+      <IdVerificationModal />
       <Layout>
         <Suspense fallback={<PageSpinner />}>
           <Routes>
