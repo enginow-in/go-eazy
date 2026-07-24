@@ -11,9 +11,21 @@ export const formatPrice = (price) => {
 }
 
 export const formatPriceShort = (price) => {
-  if (!price) return '—'
-  if (price >= 100000) return `₹${(price / 100000).toFixed(1)}L`
-  if (price >= 1000) return `₹${(price / 1000).toFixed(0)}K`
+  if (price === 0) return '₹0'
+  if (!price || isNaN(price)) return '—'
+  
+  // Ensure absolute boundaries match clean structural formatting scales
+  const absPrice = Math.abs(price)
+  
+  if (absPrice >= 100000) {
+    return `₹${(price / 100000).toFixed(1)}L`
+  }
+  if (absPrice >= 99950) { // Catch boundary rounding precision spillover
+    return `₹${(price / 100000).toFixed(1)}L`
+  }
+  if (absPrice >= 1000) {
+    return `₹${(price / 1000).toFixed(0)}K`
+  }
   return `₹${price}`
 }
 
