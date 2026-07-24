@@ -19,6 +19,7 @@ import { Skeleton } from '../components/ui/Skeleton'
 import { openAuthModal } from '../store/authSlice'
 import toast from 'react-hot-toast'
 import { LocationViewer } from '../components/map/LocationViewer'
+import { shareContent } from '../utils/helpers'
 
 const getCategoryConfig = (t) => ({
   tiffin:  { label: t('nearby.categories.tiffin'),  emoji: '🍱', color: 'bg-amber-100 text-amber-700', border: 'border-amber-200' },
@@ -128,8 +129,17 @@ export const ServiceDetail = () => {
   }
 
   const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href)
-    toast.success(t('property.sections.linkCopied'))
+    shareContent({
+      title: currentService?.name ? `${currentService.name} | GoEazy Services` : 'GoEazy Service',
+      text: currentService?.name ? `Check out ${currentService.name} on GoEazy!` : 'Check out this service on GoEazy!',
+      url: window.location.href,
+      onSuccess: (mode) => {
+        if (mode === 'copied') toast.success(t('property.sections.linkCopied') || 'Link copied to clipboard!')
+      },
+      onError: () => {
+        toast.error('Failed to copy link')
+      }
+    })
   }
 
   const handleSubmitReview = async () => {

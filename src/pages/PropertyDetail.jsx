@@ -15,7 +15,7 @@ import { openAuthModal } from '../store/authSlice'
 import { useProperties } from '../hooks/useProperties'
 import { TypeBadge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
-import { formatPrice, AMENITY_ICONS } from '../utils/helpers'
+import { formatPrice, AMENITY_ICONS, shareContent } from '../utils/helpers'
 import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
@@ -163,8 +163,17 @@ export const PropertyDetail = () => {
   }
 
   const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href)
-    toast.success(t('property.sections.linkCopied'))
+    shareContent({
+      title: p?.title ? `${p.title} | GoEazy` : 'GoEazy Property',
+      text: p?.title ? `Check out ${p.title} on GoEazy!` : 'Check out this property on GoEazy!',
+      url: window.location.href,
+      onSuccess: (mode) => {
+        if (mode === 'copied') toast.success(t('property.sections.linkCopied') || 'Link copied to clipboard!')
+      },
+      onError: () => {
+        toast.error('Failed to copy link')
+      }
+    })
   }
 
   const submitSiteVisit = async () => {
