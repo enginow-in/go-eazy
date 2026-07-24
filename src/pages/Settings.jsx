@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
-import { supabase } from '../lib/supabase'
+import { supabase } from '../utils/supabase'
 import { User, Lock, Save, AlertCircle, CheckCircle2 } from 'lucide-react'
 
 export const Settings = () => {
@@ -19,16 +19,18 @@ export const Settings = () => {
   const [securityLoading, setSecurityLoading] = useState(false)
   const [securityMessage, setSecurityMessage] = useState({ type: '', text: '' })
 
-  // Populate profile info on load
+  // Populate profile info on initial load safely
   useEffect(() => {
     if (profile) {
-      setFullName(profile.full_name || '')
-      setPhone(profile.phone || '')
+      setFullName(prev => prev || profile.full_name || '')
+      setPhone(prev => prev || profile.phone || '')
     }
   }, [profile])
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault()
+    if (!user) return
+
     setProfileLoading(true)
     setProfileMessage({ type: '', text: '' })
 
@@ -43,7 +45,7 @@ export const Settings = () => {
       setProfileMessage({ type: 'success', text: 'Profile updated successfully!' })
       setTimeout(() => setProfileMessage({ type: '', text: '' }), 4000)
     } catch (error) {
-      console.error('Error updating profile:', error.message)
+      console.error('Error updating profile:', error?.message)
       setProfileMessage({ type: 'error', text: 'Failed to update profile. Please try again.' })
     } finally {
       setProfileLoading(false)
@@ -68,11 +70,8 @@ export const Settings = () => {
     }
 
     try {
-      // First re-authenticate to verify current password since "Require current password" might be on
-      // Note: Supabase doesn't have a direct "update with current password" passing old pass via updateUser.
-      // If 'Require current password' is on, we authenticate first to get a fresh session or use the signInWithPassword
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user.email,
+        email: user?.email || '',
         password: currentPassword
       })
 
@@ -80,7 +79,6 @@ export const Settings = () => {
         throw new Error('Incorrect current password')
       }
 
-      // Now update the password
       const { error: updateError } = await supabase.auth.updateUser({
         password: newPassword
       })
@@ -94,8 +92,8 @@ export const Settings = () => {
       setTimeout(() => setSecurityMessage({ type: '', text: '' }), 4000)
       
     } catch (error) {
-      console.error('Error updating password:', error.message)
-      setSecurityMessage({ type: 'error', text: error.message || 'Failed to update password' })
+      console.error('Error updating password:', error?.message)
+      setSecurityMessage({ type: 'error', text: error?.message || 'Failed to update password' })
     } finally {
       setSecurityLoading(false)
     }
@@ -115,7 +113,7 @@ export const Settings = () => {
           {/* Profile Section */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="px-6 py-5 border-b border-gray-100 flex items-center gap-3 bg-gray-50/50">
-              <div className="w-10 h-10 rounded-xl bg-[#fff5f5] flex flex-center text-[#CA3433] justify-center items-center">
+              <div className="w-10 h-10 rounded-xl bg-[#fff5f5] flex text-[#CA3433] justify-center items-center">
                 <User size={20} />
               </div>
               <div>
@@ -193,7 +191,7 @@ export const Settings = () => {
           {/* Security Section */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="px-6 py-5 border-b border-gray-100 flex items-center gap-3 bg-gray-50/50">
-              <div className="w-10 h-10 rounded-xl bg-[#fff5f5] flex flex-center text-[#CA3433] justify-center items-center">
+              <div className="w-10 h-10 rounded-xl bg-[#fff5f5] flex text-[#CA3433] justify-center items-center">
                 <Lock size={20} />
               </div>
               <div>
@@ -221,7 +219,7 @@ export const Settings = () => {
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     required
-                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#CA3433]/20 focus:border-[#CA3433] transition-all font-medium"
                     placeholder="Enter current password"
                   />
                   <p className="text-xs text-gray-400 mt-1.5">Required to set a new password.</p>
@@ -238,7 +236,7 @@ export const Settings = () => {
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
                     minLength={8}
-                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#CA3433]/20 focus:border-[#CA3433] transition-all font-medium"
                     placeholder="At least 8 characters"
                   />
                 </div>
@@ -254,7 +252,7 @@ export const Settings = () => {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     minLength={8}
-                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#CA3433]/20 focus:border-[#CA3433] transition-all font-medium"
                     placeholder="Enter new password again"
                   />
                 </div>
