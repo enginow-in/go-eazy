@@ -4,6 +4,8 @@ import { Navbar } from '../layout/Navbar'
 import { Footer } from '../layout/Footer'
 import { AuthModal } from '../auth/AuthModal'
 import { AuthGateModal } from '../auth/AuthGateModal'
+import { AIAssistantModal } from '../ai/AIAssistantModal'
+import { CompareBar } from '../compare/CompareBar'
 import { Toaster } from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -38,6 +40,8 @@ export const Layout = ({ children }) => {
       </AnimatePresence>
       {location.pathname === '/search' && <Footer />}
       <AuthModal />
+      <AIAssistantModal />
+      <CompareBar />
     </>
   )
 }

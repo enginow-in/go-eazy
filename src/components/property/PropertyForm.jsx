@@ -9,6 +9,7 @@ import { useSelector } from 'react-redux'
 import { supabase } from '../../lib/supabase'
 import toast from 'react-hot-toast'
 import { LocationPicker } from '../map/LocationPicker'
+import { useFraudSafety } from '../../hooks/useFraudSafety'
 
 // ── Success Overlay ───────────────────────────────────────────────────────────
 const ListingSuccessOverlay = () => (
@@ -89,7 +90,8 @@ const StepTimeline = ({ current }) => (
 export const PropertyForm = ({ initialData, isEdit = false }) => {
   const navigate = useNavigate()
   const { updateProperty } = useProperties()
-  const { user } = useSelector(s => s.auth)
+  const { user, profile } = useSelector(s => s.auth)
+  const { scanListingSafety, evaluatePayment } = useFraudSafety()
   const [loading, setLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [step, setStep] = useState(1)
@@ -158,6 +160,10 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
 
   // ── Final submit ──────────────────────────────────────────────────────────
   const validateForm = () => {
+    if (profile?.is_blacklisted) {
+      toast.error('Your account is flagged/blacklisted from posting new properties.')
+      return false
+    }
     if (!form.title || !form.price || !form.city || !form.area) { toast.error('Please fill all required fields'); return false }
     if (previewUrls.length < 1 || previewUrls.length > 3) { toast.error('Please upload between 1 and 3 images'); return false }
     return true
@@ -168,7 +174,16 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
     if (!validateForm()) return
     setLoading(true)
     try {
-      await updateProperty(initialData.id, { ...form, images: previewUrls.filter(u => !u.startsWith('blob:')) }, images)
+      const safety = scanListingSafety(form, previewUrls)
+      await updateProperty(initialData.id, {
+        ...form,
+        images: previewUrls.filter(u => !u.startsWith('blob:')),
+        spam_status: safety.spamStatus,
+        spam_score: safety.spamScore,
+        spam_flags: safety.spamFlags,
+        photo_verification_status: safety.photoStatus,
+        image_hashes: safety.imageHashes
+      }, images)
       toast.success('Property updated successfully!')
       navigate('/landlord')
     } catch (err) {
@@ -181,6 +196,15 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
     if (loading) return
     setLoading(true)
     try {
+      const safety = scanListingSafety(form, previewUrls)
+      if (safety.spamStatus === 'blocked') {
+        toast.error('Listing flagged as potential spam/duplicate. Please revise your title & details.')
+        setLoading(false)
+        return
+      }
+
+      // Evaluate payment risk
+      await evaluatePayment(199, 'listing_payment')
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
       if (!token) { toast.error('Session expired — please log in again'); setLoading(false); return }
@@ -228,7 +252,18 @@ export const PropertyForm = ({ initialData, isEdit = false }) => {
             const verifyResp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-listing-payment`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s2?.access_token}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
-              body: JSON.stringify({ ...response, property_data: { ...form, images: uploadedUrls } })
+              body: JSON.stringify({
+                ...response,
+                property_data: {
+                  ...form,
+                  images: uploadedUrls,
+                  spam_status: safety.spamStatus,
+                  spam_score: safety.spamScore,
+                  spam_flags: safety.spamFlags,
+                  photo_verification_status: safety.photoStatus,
+                  image_hashes: safety.imageHashes
+                }
+              })
             })
             if (!verifyResp.ok) { const e = await verifyResp.json().catch(() => ({})); throw new Error(e.error || 'Payment verification failed') }
             setShowSuccess(true)

@@ -33,6 +33,14 @@ const PrivacyPolicy           = lazy(() => import('./pages/legal/PrivacyPolicy')
 const TermsOfService          = lazy(() => import('./pages/legal/TermsOfService'))
 const CookiePolicy            = lazy(() => import('./pages/legal/CookiePolicy'))
 const RefundPolicy            = lazy(() => import('./pages/legal/RefundPolicy'))
+const Messages                = lazy(() => import('./pages/Messages').then(m => ({ default: m.Messages })))
+const NotificationHistory     = lazy(() => import('./pages/NotificationHistory').then(m => ({ default: m.NotificationHistory })))
+const LeaseDetail             = lazy(() => import('./pages/LeaseDetail').then(m => ({ default: m.LeaseDetail })))
+const ComparePage             = lazy(() => import('./pages/ComparePage').then(m => ({ default: m.ComparePage })))
+
+
+import { PhoneOtpModal } from './components/safety/PhoneOtpModal'
+import { IdVerificationModal } from './components/safety/IdVerificationModal'
 
 const PageSpinner = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -58,6 +66,8 @@ function App() {
       <AppInitializer />
       <OnboardingQuiz />
       <RoleSelectionModal />
+      <PhoneOtpModal />
+      <IdVerificationModal />
       <Layout>
         <Suspense fallback={<PageSpinner />}>
           <Routes>
@@ -82,6 +92,7 @@ function App() {
           {/* Nearby Services Routes */}
           <Route path="/nearby" element={<NearbyServices />} />
           <Route path="/services/:id" element={<ServiceDetail />} />
+          <Route path="/compare" element={<ComparePage />} />
 
           {/* Service Provider Routes */}
           <Route path="/service-provider" element={
@@ -95,10 +106,27 @@ function App() {
             </ProtectedRoute>
           } />
           
-          {/* User Routes */}
           <Route path="/dashboard" element={
             <ProtectedRoute allowedRoles={['user', 'landlord', 'service_provider']}>
               <UserDashboard />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/messages" element={
+            <ProtectedRoute allowedRoles={['user', 'landlord', 'service_provider']}>
+              <Messages />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/notifications" element={
+            <ProtectedRoute>
+              <NotificationHistory />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/agreements/:id" element={
+            <ProtectedRoute>
+              <LeaseDetail />
             </ProtectedRoute>
           } />
           

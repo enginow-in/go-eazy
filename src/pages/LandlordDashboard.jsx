@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Home, Eye, Edit, Trash2, ArrowRight, ArrowLeft, List as ListIcon, Calendar, Check, X } from 'lucide-react'
+import { Plus, Home, Eye, Edit, Trash2, ArrowRight, ArrowLeft, List as ListIcon, Calendar, Check, X, FileText } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useProperties } from '../hooks/useProperties'
+import { useLease } from '../hooks/useLease'
 import { Button } from '../components/ui/Button'
 import { Badge, TypeBadge } from '../components/ui/Badge'
 import { PropertyCard } from '../components/property/PropertyCard'
+import { LeaseCard } from '../components/lease/LeaseCard'
+import { LeaseBuilderModal } from '../components/lease/LeaseBuilderModal'
+import { SignatureModal } from '../components/lease/SignatureModal'
 import { formatPriceShort, cn } from '../utils/helpers'
 import toast from 'react-hot-toast'
 import { Skeleton } from '../components/ui/Skeleton'
@@ -14,6 +18,7 @@ import { supabase } from '../lib/supabase'
 export const LandlordDashboard = () => {
   const { user, profile } = useAuth()
   const { getLandlordProperties, deleteProperty } = useProperties()
+  const { agreements, openBuilder } = useLease()
   const navigate = useNavigate()
   
   const [properties, setProperties] = useState([])
@@ -373,7 +378,52 @@ export const LandlordDashboard = () => {
           </div>
         )}
 
-        {/* View All CTA below cards when in preview mode */}
+        {/* Digital Lease Agreements (GoEazy SmartLease™) */}
+        <div className="mt-12 mb-8">
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-[#fff5f5] text-[#CA3433]">
+                <FileText size={22} />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-gray-900 font-display leading-none">Managed Digital Leases</h2>
+                <p className="text-[11px] text-gray-400 mt-1 font-medium bg-gray-50 px-2 py-0.5 rounded-md inline-block">
+                  GoEazy SmartLease™ Certified Execution
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => openBuilder()}
+              className="px-4 py-2 bg-[#CA3433] hover:bg-[#ac2d2c] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-[#CA3433]/20 transition-all active:scale-95 cursor-pointer"
+            >
+              <Plus size={14} /> Draft Smart Lease
+            </button>
+          </div>
+
+          {agreements.length === 0 ? (
+            <div className="bg-white p-10 rounded-3xl border border-gray-100 text-center shadow-sm">
+              <FileText size={32} className="mx-auto text-gray-300 mb-3" />
+              <p className="text-gray-500 font-medium font-display">No active lease contracts drafted yet.</p>
+              <button
+                onClick={() => openBuilder()}
+                className="mt-3 px-5 py-2 bg-[#fff5f5] text-[#CA3433] rounded-xl text-xs font-bold hover:bg-[#ffebeb] transition-colors"
+              >
+                Create First Lease Contract
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {agreements.map(lease => (
+                <LeaseCard key={lease.id} lease={lease} />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Modals */}
+        <LeaseBuilderModal />
+        <SignatureModal />
 
       </div>
     </div>

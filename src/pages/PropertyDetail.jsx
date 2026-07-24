@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { 
   MapPin, Heart, Share2, Phone, Mail, ArrowLeft, 
   CheckCircle2, ChevronDown, ChevronUp, Lock, EyeOff, X, 
-  Star, Trash2, Sparkles, Calendar 
+  Star, Trash2, Sparkles, Calendar, MessageSquare, Layers 
 } from 'lucide-react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay, Pagination, Navigation } from 'swiper/modules'
@@ -13,6 +13,9 @@ import 'swiper/css/navigation'
 import { useSelector, useDispatch } from 'react-redux'
 import { openAuthModal } from '../store/authSlice'
 import { useProperties } from '../hooks/useProperties'
+import { useMessages } from '../hooks/useMessages'
+import { useNotifications } from '../hooks/useNotifications'
+import { useCompare } from '../hooks/useCompare'
 import { TypeBadge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { formatPrice, AMENITY_ICONS } from '../utils/helpers'
@@ -21,6 +24,7 @@ import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { Skeleton } from '../components/ui/Skeleton'
 import { LocationViewer } from '../components/map/LocationViewer'
+import { LandlordTrustBadgeGroup } from '../components/safety/SafetyBadges'
 
 const StarRating = ({ value, onChange, readonly = false }) => (
   <div className="flex gap-1">
@@ -47,12 +51,16 @@ export const PropertyDetail = () => {
   const dispatch = useDispatch()
   const { t } = useTranslation()
   const { user } = useSelector(s => s.auth)
+  const { toggleCompare, isCompared } = useCompare()
   
   const { 
     currentProperty, fetchPropertyById, fetchGatedData, 
     favorites, toggleFavorite, loading,
     reviews, fetchReviews, submitReview, deleteReview
   } = useProperties()
+
+  const { getOrCreateConversation } = useMessages()
+  const { sendNotification } = useNotifications()
 
   const [showScrollToTop, setShowScrollToTop] = useState(false)
   const [gatedData, setGatedData] = useState(null)
@@ -105,6 +113,15 @@ export const PropertyDetail = () => {
       setHasUnlocked(true)
       const gated = await fetchGatedData(id)
       setGatedData(gated)
+    }
+  }
+
+  const handleInitiateChat = async () => {
+    try {
+      const conv = await getOrCreateConversation(id, currentProperty.landlord_id)
+      navigate(`/messages?id=${conv.id}`)
+    } catch (e) {
+      toast.error('Failed to initiate chat')
     }
   }
 
@@ -192,6 +209,18 @@ export const PropertyDetail = () => {
       })
       if (error) throw error
       toast.success('Visit Request Sent! Track it in your dashboard.')
+
+      // Trigger notification for Landlord & Tenant
+      sendNotification({
+        recipientId: p.landlord_id || 'landlord-demo',
+        recipientRole: 'landlord',
+        type: 'property_inquiry',
+        title: 'New Site Visit Booking',
+        message: `Visit requested for ${p.title} on ${visitDate}.`,
+        actionUrl: '/landlord',
+        metadata: { propertyId: p.id, visitDate }
+      })
+
       setVisitDate('')
     } catch (err) {
       console.error(err)
@@ -348,7 +377,15 @@ export const PropertyDetail = () => {
         <img src="/swipe-right.svg" alt="Next" className="w-12 h-12 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]" />
       </button>
       
-      <div className="absolute top-4 right-4 flex gap-2 z-10">
+      <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+        <button 
+          onClick={() => toggleCompare(p.id)}
+          className={`h-10 px-3 rounded-full flex items-center gap-1.5 text-xs font-bold transition-all shadow-sm cursor-pointer ${isCompared(p.id) ? 'bg-[#CA3433] text-white' : 'bg-white/90 backdrop-blur-sm text-gray-900 hover:bg-white'}`}
+          title={isCompared(p.id) ? 'Remove from Compare' : 'Add to Compare'}
+        >
+          <Layers size={16} />
+          <span>{isCompared(p.id) ? 'Compared' : '+ Compare'}</span>
+        </button>
         <button className="bg-white/90 backdrop-blur-sm border-0 rounded-full w-10 h-10 p-0 flex items-center justify-center hover:bg-white text-gray-900 transition-colors shadow-sm cursor-pointer" onClick={handleShare}>
           <Share2 size={18} />
         </button>
@@ -528,6 +565,7 @@ export const PropertyDetail = () => {
                 <div className="p-4 bg-[#F9F8F6] rounded-xl border border-gray-100">
                    <p className="text-xs text-gray-500 font-bold mb-1 uppercase tracking-wider">{t('property.sections.owner')}</p>
                    <p className="font-semibold text-gray-900">{p.profiles?.full_name || 'Listing Owner'}</p>
+                   <LandlordTrustBadgeGroup profile={p.profiles} photoStatus={p.photo_verification_status} />
                 </div>
 
                 {user ? (
@@ -547,6 +585,14 @@ export const PropertyDetail = () => {
                         <a href={`mailto:${gatedData?.contact_email || ''}`} className="flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-full bg-white border border-gray-200 text-gray-900 font-bold hover:bg-gray-50 transition-colors shadow-sm text-[15px]">
                           <Mail size={18} /> {t('property.sections.sendEmail')}
                         </a>
+                        {p.landlord_id !== user.id && (
+                          <button
+                            onClick={handleInitiateChat}
+                            className="flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-full bg-gray-950 text-white font-bold hover:bg-black transition-all duration-200 active:scale-95 shadow-sm text-[15px] border-none outline-none cursor-pointer"
+                          >
+                            <MessageSquare size={18} /> Chat with Owner
+                          </button>
+                        )}
                       </div>
                     ) : (
                       <div className="border border-red-50 rounded-xl p-6 text-center bg-red-50/10 relative overflow-hidden h-48 flex flex-col items-center justify-center shadow-sm">

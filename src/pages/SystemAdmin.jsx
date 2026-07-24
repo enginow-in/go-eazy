@@ -2,32 +2,50 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useServices } from '../hooks/useServices'
-import { LogOut, ShieldAlert, ShieldCheck, Activity, Users, Building, AlertTriangle, FileText, CheckCircle, XCircle, Eye } from 'lucide-react'
+import { LogOut, ShieldAlert, ShieldCheck, Activity, Users, Building, AlertTriangle, FileText, CheckCircle, XCircle, Eye, Shield, UserX, AlertOctagon, Search, Ban, Check } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { Modal } from '../components/ui/Modal'
 import { Button } from '../components/ui/Button'
+import { Input } from '../components/ui/Input'
+import { useNotifications } from '../hooks/useNotifications'
+import { useFraudSafety } from '../hooks/useFraudSafety'
 import toast from 'react-hot-toast'
 
 export const SystemAdmin = () => {
   const { user, role, loading, signInWithGoogle, signOut } = useAuth()
   const { getAdminPendingServices, updateServiceStatus } = useServices()
+  const { sendNotification } = useNotifications()
   const navigate = useNavigate()
   
+  const {
+    fraudAlerts,
+    blacklistedUsers,
+    safetyStats,
+    fetchAdminFraudData,
+    blacklistUser,
+    unblacklistUser,
+    resolveAlert
+  } = useFraudSafety()
+
   const [stats, setStats] = useState({ users: 0, properties: 0, services: 0 })
   const [loadingStats, setLoadingStats] = useState(true)
 
-  // Service Approvals State
+  // Service Approvals & Fraud State
   const [providers, setProviders] = useState([])
   const [loadingProviders, setLoadingProviders] = useState(true)
   const [selectedDoc, setSelectedDoc] = useState(null)
   const [showApprovals, setShowApprovals] = useState(false)
-
+  const [activeTab, setActiveTab] = useState('overview') // 'overview' | 'approvals' | 'fraud_center'
+  const [blacklistUserId, setBlacklistUserId] = useState('')
+  const [blacklistReason, setBlacklistReason] = useState('')
+  const [blacklistRisk, setBlacklistRisk] = useState('high')
 
   useEffect(() => {
     // Only load stats if authorized
     if (user && role === 'admin') {
       loadStats()
       loadProviders()
+      fetchAdminFraudData()
     }
   }, [user])
 
@@ -66,10 +84,37 @@ export const SystemAdmin = () => {
     const toastId = toast.loading(`Marking as ${newStatus}...`)
     try {
       await updateServiceStatus(id, newStatus)
+      const providerItem = providers.find(p => p.id === id)
       setProviders(prev => prev.map(p => p.id === id ? { ...p, verification_status: newStatus } : p))
       toast.success(`Service Provider ${newStatus}`, { id: toastId })
+
+      // Trigger Notification for Service Provider
+      sendNotification({
+        recipientId: providerItem?.user_id || 'service-provider-demo',
+        recipientRole: 'service_provider',
+        type: 'service_approval',
+        title: `Service Listing ${newStatus === 'approved' ? 'Approved' : 'Rejected'}`,
+        message: `Your service listing "${providerItem?.business_name || 'Listing'}" has been marked as ${newStatus} by GoEazy Admin.`,
+        actionUrl: '/service-provider',
+        metadata: { serviceId: id, status: newStatus }
+      })
     } catch {
       toast.error('Failed to update status', { id: toastId })
+    }
+  }
+
+  const handleAddBlacklist = async (e) => {
+    e.preventDefault()
+    if (!blacklistUserId || !blacklistReason) {
+      toast.error('Please provide User ID and Reason')
+      return
+    }
+    try {
+      await blacklistUser(blacklistUserId, blacklistReason, blacklistRisk)
+      setBlacklistUserId('')
+      setBlacklistReason('')
+    } catch {
+      // handled
     }
   }
 
@@ -172,16 +217,45 @@ export const SystemAdmin = () => {
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto p-6 lg:p-10 space-y-10">
+      <main className="max-w-6xl mx-auto p-6 lg:p-10 space-y-8">
         
-        {/* Welcome & Stats Section (Hidden when managing list) */}
-        {!showApprovals && (
-          <>
+        {/* Navigation Tabs */}
+        <div className="flex items-center gap-3 border-b border-gray-200 pb-2">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+              activeTab === 'overview'
+                ? 'bg-gray-900 text-white shadow-sm'
+                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+            }`}
+          >
+            <Activity size={16} /> Overview & Approvals
+          </button>
+          <button
+            onClick={() => setActiveTab('fraud_center')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all relative ${
+              activeTab === 'fraud_center'
+                ? 'bg-[#CA3433] text-white shadow-sm shadow-red-200'
+                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+            }`}
+          >
+            <ShieldAlert size={16} /> Fraud & Safety Center
+            {fraudAlerts.filter(a => a.status === 'pending').length > 0 && (
+              <span className="ml-1 bg-white text-[#CA3433] font-mono text-xs px-2 py-0.5 rounded-full font-black">
+                {fraudAlerts.filter(a => a.status === 'pending').length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* ── TAB 1: OVERVIEW & APPROVALS ── */}
+        {activeTab === 'overview' && (
+          <div className="space-y-10">
             <div>
               <h1 className="text-3xl font-extrabold font-display">System Overview</h1>
               <p className="text-gray-500 mt-1 flex items-center gap-2 font-medium">
                 <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse outline outline-2 outline-green-100"></span>
-                All systems nominal. You have database access.
+                All systems nominal. Database and safety engine active.
               </p>
             </div>
 
@@ -222,8 +296,6 @@ export const SystemAdmin = () => {
                   <p className="text-xl md:text-4xl font-black text-gray-900">{stats.services}</p>}
               </div>
             </div>
-          </>
-        )}
 
         {/* ── APPROVAL WORKFLOW ── */}
         <div>
@@ -334,6 +406,177 @@ export const SystemAdmin = () => {
             </div>
           )}
         </div>
+      </div>
+    )}
+
+        {/* ── TAB 2: FRAUD & SAFETY CENTER ── */}
+        {activeTab === 'fraud_center' && (
+          <div className="space-y-8 animate-in fade-in duration-300">
+            <div>
+              <h1 className="text-3xl font-extrabold font-display">Fraud & Safety Command Center</h1>
+              <p className="text-gray-500 mt-1 font-medium">
+                Monitor platform risk, review automated spam/photo alerts, and manage suspicious user blacklists.
+              </p>
+            </div>
+
+            {/* Safety Stats Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-white border border-red-100 rounded-2xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Spam / Duplicate Flags</span>
+                  <div className="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
+                    <AlertOctagon size={20} />
+                  </div>
+                </div>
+                <p className="text-3xl font-black text-gray-900">{safetyStats.totalSpamFlagged || fraudAlerts.length}</p>
+                <p className="text-xs text-gray-500 mt-1">Automated listing similarity detections</p>
+              </div>
+
+              <div className="bg-white border border-amber-100 rounded-2xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Blacklisted Accounts</span>
+                  <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                    <UserX size={20} />
+                  </div>
+                </div>
+                <p className="text-3xl font-black text-gray-900">{blacklistedUsers.length}</p>
+                <p className="text-xs text-gray-500 mt-1">Blocked from creation & payments</p>
+              </div>
+
+              <div className="bg-white border border-blue-100 rounded-2xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Payment Risk Logs</span>
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <Activity size={20} />
+                  </div>
+                </div>
+                <p className="text-3xl font-black text-gray-900">{fraudAlerts.filter(a => a.entity_type === 'transaction').length}</p>
+                <p className="text-xs text-gray-500 mt-1">Velocity & high-amount payment checks</p>
+              </div>
+            </div>
+
+            {/* Blacklist Management Form & Table */}
+            <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+              <h2 className="text-xl font-bold text-gray-900 font-display mb-4 flex items-center gap-2">
+                <UserX className="text-red-500" size={20} /> User Blacklist Management
+              </h2>
+
+              <form onSubmit={handleAddBlacklist} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                <Input
+                  id="blacklist-user-id"
+                  label="User UUID *"
+                  placeholder="e.g. 123e4567-e89b-12d3..."
+                  value={blacklistUserId}
+                  onChange={e => setBlacklistUserId(e.target.value)}
+                  required
+                />
+                <Input
+                  id="blacklist-reason"
+                  label="Reason *"
+                  placeholder="e.g. Repeated spam listings"
+                  value={blacklistReason}
+                  onChange={e => setBlacklistReason(e.target.value)}
+                  required
+                />
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Risk Severity</label>
+                  <select
+                    value={blacklistRisk}
+                    onChange={e => setBlacklistRisk(e.target.value)}
+                    className="w-full h-11 px-3 bg-white border border-gray-200 rounded-xl text-sm font-bold"
+                  >
+                    <option value="medium">Medium Risk</option>
+                    <option value="high">High Risk</option>
+                    <option value="critical">Critical Risk</option>
+                  </select>
+                </div>
+                <div className="flex items-end">
+                  <Button type="submit" variant="primary" className="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl">
+                    <Ban size={16} /> Add to Blacklist
+                  </Button>
+                </div>
+              </form>
+
+              {blacklistedUsers.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-6">No users currently blacklisted.</p>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {blacklistedUsers.map(bu => (
+                    <div key={bu.id} className="py-3 flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-gray-900 text-sm">{bu.full_name || bu.email || bu.id}</p>
+                        <p className="text-xs text-gray-500">Reason: {bu.blacklist_reason || 'Suspicious Activity'}</p>
+                      </div>
+                      <Button
+                        onClick={() => unblacklistUser(bu.id)}
+                        variant="secondary"
+                        className="py-1.5 px-3 text-xs font-bold text-gray-700"
+                      >
+                        Remove Blacklist
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Real-time Fraud Alerts Feed */}
+            <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+              <h2 className="text-xl font-bold text-gray-900 font-display mb-4 flex items-center gap-2">
+                <AlertTriangle className="text-amber-500" size={20} /> Fraud & Security Risk Feed
+              </h2>
+
+              {fraudAlerts.length === 0 ? (
+                <div className="text-center py-8 text-gray-400 text-sm">
+                  <CheckCircle size={36} className="mx-auto mb-2 text-green-500" />
+                  No open fraud alerts. All automated checks passing.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {fraudAlerts.map(alert => (
+                    <div key={alert.id} className="p-4 rounded-xl border border-gray-100 bg-gray-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
+                            alert.risk_level === 'critical' ? 'bg-red-100 text-red-700' :
+                            alert.risk_level === 'high' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {alert.risk_level} Risk
+                          </span>
+                          <span className="text-xs font-bold text-gray-500 uppercase">{alert.flag_type}</span>
+                        </div>
+                        <p className="text-sm font-bold text-gray-900">{alert.description}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">User: {alert.profiles?.email || alert.user_id || 'System'}</p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {alert.status === 'pending' ? (
+                          <>
+                            <button
+                              onClick={() => resolveAlert(alert.id, 'dismissed')}
+                              className="px-3 py-1.5 text-xs font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50"
+                            >
+                              Dismiss
+                            </button>
+                            <button
+                              onClick={() => resolveAlert(alert.id, 'action_taken')}
+                              className="px-3 py-1.5 text-xs font-bold text-white bg-green-600 rounded-xl hover:bg-green-700"
+                            >
+                              Resolve
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-xs font-bold text-gray-400 capitalize">Status: {alert.status}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+          </div>
+        )}
 
         {/* Document Modal */}
         <Modal open={!!selectedDoc} onClose={() => setSelectedDoc(null)} size="lg" className="bg-white">
