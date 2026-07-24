@@ -1,10 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import {
   ArrowLeft, ArrowRight, Check, Plus, Trash2,
-  Upload, Clock, IndianRupee, MapPin, User,
-  FileText, Phone, ChevronDown, Image,
+  Upload, IndianRupee, MapPin, User,
+  FileText, Phone, Image,
 } from 'lucide-react'
 import { useServices } from '../hooks/useServices'
 import { Button } from '../components/ui/Button'
@@ -17,16 +17,14 @@ const CATEGORIES = [
   { value: 'cleaning', label: 'Cleaning 🧹', docs: ['Aadhaar Card', 'PAN Card', 'Business Registration (optional)'] },
 ]
 
-
-
 const STEPS = [
-  { icon: User,         label: 'Basic Info'     },
-  { icon: Image,        label: 'Photo'          },
-  { icon: MapPin,       label: 'Location'       },
-  { icon: IndianRupee,  label: 'Services'       },
-  { icon: IndianRupee,  label: 'Plans'          },
-  { icon: FileText,     label: 'Documents'      },
-  { icon: Phone,        label: 'Contact'        },
+  { icon: User,        label: 'Basic Info'     },
+  { icon: Image,       label: 'Photo'          },
+  { icon: MapPin,      label: 'Location'       },
+  { icon: IndianRupee, label: 'Services'       },
+  { icon: IndianRupee, label: 'Plans'          },
+  { icon: FileText,    label: 'Documents'      },
+  { icon: Phone,       label: 'Contact'        },
 ]
 
 const InputField = ({ label, required, ...props }) => (
@@ -69,6 +67,13 @@ export const ServiceNew = () => {
   const [posterImages, setPosterImages] = useState([])
   const [posterPreviews, setPosterPreviews] = useState([])
 
+  // Cleanup object URLs on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      posterPreviews.forEach(url => URL.revokeObjectURL(url))
+    }
+  }, [posterPreviews])
+
   // Step 2: Location
   const [location, setLocation] = useState({
     state: 'Uttarakhand', city: '', area: '', address: '', landmark: '',
@@ -79,14 +84,13 @@ export const ServiceNew = () => {
     setLocation(v => ({ ...v, latitude, longitude, map_address: map_address || '' }))
   }
 
-  // Step 3: Services (rows)
+  // Bug Fix 2: Attach stable unique IDs for list items
   const [serviceItems, setServiceItems] = useState([
-    { service_name: '', price: '', unit: 'per month', description: '' },
+    { id: 'item-0', service_name: '', price: '', unit: 'per month', description: '' },
   ])
 
-  // Step 4: Plans
   const [plans, setPlans] = useState([
-    { plan_name: 'Monthly', price: '', description: '' },
+    { id: 'plan-0', plan_name: 'Monthly', price: '', description: '' },
   ])
 
   // Step 5: Documents
@@ -97,19 +101,27 @@ export const ServiceNew = () => {
 
   const selectedCategory = CATEGORIES.find(c => c.value === basicInfo.category)
 
-  const addServiceItem = () => setServiceItems(v => [...v, { service_name: '', price: '', unit: 'per month', description: '' }])
-  const removeServiceItem = (i) => setServiceItems(v => v.filter((_, idx) => idx !== i))
-  const updateServiceItem = (i, key, val) => setServiceItems(v => v.map((item, idx) => idx === i ? { ...item, [key]: val } : item))
+  const addServiceItem = () => setServiceItems(v => [...v, { id: `item-${Date.now()}`, service_name: '', price: '', unit: 'per month', description: '' }])
+  const removeServiceItem = (id) => setServiceItems(v => v.filter(item => item.id !== id))
+  const updateServiceItem = (id, key, val) => setServiceItems(v => v.map(item => item.id === id ? { ...item, [key]: val } : item))
 
-  const addPlan = () => setPlans(v => [...v, { plan_name: '', price: '', description: '' }])
-  const removePlan = (i) => setPlans(v => v.filter((_, idx) => idx !== i))
-  const updatePlan = (i, key, val) => setPlans(v => v.map((p, idx) => idx === i ? { ...p, [key]: val } : p))
+  const addPlan = () => setPlans(v => [...v, { id: `plan-${Date.now()}`, plan_name: '', price: '', description: '' }])
+  const removePlan = (id) => setPlans(v => v.filter(p => p.id !== id))
+  const updatePlan = (id, key, val) => setPlans(v => v.map(p => p.id === id ? { ...p, [key]: val } : p))
 
   const handleFileChange = e => {
     const files = Array.from(e.target.files)
     setDocumentFiles(v => [...v, ...files])
   }
   const removeFile = (i) => setDocumentFiles(v => v.filter((_, idx) => idx !== i))
+
+  const removePosterImage = (idx) => {
+    if (posterPreviews[idx]) {
+      URL.revokeObjectURL(posterPreviews[idx])
+    }
+    setPosterImages(v => v.filter((_, i) => i !== idx))
+    setPosterPreviews(v => v.filter((_, i) => i !== idx))
+  }
 
   const validateStep = () => {
     if (step === 0 && !basicInfo.name.trim()) { toast.error('Provider name is required'); return false }
@@ -145,7 +157,7 @@ export const ServiceNew = () => {
       toast.success('Service listing created! Pending verification.')
       navigate('/service-provider')
     } catch (err) {
-      toast.error(err.message || 'Failed to create listing')
+      toast.error(err?.message || 'Failed to create listing')
     } finally {
       setSubmitting(false)
     }
@@ -166,7 +178,7 @@ export const ServiceNew = () => {
           <p className="text-sm text-gray-500 mt-1">Be part of the GoEazy services marketplace</p>
         </div>
 
-        {/* Step Timeline — same style as PropertyForm */}
+        {/* Step Timeline */}
         <div className="flex items-center justify-between mb-6 px-1">
           {STEPS.map((s, i) => {
             const done   = i < step
@@ -230,12 +242,10 @@ export const ServiceNew = () => {
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   {posterPreviews.map((preview, i) => (
                     <div key={i} className="relative aspect-video rounded-xl overflow-hidden group border border-gray-200">
-                      <img src={preview} className="w-full h-full object-cover" />
+                      <img src={preview} alt={`Service preview ${i + 1}`} className="w-full h-full object-cover" />
                       <button 
-                        onClick={() => {
-                          setPosterImages(v => v.filter((_, idx) => idx !== i))
-                          setPosterPreviews(v => v.filter((_, idx) => idx !== i))
-                        }}
+                        type="button"
+                        onClick={() => removePosterImage(i)}
                         className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <Trash2 size={14} />
@@ -245,7 +255,7 @@ export const ServiceNew = () => {
                   
                   {posterPreviews.length < 3 && (
                     <div 
-                      className={`relative aspect-video rounded-xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center bg-gray-50 hover:border-[#CA3433] hover:bg-red-50/50 border-gray-200 text-gray-500`}
+                      className="relative aspect-video rounded-xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center bg-gray-50 hover:border-[#CA3433] hover:bg-red-50/50 border-gray-200 text-gray-500"
                       onClick={() => document.getElementById('poster-upload').click()}
                     >
                       <Image className="mb-2 text-gray-400" size={24} />
@@ -308,27 +318,27 @@ export const ServiceNew = () => {
               <h2 className="text-lg font-bold text-gray-900">Services & Pricing</h2>
               <p className="text-sm text-gray-500">List each item/service you offer with its price.</p>
               {serviceItems.map((item, i) => (
-                <div key={i} className="border border-gray-100 rounded-xl p-4 space-y-3 relative">
+                <div key={item.id} className="border border-gray-100 rounded-xl p-4 space-y-3 relative">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-gray-400 uppercase">Item {i + 1}</span>
                     {serviceItems.length > 1 && (
-                      <button type="button" onClick={() => removeServiceItem(i)} className="text-red-400 hover:text-red-600">
+                      <button type="button" onClick={() => removeServiceItem(item.id)} className="text-red-400 hover:text-red-600">
                         <Trash2 size={14} />
                       </button>
                     )}
                   </div>
-                  <InputField label="Service Name" required placeholder="e.g. Dal Rice Tiffin" value={item.service_name} onChange={e => updateServiceItem(i, 'service_name', e.target.value)} />
+                  <InputField label="Service Name" required placeholder="e.g. Dal Rice Tiffin" value={item.service_name} onChange={e => updateServiceItem(item.id, 'service_name', e.target.value)} />
                   <div className="grid grid-cols-2 gap-3">
-                    <InputField label="Price (₹)" required type="number" placeholder="e.g. 1500" value={item.price} onChange={e => updateServiceItem(i, 'price', e.target.value)} />
+                    <InputField label="Price (₹)" required type="number" placeholder="e.g. 1500" value={item.price} onChange={e => updateServiceItem(item.id, 'price', e.target.value)} />
                     <div>
                       <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Unit</label>
-                      <select value={item.unit} onChange={e => updateServiceItem(i, 'unit', e.target.value)}
+                      <select value={item.unit} onChange={e => updateServiceItem(item.id, 'unit', e.target.value)}
                         className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-[#CA3433]">
                         {['per day','per week','per month','per kg','per visit','per hour'].map(u => <option key={u}>{u}</option>)}
                       </select>
                     </div>
                   </div>
-                  <InputField label="Description (optional)" placeholder="Brief description..." value={item.description} onChange={e => updateServiceItem(i, 'description', e.target.value)} />
+                  <InputField label="Description (optional)" placeholder="Brief description..." value={item.description} onChange={e => updateServiceItem(item.id, 'description', e.target.value)} />
                 </div>
               ))}
               <button type="button" onClick={addServiceItem}
@@ -344,20 +354,20 @@ export const ServiceNew = () => {
               <h2 className="text-lg font-bold text-gray-900">Subscription Plans</h2>
               <p className="text-sm text-gray-500">Add monthly or weekly plans for your customers.</p>
               {plans.map((plan, i) => (
-                <div key={i} className="border border-gray-100 rounded-xl p-4 space-y-3">
+                <div key={plan.id} className="border border-gray-100 rounded-xl p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-gray-400 uppercase">Plan {i + 1}</span>
                     {plans.length > 1 && (
-                      <button type="button" onClick={() => removePlan(i)} className="text-red-400 hover:text-red-600">
+                      <button type="button" onClick={() => removePlan(plan.id)} className="text-red-400 hover:text-red-600">
                         <Trash2 size={14} />
                       </button>
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <InputField label="Plan Name" required placeholder="e.g. Monthly" value={plan.plan_name} onChange={e => updatePlan(i, 'plan_name', e.target.value)} />
-                    <InputField label="Price (₹)" required type="number" placeholder="e.g. 2000" value={plan.price} onChange={e => updatePlan(i, 'price', e.target.value)} />
+                    <InputField label="Plan Name" required placeholder="e.g. Monthly" value={plan.plan_name} onChange={e => updatePlan(plan.id, 'plan_name', e.target.value)} />
+                    <InputField label="Price (₹)" required type="number" placeholder="e.g. 2000" value={plan.price} onChange={e => updatePlan(plan.id, 'price', e.target.value)} />
                   </div>
-                  <TextareaField label="Description" rows={2} placeholder="What's included in this plan..." value={plan.description} onChange={e => updatePlan(i, 'description', e.target.value)} />
+                  <TextareaField label="Description" rows={2} placeholder="What's included in this plan..." value={plan.description} onChange={e => updatePlan(plan.id, 'description', e.target.value)} />
                 </div>
               ))}
               <button type="button" onClick={addPlan}
