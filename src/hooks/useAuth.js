@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { setUser, setProfile, logout, setLoading } from '../store/authSlice'
@@ -6,6 +6,9 @@ import { setUser, setProfile, logout, setLoading } from '../store/authSlice'
 export const useAuth = () => {
   const dispatch = useDispatch()
   const { user, profile, role, loading, authModalOpen, authModalTab } = useSelector(s => s.auth)
+
+  // THIS LINE HERE TO TRACK PROFILE FETCH REQUESTS
+  const lastFetchedIdRef = useRef(null)
 
   useEffect(() => {
     // Get initial session
@@ -37,6 +40,13 @@ export const useAuth = () => {
 
   const fetchProfile = async (userId) => {
     try {
+      if (lastFetchedIdRef.current === userId) {
+        console.log('Auth: Profile request deduplicated for user:', userId)
+        dispatch(setLoading(false))
+        return
+      }
+      lastFetchedIdRef.current = userId
+    
       // First try to fetch
       let { data, error } = await supabase
         .from('profiles')
