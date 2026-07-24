@@ -6,22 +6,28 @@ import { LogOut, ShieldAlert, ShieldCheck, Activity, Users, Building, AlertTrian
 import { supabase } from '../lib/supabase'
 import { Modal } from '../components/ui/Modal'
 import { Button } from '../components/ui/Button'
+import { useNotifications } from '../hooks/useNotifications'
+import { AdminAnalyticsView } from '../components/analytics/AdminAnalyticsView'
+import { TrendingUp } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export const SystemAdmin = () => {
   const { user, role, loading, signInWithGoogle, signOut } = useAuth()
   const { getAdminPendingServices, updateServiceStatus } = useServices()
+  const { sendNotification } = useNotifications()
   const navigate = useNavigate()
   
   const [stats, setStats] = useState({ users: 0, properties: 0, services: 0 })
   const [loadingStats, setLoadingStats] = useState(true)
 
-  // Service Approvals State
+  // Analytics & Service Approvals State
+  const [adminTab, setAdminTab] = useState('overview') // 'overview' | 'analytics'
+  const [allProperties, setAllProperties] = useState([])
+  const [allProfiles, setAllProfiles] = useState([])
   const [providers, setProviders] = useState([])
   const [loadingProviders, setLoadingProviders] = useState(true)
   const [selectedDoc, setSelectedDoc] = useState(null)
   const [showApprovals, setShowApprovals] = useState(false)
-
 
   useEffect(() => {
     // Only load stats if authorized
@@ -33,10 +39,12 @@ export const SystemAdmin = () => {
 
   const loadStats = async () => {
     try {
-      const [uRes, pRes, sRes] = await Promise.all([
+      const [uRes, pRes, sRes, propsData, profsData] = await Promise.all([
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
         supabase.from('properties').select('*', { count: 'exact', head: true }),
-        supabase.from('service_providers').select('*', { count: 'exact', head: true })
+        supabase.from('service_providers').select('*', { count: 'exact', head: true }),
+        supabase.from('properties').select('*').limit(100),
+        supabase.from('profiles').select('*').limit(100)
       ])
       
       setStats({
@@ -44,6 +52,8 @@ export const SystemAdmin = () => {
         properties: pRes.count || 0,
         services: sRes.count || 0
       })
+      if (propsData.data) setAllProperties(propsData.data)
+      if (profsData.data) setAllProfiles(profsData.data)
     } catch (e) {
       console.error('Error loading admin stats:', e)
     } finally {
@@ -66,8 +76,20 @@ export const SystemAdmin = () => {
     const toastId = toast.loading(`Marking as ${newStatus}...`)
     try {
       await updateServiceStatus(id, newStatus)
+      const providerItem = providers.find(p => p.id === id)
       setProviders(prev => prev.map(p => p.id === id ? { ...p, verification_status: newStatus } : p))
       toast.success(`Service Provider ${newStatus}`, { id: toastId })
+
+      // Trigger Notification for Service Provider
+      sendNotification({
+        recipientId: providerItem?.user_id || 'service-provider-demo',
+        recipientRole: 'service_provider',
+        type: 'service_approval',
+        title: `Service Listing ${newStatus === 'approved' ? 'Approved' : 'Rejected'}`,
+        message: `Your service listing "${providerItem?.business_name || 'Listing'}" has been marked as ${newStatus} by GoEazy Admin.`,
+        actionUrl: '/service-provider',
+        metadata: { serviceId: id, status: newStatus }
+      })
     } catch {
       toast.error('Failed to update status', { id: toastId })
     }
@@ -174,6 +196,36 @@ export const SystemAdmin = () => {
       {/* Main Content */}
       <main className="max-w-6xl mx-auto p-6 lg:p-10 space-y-10">
         
+        {/* Navigation Tabs */}
+        {!showApprovals && (
+          <div className="flex items-center gap-3 border-b border-gray-200 pb-3">
+            <button
+              onClick={() => setAdminTab('overview')}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                adminTab === 'overview'
+                  ? 'bg-gray-900 text-white shadow-sm'
+                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              <Activity size={16} /> Overview & Approvals
+            </button>
+            <button
+              onClick={() => setAdminTab('analytics')}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                adminTab === 'analytics'
+                  ? 'bg-blue-600 text-white shadow-sm shadow-blue-200'
+                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              <TrendingUp size={16} /> Growth & Churn Analytics
+            </button>
+          </div>
+        )}
+
+        {adminTab === 'analytics' && !showApprovals ? (
+          <AdminAnalyticsView properties={allProperties} profiles={allProfiles} />
+        ) : (
+          <>
         {/* Welcome & Stats Section (Hidden when managing list) */}
         {!showApprovals && (
           <>
@@ -334,6 +386,8 @@ export const SystemAdmin = () => {
             </div>
           )}
         </div>
+      </>
+    )}
 
         {/* Document Modal */}
         <Modal open={!!selectedDoc} onClose={() => setSelectedDoc(null)} size="lg" className="bg-white">

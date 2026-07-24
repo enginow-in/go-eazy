@@ -9,6 +9,7 @@ import { useServices } from '../hooks/useServices'
 import { Button } from '../components/ui/Button'
 import { Skeleton } from '../components/ui/Skeleton'
 import { supabase } from '../lib/supabase'
+import { ServiceProviderAnalyticsView } from '../components/analytics/ServiceProviderAnalyticsView'
 import toast from 'react-hot-toast'
 
 const CATEGORY_CONFIG = {
@@ -184,6 +185,11 @@ export const ServiceProviderDashboard = () => {
               <p className="text-xs text-gray-400 font-medium mt-0.5">{stat.label}</p>
             </div>
           ))}
+        </div>
+
+        {/* Provider Analytics View */}
+        <div className="mb-10">
+          <ServiceProviderAnalyticsView services={myServices} />
         </div>
 
         {/* Listings */}

@@ -3,6 +3,10 @@ import authReducer from './authSlice'
 import propertyReducer from './propertySlice'
 import uiReducer from './uiSlice'
 import serviceReducer from './serviceSlice'
+import notificationReducer from './notificationSlice'
+import leaseReducer from './leaseSlice'
+import compareReducer from './compareSlice'
+import analyticsReducer from './analyticsSlice'
 
 export const store = configureStore({
   reducer: {
@@ -10,5 +14,10 @@ export const store = configureStore({
     property: propertyReducer,
     ui: uiReducer,
     service: serviceReducer,
+    notifications: notificationReducer,
+    lease: leaseReducer,
+    compare: compareReducer,
+    analytics: analyticsReducer,
   },
 })
+
