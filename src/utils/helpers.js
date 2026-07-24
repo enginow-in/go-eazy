@@ -40,3 +40,61 @@ export const AMENITY_ICONS = {
   power: Zap,
   water: Droplets,
 }
+
+/**
+ * Resilient cross-platform share helper.
+ * Uses Web Share API (native mobile share sheet on iOS/Android) when available,
+ * falling back to Clipboard API, and finally execCommand copy.
+ */
+export const shareContent = async ({ title, text, url = window.location.href, onSuccess, onError }) => {
+  const shareData = {
+    title: title || document.title,
+    text: text || '',
+    url,
+  }
+
+  // 1. Web Share API (Mobile Safari, Chrome Android, Edge Mobile)
+  if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+    try {
+      await navigator.share(shareData)
+      if (onSuccess) onSuccess('shared')
+      return
+    } catch (err) {
+      if (err.name === 'AbortError') return // User cancelled native share sheet
+    }
+  }
+
+  // 2. Modern Clipboard API
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+    try {
+      await navigator.clipboard.writeText(url)
+      if (onSuccess) onSuccess('copied')
+      return
+    } catch (err) {
+      // Fall through to execCommand fallback
+    }
+  }
+
+  // 3. Legacy execCommand fallback (HTTP / older WebView / restricted contexts)
+  try {
+    const textArea = document.createElement('textarea')
+    textArea.value = url
+    textArea.style.position = 'fixed'
+    textArea.style.left = '-999999px'
+    textArea.style.top = '-999999px'
+    document.body.appendChild(textArea)
+    textArea.focus()
+    textArea.select()
+    const successful = document.execCommand('copy')
+    document.body.removeChild(textArea)
+    if (successful) {
+      if (onSuccess) onSuccess('copied')
+      return
+    }
+  } catch (err) {
+    // Ignore
+  }
+
+  if (onError) onError()
+}
+
