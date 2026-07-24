@@ -14,6 +14,8 @@ import { formatPriceShort, cn } from '../utils/helpers'
 import toast from 'react-hot-toast'
 import { Skeleton } from '../components/ui/Skeleton'
 import { supabase } from '../lib/supabase'
+import { LandlordAnalyticsView } from '../components/analytics/LandlordAnalyticsView'
+import { TrendingUp, BarChart2 } from 'lucide-react'
 
 export const LandlordDashboard = () => {
   const { user, profile } = useAuth()
@@ -27,6 +29,7 @@ export const LandlordDashboard = () => {
   const [siteVisits, setSiteVisits] = useState([])
   const [loadingVisits, setLoadingVisits] = useState(true)
   const [actioningVisitId, setActioningVisitId] = useState(null)
+  const [activeTab, setActiveTab] = useState('listings') // 'listings' | 'analytics'
 
   useEffect(() => {
     if (user) {
@@ -150,6 +153,35 @@ export const LandlordDashboard = () => {
             New Listing
           </Button>
         </div>
+
+        {/* Navigation Tabs */}
+        <div className="flex items-center gap-3 border-b border-gray-200 mb-8 pb-2">
+          <button
+            onClick={() => setActiveTab('listings')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+              activeTab === 'listings'
+                ? 'bg-gray-900 text-white shadow-sm'
+                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+            }`}
+          >
+            <Home size={16} /> My Properties & Requests
+          </button>
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+              activeTab === 'analytics'
+                ? 'bg-[#CA3433] text-white shadow-sm shadow-red-200'
+                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+            }`}
+          >
+            <TrendingUp size={16} /> Analytics & Conversion Plus™
+          </button>
+        </div>
+
+        {activeTab === 'analytics' ? (
+          <LandlordAnalyticsView properties={properties} />
+        ) : (
+          <>
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
@@ -420,6 +452,8 @@ export const LandlordDashboard = () => {
             </div>
           )}
         </div>
+        </>
+        )}
 
         {/* Modals */}
         <LeaseBuilderModal />
