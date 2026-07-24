@@ -13,6 +13,7 @@ import { OnboardingQuiz } from './components/common/OnboardingQuiz'
 import { useSelector } from 'react-redux'
 import { useAuth } from './hooks/useAuth'
 import ScrollToTop from './components/common/ScrollToTop'
+import { ErrorBoundary } from './components/common/ErrorBoundary'
 
 // Heavy pages: lazy-loaded into separate chunks to prevent
 // "Cannot access X before initialization" TDZ errors from
@@ -41,7 +42,7 @@ const PageSpinner = () => (
 )
 
 function App() {
-  useAuth() 
+  useAuth()
   const { loading } = useSelector(s => s.auth)
 
   if (loading) {
@@ -59,85 +60,73 @@ function App() {
       <OnboardingQuiz />
       <RoleSelectionModal />
       <Layout>
-        <Suspense fallback={<PageSpinner />}>
-          <Routes>
-          <Route path="/" element={<Navigate to="/search" replace />} />
-          <Route path="/search" element={<Search />} />
-          <Route path="/property/:id" element={<PropertyDetail />} />
-          
-          {/* Legal Routes */}
-          <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="/terms" element={<TermsOfService />} />
-          <Route path="/cookies" element={<CookiePolicy />} />
-          <Route path="/refund" element={<RefundPolicy />} />
-          <Route path="/about" element={<About />} />
-
-          {/* Admin Route */}
-          <Route path="/systemadmin" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <SystemAdmin />
-            </ProtectedRoute>
-          } />
-
-          {/* Nearby Services Routes */}
-          <Route path="/nearby" element={<NearbyServices />} />
-          <Route path="/services/:id" element={<ServiceDetail />} />
-
-          {/* Service Provider Routes */}
-          <Route path="/service-provider" element={
-            <ProtectedRoute allowedRoles={['service_provider']}>
-              <ServiceProviderDashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/service-provider/new" element={
-            <ProtectedRoute allowedRoles={['service_provider']}>
-              <ServiceNew />
-            </ProtectedRoute>
-          } />
-          
-          {/* User Routes */}
-          <Route path="/dashboard" element={
-            <ProtectedRoute allowedRoles={['user', 'landlord', 'service_provider']}>
-              <UserDashboard />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/dashboard/saved" element={
-            <ProtectedRoute>
-              <SavedProperties />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/settings" element={
-            <ProtectedRoute>
-              <Settings />
-            </ProtectedRoute>
-          } />
-          
-          {/* Landlord Routes */}
-          <Route path="/landlord" element={
-            <ProtectedRoute allowedRoles={['landlord']}>
-              <LandlordDashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/landlord/properties/new" element={
-            <ProtectedRoute allowedRoles={['landlord']}>
-              <PropertyNew />
-            </ProtectedRoute>
-          } />
-          <Route path="/landlord/properties/:id/edit" element={
-            <ProtectedRoute allowedRoles={['landlord']}>
-              <PropertyEdit />
-            </ProtectedRoute>
-          } />
-
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        </Suspense>
+        {/* ErrorBoundary wraps Suspense so chunk load failures show a UI instead of blank screen */}
+        <ErrorBoundary>
+          <Suspense fallback={<PageSpinner />}>
+            <Routes>
+              {/* ... all existing routes unchanged ... */}
+              <Route path="/" element={<Navigate to="/search" replace />} />
+              <Route path="/search" element={<Search />} />
+              <Route path="/property/:id" element={<PropertyDetail />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfService />} />
+              <Route path="/cookies" element={<CookiePolicy />} />
+              <Route path="/refund" element={<RefundPolicy />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/systemadmin" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <SystemAdmin />
+                </ProtectedRoute>
+              } />
+              <Route path="/nearby" element={<NearbyServices />} />
+              <Route path="/services/:id" element={<ServiceDetail />} />
+              <Route path="/service-provider" element={
+                <ProtectedRoute allowedRoles={['service_provider']}>
+                  <ServiceProviderDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/service-provider/new" element={
+                <ProtectedRoute allowedRoles={['service_provider']}>
+                  <ServiceNew />
+                </ProtectedRoute>
+              } />
+              <Route path="/dashboard" element={
+                <ProtectedRoute allowedRoles={['user', 'landlord', 'service_provider']}>
+                  <UserDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/dashboard/saved" element={
+                <ProtectedRoute>
+                  <SavedProperties />
+                </ProtectedRoute>
+              } />
+              <Route path="/settings" element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              } />
+              <Route path="/landlord" element={
+                <ProtectedRoute allowedRoles={['landlord']}>
+                  <LandlordDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/landlord/properties/new" element={
+                <ProtectedRoute allowedRoles={['landlord']}>
+                  <PropertyNew />
+                </ProtectedRoute>
+              } />
+              <Route path="/landlord/properties/:id/edit" element={
+                <ProtectedRoute allowedRoles={['landlord']}>
+                  <PropertyEdit />
+                </ProtectedRoute>
+              } />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+        </ErrorBoundary>
       </Layout>
     </BrowserRouter>
   )
 }
-
 
 export default App
