@@ -17,6 +17,13 @@ export const ProtectedRoute = ({ children, allowedRoles }) => {
   // Not logged in at all
   if (!user) return <Navigate to="/" replace />
 
+  // ── 🟢 FIXED: ROLE EXISTENCE ERROR GUARD ──
+  // If user is authenticated but no valid profile/role could be recovered, drop them out of the dashboard router
+  if (user && !role) {
+    console.error("Auth Routing Error: Profile loaded successfully but role context is missing.")
+    return <Navigate to="/" replace />
+  }
+
   // Role restriction check
   if (allowedRoles && !allowedRoles.includes(role)) {
     // Smart redirect to correct dashboard for this user's actual role
