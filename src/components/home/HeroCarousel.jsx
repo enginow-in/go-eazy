@@ -3,23 +3,26 @@ import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { CAROUSEL_SLIDES } from '../../utils/constants'
 
+// Module-level constant — avoids re-evaluating CAROUSEL_SLIDES.length inside the component
+// and ensures startTimer's useCallback dependency is a stable primitive.
+const SLIDE_COUNT = CAROUSEL_SLIDES.length
 const INTERVAL_MS = 5000
 
 export const HeroCarousel = () => {
   const [current, setCurrent] = useState(0)
   const navigate = useNavigate()
   const timerRef = useRef(null)
-  const slidesCount = CAROUSEL_SLIDES.length
 
   // Start (or restart) the auto-play timer.
-  // Calling this on any manual interaction resets the 5-second cycle cleanly,
-  // preventing a double-advance when a click coincides with an interval tick.
+  // Using useRef + useCallback ensures the interval is reset cleanly on any manual
+  // interaction, preventing double-advance when a click coincides with an interval tick.
+  // SLIDE_COUNT is module-level so this callback is stable across renders.
   const startTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current)
     timerRef.current = setInterval(() => {
-      setCurrent(c => (c + 1) % slidesCount)
+      setCurrent(c => (c + 1) % SLIDE_COUNT)
     }, INTERVAL_MS)
-  }, [slidesCount])
+  }, []) // stable — SLIDE_COUNT is a module-level constant, not a prop or state
 
   useEffect(() => {
     startTimer()
@@ -27,12 +30,12 @@ export const HeroCarousel = () => {
   }, [startTimer])
 
   const handlePrev = () => {
-    setCurrent(c => (c - 1 + slidesCount) % slidesCount)
+    setCurrent(c => (c - 1 + SLIDE_COUNT) % SLIDE_COUNT)
     startTimer()
   }
 
   const handleNext = () => {
-    setCurrent(c => (c + 1) % slidesCount)
+    setCurrent(c => (c + 1) % SLIDE_COUNT)
     startTimer()
   }
 
@@ -45,27 +48,37 @@ export const HeroCarousel = () => {
 
   return (
     <div className="relative w-full overflow-hidden rounded-3xl" style={{ height: '420px' }}>
-      {CAROUSEL_SLIDES.map((s, i) => (
-        <div
-          key={s.id}
-          // pointer-events-none on inactive slides prevents invisible layers
-          // from intercepting clicks/taps that belong to foreground elements.
-          className={`absolute inset-0 transition-opacity duration-700 ${
-            i === current ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-          }`}
-          aria-hidden={i !== current}
-        >
-          <img
-            src={s.image}
-            alt={s.title}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
-        </div>
-      ))}
+      {CAROUSEL_SLIDES.map((s, i) => {
+        const isActive = i === current
+        return (
+          <div
+            key={s.id}
+            // pointer-events-none on inactive slides prevents invisible layers from
+            // intercepting clicks/taps meant for foreground controls.
+            className={`absolute inset-0 transition-opacity duration-700 ${
+              isActive ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+            }`}
+            // aria-hidden must be a boolean, not a conditional expression that
+            // could evaluate to `false` (which React keeps as an attribute value).
+            aria-hidden={!isActive}
+            role="group"
+            aria-roledescription="slide"
+            aria-label={`Slide ${i + 1} of ${SLIDE_COUNT}: ${s.title}`}
+          >
+            <img
+              src={s.image}
+              alt={s.title}
+              className="w-full h-full object-cover"
+              // First slide should be eager-loaded for optimal LCP.
+              // Subsequent slides can be lazy-loaded since they are off-screen.
+              loading={i === 0 ? 'eager' : 'lazy'}
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
+          </div>
+        )
+      })}
 
-      {/* Content */}
+      {/* Content overlay */}
       <div className="relative z-10 h-full flex items-center px-10 md:px-16">
         <div className="max-w-lg animate-fadeInUp">
           <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-full px-4 py-1.5 mb-4">
@@ -87,7 +100,7 @@ export const HeroCarousel = () => {
         </div>
       </div>
 
-      {/* Controls */}
+      {/* Prev / Next controls */}
       <button
         onClick={handlePrev}
         aria-label="Previous slide"
@@ -103,13 +116,18 @@ export const HeroCarousel = () => {
         <ChevronRight size={20} className="text-gray-700" />
       </button>
 
-      {/* Dots */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10" role="tablist" aria-label="Carousel slides">
+      {/* Dot navigation */}
+      <div
+        className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10"
+        role="tablist"
+        aria-label="Carousel slide navigation"
+      >
         {CAROUSEL_SLIDES.map((s, i) => (
           <button
             key={i}
             role="tab"
             aria-selected={i === current}
+            aria-controls={`carousel-slide-${i}`}
             aria-label={`Go to slide ${i + 1}: ${s.title}`}
             onClick={() => handleDot(i)}
             className={`transition-all duration-300 rounded-full ${
