@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useServices } from '../hooks/useServices'
-import { LogOut, ShieldAlert, ShieldCheck, Activity, Users, Building, AlertTriangle, FileText, CheckCircle, XCircle, Eye } from 'lucide-react'
-import { supabase } from '../lib/supabase'
+import { LogOut, ShieldAlert, ShieldCheck, Activity, Users, Building, AlertTriangle, FileText, CheckCircle, XCircle } from 'lucide-react'
+import { supabase } from '../utils/supabase'
 import { Modal } from '../components/ui/Modal'
 import { Button } from '../components/ui/Button'
 import toast from 'react-hot-toast'
@@ -22,45 +22,49 @@ export const SystemAdmin = () => {
   const [selectedDoc, setSelectedDoc] = useState(null)
   const [showApprovals, setShowApprovals] = useState(false)
 
-
+  // Bug Fix 1 & 2: Added cleanup lifecycle guards to async statistics & providers loader calls
   useEffect(() => {
-    // Only load stats if authorized
-    if (user && role === 'admin') {
-      loadStats()
-      loadProviders()
-    }
-  }, [user])
+    let isMounted = true
 
-  const loadStats = async () => {
-    try {
-      const [uRes, pRes, sRes] = await Promise.all([
-        supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        supabase.from('properties').select('*', { count: 'exact', head: true }),
-        supabase.from('service_providers').select('*', { count: 'exact', head: true })
-      ])
-      
-      setStats({
-        users: uRes.count || 0,
-        properties: pRes.count || 0,
-        services: sRes.count || 0
-      })
-    } catch (e) {
-      console.error('Error loading admin stats:', e)
-    } finally {
-      setLoadingStats(false)
-    }
-  }
+    const fetchAdminData = async () => {
+      if (user && role === 'admin') {
+        try {
+          const [uRes, pRes, sRes] = await Promise.all([
+            supabase.from('profiles').select('*', { count: 'exact', head: true }),
+            supabase.from('properties').select('*', { count: 'exact', head: true }),
+            supabase.from('service_providers').select('*', { count: 'exact', head: true })
+          ])
+          
+          if (isMounted) {
+            setStats({
+              users: uRes.count || 0,
+              properties: pRes.count || 0,
+              services: sRes.count || 0
+            })
+            setLoadingStats(false)
+          }
 
-  const loadProviders = async () => {
-    try {
-      const data = await getAdminPendingServices()
-      setProviders(data)
-    } catch (e) {
-      console.error('Failed to load pending services', e)
-    } finally {
-      setLoadingProviders(false)
+          const pendingData = await getAdminPendingServices()
+          if (isMounted) {
+            setProviders(pendingData || [])
+            setLoadingProviders(false)
+          }
+        } catch (e) {
+          console.error('Error loading admin stats or providers:', e)
+          if (isMounted) {
+            setLoadingStats(false)
+            setLoadingProviders(false)
+          }
+        }
+      }
     }
-  }
+
+    fetchAdminData()
+
+    return () => {
+      isMounted = false
+    }
+  }, [user, role, getAdminPendingServices])
 
   const handleAction = async (id, newStatus) => {
     const toastId = toast.loading(`Marking as ${newStatus}...`)
@@ -74,12 +78,10 @@ export const SystemAdmin = () => {
   }
 
   const handleGoogleLogin = async () => {
-    // Set the return path so they land back here after Google auth
     localStorage.setItem('sb_return_to', '/systemadmin')
     await signInWithGoogle()
   }
 
-  // Still checking session loading from auth slice
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F9F8F6] flex items-center justify-center">
@@ -115,7 +117,6 @@ export const SystemAdmin = () => {
   if (role !== 'admin') {
     return (
       <div className="min-h-screen bg-[#F9F8F6] flex flex-col items-center justify-center p-4 relative overflow-hidden">
-        {/* Warning Background */}
         <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
           <ShieldAlert size={800} className="text-red-600" />
         </div>
@@ -147,7 +148,7 @@ export const SystemAdmin = () => {
     )
   }
 
-  // 3. SECURE ADMIN DASHBOARD (SUCCESS)
+  // 3. SECURE ADMIN DASHBOARD
   return (
     <div className="min-h-screen bg-[#F9F8F6] text-gray-900">
       {/* Top Navbar */}
@@ -174,7 +175,7 @@ export const SystemAdmin = () => {
       {/* Main Content */}
       <main className="max-w-6xl mx-auto p-6 lg:p-10 space-y-10">
         
-        {/* Welcome & Stats Section (Hidden when managing list) */}
+        {/* Welcome & Stats Section */}
         {!showApprovals && (
           <>
             <div>
@@ -225,7 +226,7 @@ export const SystemAdmin = () => {
           </>
         )}
 
-        {/* ── APPROVAL WORKFLOW ── */}
+        {/* APPROVAL WORKFLOW */}
         <div>
           {!showApprovals ? (
             <div 
@@ -239,7 +240,7 @@ export const SystemAdmin = () => {
                 <div>
                   <h2 className="text-2xl font-bold font-display text-gray-900">Provider Approvals</h2>
                   <p className="text-gray-500 text-sm mt-0.5">
-                     {loadingProviders ? 'Loading pending requests...' : `Manage ${providers.length} service provider listings`}
+                    {loadingProviders ? 'Loading pending requests...' : `Manage ${providers.length} service provider listings`}
                   </p>
                 </div>
               </div>
