@@ -28,10 +28,12 @@ const PropertyCardComponent = ({ property, layout = 'grid', compact = false, con
   // Memoize values with deterministic calculation
   const { rating, numBeds } = useMemo(() => {
     return {
-      rating: property.rating || '0.0',
+      rating: property.avg_rating != null
+        ? Number(property.avg_rating).toFixed(1)
+        : '0.0',
       numBeds: property.bedrooms || 0,
     }
-  }, [property.rating, property.bedrooms])
+  }, [property.avg_rating, property.bedrooms])
 
   const formatPrice = (p) => {
     if (!p) return '0'
