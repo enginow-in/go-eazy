@@ -13,6 +13,7 @@ import { AMENITY_ICONS, cn } from '../utils/helpers'
 import { Skeleton } from '../components/ui/Skeleton'
 import { useAuth } from '../hooks/useAuth'
 import { RecommendedSection } from '../components/property/RecommendedSection'
+import { useLocalStorage } from '../hooks/useLocalStorage'
 
 export const Search = () => {
   const { t } = useTranslation()
@@ -20,7 +21,8 @@ export const Search = () => {
   const [searchParams] = useSearchParams()
   const { listings, filters, loading, hasMore, fetchProperties, updateFilters, totalCount } = useProperties()
   
-  const [viewMode, setViewMode] = useState('grid')
+  // Persist the user's grid/list view preference across navigations and refreshes
+  const [viewMode, setViewMode] = useLocalStorage('goeazy_view_mode', 'grid')
   const [showFilters, setShowFilters] = useState(false)
   const [localFilters, setLocalFilters] = useState({
     city: filters.city || '', 
