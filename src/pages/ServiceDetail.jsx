@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import {
@@ -70,6 +70,7 @@ export const ServiceDetail = () => {
   const [galleryPrevEl, setGalleryPrevEl] = useState(null)
   const [galleryNextEl, setGalleryNextEl] = useState(null)
   const [showScrollToTop, setShowScrollToTop] = useState(false)
+  const isMountedRef = useRef(true)
 
   const service = currentService
   const categoryConfig = getCategoryConfig(t)
@@ -85,13 +86,23 @@ export const ServiceDetail = () => {
   }, [])
 
   useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
+  useEffect(() => {
+    let active = true
     const load = async () => {
       setLoading(true)
       await fetchServiceById(id)
       await fetchReviews(id)
-      setLoading(false)
+      if (active && isMountedRef.current) setLoading(false)
     }
     load()
+    return () => {
+      active = false
+    }
     // eslint-disable-next-line
   }, [id])
 
@@ -102,8 +113,10 @@ export const ServiceDetail = () => {
       
       const isProvider = service?.provider_id === user.id
       if (isProvider) {
+        if (!isMountedRef.current) return
         setContactUnlocked(true)
         const gated = await fetchServiceGatedData(id)
+        if (!isMountedRef.current) return
         setGatedData(gated)
       }
     }
@@ -123,7 +136,9 @@ export const ServiceDetail = () => {
       return
     }
     setContactUnlocked(true)
-    fetchServiceGatedData(id).then(setGatedData)
+    fetchServiceGatedData(id).then((data) => {
+      if (isMountedRef.current) setGatedData(data)
+    })
     toast.success(t('services.reviews.contactUnlocked'))
   }
 

@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import {
@@ -15,14 +15,22 @@ const PUBLIC_PROFILE_FIELDS = 'full_name, avatar_url'
 
 export const useServices = () => {
   const dispatch = useDispatch()
+  const isMountedRef = useRef(true)
   const {
     services, currentService, reviews, filters, loading,
     reviewsLoading, hasMore, page,
   } = useSelector(s => s.service)
   const { user } = useSelector(s => s.auth)
 
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
   // ── Fetch Services List ─────────────────────────────────────────────
   const fetchServices = useCallback(async (reset = false) => {
+    if (!isMountedRef.current) return
     dispatch(setServiceLoading(true))
     try {
       const from = reset ? 0 : page * PAGE_SIZE
@@ -48,6 +56,7 @@ export const useServices = () => {
         .range(from, from + PAGE_SIZE - 1)
 
       if (error) throw error
+      if (!isMountedRef.current) return
 
       if (reset) dispatch(setServices(data || []))
       else dispatch(appendServices(data || []))
@@ -55,10 +64,11 @@ export const useServices = () => {
       dispatch(setServiceHasMore((data || []).length === PAGE_SIZE))
       dispatch(setServicePage(reset ? 1 : page + 1))
     } catch (err) {
+      if (!isMountedRef.current) return
       console.error('fetchServices error:', err)
       dispatch(setServices([]))
     } finally {
-      dispatch(setServiceLoading(false))
+      if (isMountedRef.current) dispatch(setServiceLoading(false))
     }
   }, [filters, page, dispatch])
 
@@ -66,6 +76,7 @@ export const useServices = () => {
   // Clears stale data first, then fetches. Providers can view their own
   // service regardless of verification/payment status.
   const fetchServiceById = useCallback(async (id) => {
+    if (!isMountedRef.current) return
     dispatch(setCurrentService(null)) // Clear stale service immediately
     try {
       const { data, error } = await supabase
@@ -75,6 +86,7 @@ export const useServices = () => {
         .maybeSingle()
 
       if (error) throw error
+      if (!isMountedRef.current) return
       dispatch(setCurrentService(data))
 
       // Increment views for verified (publicly visible) listings
@@ -82,6 +94,7 @@ export const useServices = () => {
         await supabase.rpc('increment_service_views', { p_service_id: id })
       }
     } catch (err) {
+      if (!isMountedRef.current) return
       console.error('fetchServiceById error:', err)
       dispatch(setCurrentService(null))
     }
@@ -102,6 +115,7 @@ export const useServices = () => {
 
   // ── Fetch Reviews for a Provider ───────────────────────────────────
   const fetchReviews = useCallback(async (serviceProviderId) => {
+    if (!isMountedRef.current) return
     dispatch(setReviewsLoading(true))
     try {
       const { data, error } = await supabase
@@ -111,11 +125,13 @@ export const useServices = () => {
         .order('created_at', { ascending: false })
 
       if (error) throw error
+      if (!isMountedRef.current) return
       dispatch(setReviews(data || []))
     } catch (err) {
+      if (!isMountedRef.current) return
       console.error('fetchReviews error:', err)
     } finally {
-      dispatch(setReviewsLoading(false))
+      if (isMountedRef.current) dispatch(setReviewsLoading(false))
     }
   }, [dispatch])
 
@@ -138,7 +154,7 @@ export const useServices = () => {
       .maybeSingle()
 
     if (error) throw error
-    dispatch(addReview(data))
+    if (isMountedRef.current) dispatch(addReview(data))
     return data
   }
 
@@ -152,7 +168,7 @@ export const useServices = () => {
       .eq('reviewer_id', user.id)
 
     if (error) throw error
-    dispatch(removeReview(reviewId))
+    if (isMountedRef.current) dispatch(removeReview(reviewId))
   }
 
   // ── Create Service Provider Listing ────────────────────────────────

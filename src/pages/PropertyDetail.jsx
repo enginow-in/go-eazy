@@ -56,6 +56,7 @@ export const PropertyDetail = () => {
 
   const [showScrollToTop, setShowScrollToTop] = useState(false)
   const [gatedData, setGatedData] = useState(null)
+  const isMountedRef = useRef(true)
   
   const [reviewRating, setReviewRating] = useState(0)
   const [reviewText, setReviewText] = useState('')
@@ -76,6 +77,12 @@ export const PropertyDetail = () => {
   const [galleryNextEl, setGalleryNextEl] = useState(null)
 
   useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
+  useEffect(() => {
     visitDateRef.current = visitDate
   }, [visitDate])
 
@@ -88,9 +95,19 @@ export const PropertyDetail = () => {
   }, [])
 
   useEffect(() => {
-    fetchPropertyById(id)
-    fetchReviews(id)
-    checkUnlockStatus()
+    let active = true
+    const loadDetails = async () => {
+      await fetchPropertyById(id)
+      await fetchReviews(id)
+      if (active && isMountedRef.current) {
+        await checkUnlockStatus()
+      }
+    }
+
+    loadDetails()
+    return () => {
+      active = false
+    }
   }, [id, user, fetchPropertyById, fetchReviews])
 
   const checkUnlockStatus = async () => {
@@ -101,10 +118,11 @@ export const PropertyDetail = () => {
       .eq('user_id', user.id)
       .eq('property_id', id)
       .maybeSingle()
+    if (!isMountedRef.current) return
     if (data) {
       setHasUnlocked(true)
       const gated = await fetchGatedData(id)
-      setGatedData(gated)
+      if (isMountedRef.current) setGatedData(gated)
     }
   }
 
@@ -112,7 +130,9 @@ export const PropertyDetail = () => {
   useEffect(() => {
     const isLandlord = currentProperty && user && currentProperty.landlord_id === user.id
     if (isLandlord && !gatedData) {
-      fetchGatedData(id).then(setGatedData)
+      fetchGatedData(id).then((data) => {
+        if (isMountedRef.current) setGatedData(data)
+      })
     }
   }, [currentProperty, user, id, fetchGatedData, gatedData])
 

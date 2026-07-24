@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Heart, Clock, User as UserIcon, ChevronLeft, Bell, Calendar, MapPin } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
@@ -19,6 +19,13 @@ export const UserDashboard = () => {
   const [showNotifications, setShowNotifications] = useState(false)
   const [myVisits, setMyVisits] = useState([])
   const [loadingData, setLoadingData] = useState(true)
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   useEffect(() => {
     if (user) {
@@ -36,20 +43,24 @@ export const UserDashboard = () => {
         supabase.from('site_visits').select('*, property:properties(title, city)').eq('user_id', user.id).order('created_at', { ascending: false })
       ])
       
+      if (!isMountedRef.current) return
       if (!notifRes.error) setNotifications(notifRes.data || [])
       if (!visitRes.error) setMyVisits(visitRes.data || [])
     } catch (err) {
+      if (!isMountedRef.current) return
       console.error(err)
     } finally {
-      setLoadingData(false)
+      if (isMountedRef.current) setLoadingData(false)
     }
   }
 
   const markAsRead = async () => {
     try {
       await supabase.from('notifications').update({ is_read: true }).eq('user_id', user.id).eq('is_read', false)
+      if (!isMountedRef.current) return
       setNotifications(prev => prev.map(n => ({...n, is_read: true})))
     } catch (err) {
+      if (!isMountedRef.current) return
       console.error(err)
     }
   }
@@ -68,33 +79,38 @@ export const UserDashboard = () => {
       // Fetch details for favorited ids
       if (favorites.length > 0) {
         const { data } = await supabase.from('properties').select('*').in('id', favorites)
+        if (!isMountedRef.current) return
         if (data) {
            // preserve order based on favorites array
            const ordered = favorites.map(id => data.find(p => p.id === id)).filter(Boolean)
            setFavProps(ordered)
         }
       } else {
+        if (!isMountedRef.current) return
         setFavProps([])
       }
 
       // Fetch details for recently viewed ids
       if (recentlyViewed.length > 0) {
         const { data } = await supabase.from('properties').select('*').in('id', recentlyViewed)
+        if (!isMountedRef.current) return
         if (data) {
           // preserve order based on recentlyViewed array
           const ordered = recentlyViewed.map(id => data.find(p => p.id === id)).filter(Boolean)
           setRecentProps(ordered)
         }
       } else {
+        if (!isMountedRef.current) return
         setRecentProps([])
       }
     } catch (err) {
+      if (!isMountedRef.current) return
       console.error('[UserDashboard] Load error:', err)
       // Fallback
       setFavProps(MOCK_PROPERTIES.filter(p => favorites.includes(p.id)))
       setRecentProps(recentlyViewed.map(id => MOCK_PROPERTIES.find(p => p.id === id)).filter(Boolean))
     } finally {
-      setLoading(false)
+      if (isMountedRef.current) setLoading(false)
     }
   }
 

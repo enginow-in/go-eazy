@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { MOCK_PROPERTIES } from '../utils/constants'
@@ -21,6 +21,7 @@ const PUBLIC_PROFILE_FIELDS = 'full_name, avatar_url, bio'
 
 export const useProperties = () => {
   const dispatch = useDispatch()
+  const isMountedRef = useRef(true)
   const { 
     listings, featured, currentProperty, 
     favorites, recentlyViewed, filters, 
@@ -29,7 +30,14 @@ export const useProperties = () => {
   } = useSelector(s => s.property)
   const { user, profile } = useSelector(s => s.auth)
 
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
   const fetchProperties = useCallback(async (reset = false) => {
+    if (!isMountedRef.current) return
     dispatch(setLoading(true))
     try {
       let query = supabase
@@ -60,6 +68,7 @@ export const useProperties = () => {
         .range(from, from + PAGE_SIZE - 1)
 
       if (error) throw error
+      if (!isMountedRef.current) return
 
       if (reset) {
         dispatch(setListings(data || []))
@@ -71,14 +80,16 @@ export const useProperties = () => {
       dispatch(setHasMore((data || []).length === PAGE_SIZE))
       dispatch(setPage(reset ? 1 : page + 1))
     } catch (err) {
+      if (!isMountedRef.current) return
       console.error('fetchProperties error:', err)
       dispatch(setListings([]))
     } finally {
-      dispatch(setLoading(false))
+      if (isMountedRef.current) dispatch(setLoading(false))
     }
   }, [filters, page, dispatch])
 
   const fetchFeatured = useCallback(async () => {
+    if (!isMountedRef.current) return
     try {
       const { data, error } = await supabase
         .from('properties')
@@ -87,8 +98,10 @@ export const useProperties = () => {
         .order('views', { ascending: false })
         .limit(8)
       if (error) throw error
+      if (!isMountedRef.current) return
       dispatch(setFeatured(data?.length ? data : MOCK_PROPERTIES.sort((a, b) => b.views - a.views).slice(0, 8)))
     } catch {
+      if (!isMountedRef.current) return
       dispatch(setFeatured(MOCK_PROPERTIES.sort((a, b) => b.views - a.views).slice(0, 8)))
     }
   }, [dispatch])
@@ -110,6 +123,7 @@ export const useProperties = () => {
   }, [])
 
   const fetchPropertyById = useCallback(async (id) => {
+    if (!isMountedRef.current) return
     dispatch(setLoading(true))
     try {
       const { data, error } = await supabase
@@ -118,16 +132,18 @@ export const useProperties = () => {
         .eq('id', id)
         .maybeSingle()
       if (error) throw error
+      if (!isMountedRef.current) return
       dispatch(setCurrentProperty(data))
       
-      if (user && data) {
+      if (user && data && isMountedRef.current) {
         dispatch(addRecentlyViewed(id))
         await supabase.from('recently_viewed').upsert({ user_id: user.id, property_id: id, viewed_at: new Date().toISOString() })
       }
     } catch (err) {
+      if (!isMountedRef.current) return
       console.error('Error fetching property:', err)
     } finally {
-      dispatch(setLoading(false))
+      if (isMountedRef.current) dispatch(setLoading(false))
     }
   }, [user, dispatch])
 
@@ -160,6 +176,7 @@ export const useProperties = () => {
   }, [user])
 
   const fetchReviews = useCallback(async (propertyId) => {
+    if (!isMountedRef.current) return
     dispatch(setReviewsLoading(true))
     try {
       const { data, error } = await supabase
@@ -169,11 +186,13 @@ export const useProperties = () => {
         .order('created_at', { ascending: false })
 
       if (error) throw error
+      if (!isMountedRef.current) return
       dispatch(setReviews(data || []))
     } catch (err) {
+      if (!isMountedRef.current) return
       console.error('fetchReviews error:', err)
     } finally {
-      dispatch(setReviewsLoading(false))
+      if (isMountedRef.current) dispatch(setReviewsLoading(false))
     }
   }, [dispatch])
 
@@ -194,7 +213,7 @@ export const useProperties = () => {
       .maybeSingle()
 
     if (error) throw error
-    dispatch(addReview(data))
+    if (isMountedRef.current) dispatch(addReview(data))
     return data
   }
 
@@ -207,7 +226,7 @@ export const useProperties = () => {
       .eq('reviewer_id', user.id)
 
     if (error) throw error
-    dispatch(removeReview(reviewId))
+    if (isMountedRef.current) dispatch(removeReview(reviewId))
   }
 
   const createProperty = async (propertyData, images) => {

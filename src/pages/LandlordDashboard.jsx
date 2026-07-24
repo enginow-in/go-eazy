@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Home, Eye, Edit, Trash2, ArrowRight, ArrowLeft, List as ListIcon, Calendar, Check, X } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
@@ -22,6 +22,13 @@ export const LandlordDashboard = () => {
   const [siteVisits, setSiteVisits] = useState([])
   const [loadingVisits, setLoadingVisits] = useState(true)
   const [actioningVisitId, setActioningVisitId] = useState(null)
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   useEffect(() => {
     if (user) {
@@ -33,12 +40,14 @@ export const LandlordDashboard = () => {
   const loadProperties = async () => {
     try {
       const data = await getLandlordProperties()
+      if (!isMountedRef.current) return
       setProperties(data)
     } catch (err) {
+      if (!isMountedRef.current) return
       console.error('Failed to load properties:', err)
       toast.error('Failed to load listings')
     } finally {
-      setLoading(false)
+      if (isMountedRef.current) setLoading(false)
     }
   }
 
@@ -48,8 +57,11 @@ export const LandlordDashboard = () => {
     try {
       await deleteProperty(id)
       setProperties(prev => prev.filter(p => p.id !== id))
+      if (!isMountedRef.current) return
+      setProperties(prev => prev.filter(p => p.id !== id))
       toast.success('Property deleted permanently', { id: toastId })
     } catch (err) {
+      if (!isMountedRef.current) return
       console.error('Delete failed:', err)
       toast.error(err.message || 'Failed to delete property', { id: toastId })
     }
@@ -69,11 +81,13 @@ export const LandlordDashboard = () => {
         .order('created_at', { ascending: false })
       
       if (error) throw error
+      if (!isMountedRef.current) return
       setSiteVisits(data || [])
     } catch (err) {
+      if (!isMountedRef.current) return
       console.error('Failed to load visits:', err)
     } finally {
-      setLoadingVisits(false)
+      if (isMountedRef.current) setLoadingVisits(false)
     }
   }
 
@@ -92,13 +106,15 @@ export const LandlordDashboard = () => {
         message: msg
       })
 
+      if (!isMountedRef.current) return
       toast.success(`Visit ${action} successfully`)
       setSiteVisits(prev => prev.filter(v => v.id !== visitId))
     } catch (err) {
+      if (!isMountedRef.current) return
       console.error(err)
       toast.error('Failed to update visit status')
     } finally {
-      setActioningVisitId(null)
+      if (isMountedRef.current) setActioningVisitId(null)
     }
   }
 

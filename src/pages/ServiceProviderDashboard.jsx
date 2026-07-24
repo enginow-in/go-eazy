@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import {
@@ -39,16 +39,25 @@ export const ServiceProviderDashboard = () => {
 
   const [myServices, setMyServices] = useState([])
   const [loading, setLoading] = useState(true)
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   const loadMyServices = async () => {
     setLoading(true)
     try {
       const data = await getMyServices()
+      if (!isMountedRef.current) return
       setMyServices(data)
     } catch {
+      if (!isMountedRef.current) return
       toast.error('Could not load your listings')
     } finally {
-      setLoading(false)
+      if (isMountedRef.current) setLoading(false)
     }
   }
 
@@ -58,9 +67,11 @@ export const ServiceProviderDashboard = () => {
     if (!window.confirm('Are you sure you want to delete this listing?')) return
     try {
       await deleteService(id)
+      if (!isMountedRef.current) return
       setMyServices(v => v.filter(s => s.id !== id))
       toast.success('Listing deleted')
     } catch (err) {
+      if (!isMountedRef.current) return
       toast.error('Failed to delete listing')
     }
   }
@@ -113,6 +124,7 @@ export const ServiceProviderDashboard = () => {
             // Mark payment as paid in DB
             await payServiceListing(serviceId)
             // Refresh the service in UI
+            if (!isMountedRef.current) return
             setMyServices(prev => prev.map(s =>
               s.id === serviceId ? { ...s, payment_status: 'paid' } : s
             ))
