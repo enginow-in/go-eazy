@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { PropertyForm } from '../components/property/PropertyForm'
 import { ArrowLeft } from 'lucide-react'
@@ -9,10 +9,24 @@ export const PropertyEdit = () => {
   const navigate = useNavigate()
   const { fetchPropertyById, currentProperty } = useProperties()
   const [loading, setLoading] = useState(true)
+  const isMountedRef = useRef(true)
 
   useEffect(() => {
-    fetchPropertyById(id).then(() => setLoading(false))
-  }, [id])
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    fetchPropertyById(id).then(() => {
+      if (active && isMountedRef.current) setLoading(false)
+    })
+
+    return () => {
+      active = false
+    }
+  }, [id, fetchPropertyById])
 
   if (loading) {
     return (

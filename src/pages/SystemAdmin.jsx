@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useServices } from '../hooks/useServices'
@@ -15,6 +15,13 @@ export const SystemAdmin = () => {
   
   const [stats, setStats] = useState({ users: 0, properties: 0, services: 0 })
   const [loadingStats, setLoadingStats] = useState(true)
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   // Service Approvals State
   const [providers, setProviders] = useState([])
@@ -39,26 +46,30 @@ export const SystemAdmin = () => {
         supabase.from('service_providers').select('*', { count: 'exact', head: true })
       ])
       
+      if (!isMountedRef.current) return
       setStats({
         users: uRes.count || 0,
         properties: pRes.count || 0,
         services: sRes.count || 0
       })
     } catch (e) {
+      if (!isMountedRef.current) return
       console.error('Error loading admin stats:', e)
     } finally {
-      setLoadingStats(false)
+      if (isMountedRef.current) setLoadingStats(false)
     }
   }
 
   const loadProviders = async () => {
     try {
       const data = await getAdminPendingServices()
+      if (!isMountedRef.current) return
       setProviders(data)
     } catch (e) {
+      if (!isMountedRef.current) return
       console.error('Failed to load pending services', e)
     } finally {
-      setLoadingProviders(false)
+      if (isMountedRef.current) setLoadingProviders(false)
     }
   }
 
@@ -66,9 +77,11 @@ export const SystemAdmin = () => {
     const toastId = toast.loading(`Marking as ${newStatus}...`)
     try {
       await updateServiceStatus(id, newStatus)
+      if (!isMountedRef.current) return
       setProviders(prev => prev.map(p => p.id === id ? { ...p, verification_status: newStatus } : p))
       toast.success(`Service Provider ${newStatus}`, { id: toastId })
     } catch {
+      if (!isMountedRef.current) return
       toast.error('Failed to update status', { id: toastId })
     }
   }

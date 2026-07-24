@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import { User, Lock, Save, AlertCircle, CheckCircle2 } from 'lucide-react'
@@ -18,10 +18,18 @@ export const Settings = () => {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [securityLoading, setSecurityLoading] = useState(false)
   const [securityMessage, setSecurityMessage] = useState({ type: '', text: '' })
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   // Populate profile info on load
   useEffect(() => {
     if (profile) {
+      if (!isMountedRef.current) return
       setFullName(profile.full_name || '')
       setPhone(profile.phone || '')
     }
@@ -39,14 +47,18 @@ export const Settings = () => {
         .eq('id', user.id)
 
       if (error) throw error
+      if (!isMountedRef.current) return
 
       setProfileMessage({ type: 'success', text: 'Profile updated successfully!' })
-      setTimeout(() => setProfileMessage({ type: '', text: '' }), 4000)
+      setTimeout(() => {
+        if (isMountedRef.current) setProfileMessage({ type: '', text: '' })
+      }, 4000)
     } catch (error) {
+      if (!isMountedRef.current) return
       console.error('Error updating profile:', error.message)
       setProfileMessage({ type: 'error', text: 'Failed to update profile. Please try again.' })
     } finally {
-      setProfileLoading(false)
+      if (isMountedRef.current) setProfileLoading(false)
     }
   }
 
@@ -87,17 +99,21 @@ export const Settings = () => {
 
       if (updateError) throw updateError
 
+      if (!isMountedRef.current) return
       setSecurityMessage({ type: 'success', text: 'Password updated successfully!' })
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
-      setTimeout(() => setSecurityMessage({ type: '', text: '' }), 4000)
+      setTimeout(() => {
+        if (isMountedRef.current) setSecurityMessage({ type: '', text: '' })
+      }, 4000)
       
     } catch (error) {
+      if (!isMountedRef.current) return
       console.error('Error updating password:', error.message)
       setSecurityMessage({ type: 'error', text: error.message || 'Failed to update password' })
     } finally {
-      setSecurityLoading(false)
+      if (isMountedRef.current) setSecurityLoading(false)
     }
   }
 

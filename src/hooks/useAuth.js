@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { supabase } from '../lib/supabase'
 import { setUser, setProfile, logout, setLoading } from '../store/authSlice'
@@ -6,11 +6,20 @@ import { setUser, setProfile, logout, setLoading } from '../store/authSlice'
 export const useAuth = () => {
   const dispatch = useDispatch()
   const { user, profile, role, loading, authModalOpen, authModalTab } = useSelector(s => s.auth)
+  const isMountedRef = useRef(true)
 
   useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
-
+      if (!active || !isMountedRef.current) return
       if (error) console.error('Auth: Session error', error)
       
       dispatch(setUser(session?.user ?? null))
@@ -20,8 +29,8 @@ export const useAuth = () => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!active || !isMountedRef.current) return
 
-      
       dispatch(setUser(session?.user ?? null))
       if (session?.user) {
         fetchProfile(session.user.id)
@@ -32,10 +41,15 @@ export const useAuth = () => {
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      active = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   const fetchProfile = async (userId) => {
+    if (!isMountedRef.current) return
+
     try {
       // First try to fetch
       let { data, error } = await supabase
@@ -105,8 +119,10 @@ export const useAuth = () => {
       }
 
 
+      if (!isMountedRef.current) return
       dispatch(setProfile(data))
     } catch (err) {
+      if (!isMountedRef.current) return
       console.error('Auth: fetchProfile catch block', err)
       dispatch(setLoading(false))
     }

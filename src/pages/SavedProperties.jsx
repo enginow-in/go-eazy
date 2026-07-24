@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, Heart } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
@@ -14,6 +14,13 @@ export const SavedProperties = () => {
   const { favorites } = useProperties()
   const [favProps, setFavProps] = useState([])
   const [loading, setLoading] = useState(true)
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   useEffect(() => {
     if (user) {
@@ -37,19 +44,22 @@ export const SavedProperties = () => {
           .in('id', favorites)
         
         if (error) throw error
+        if (!isMountedRef.current) return
         if (data) {
           // preserve order based on favorites array
           const ordered = favorites.map(id => data.find(p => p.id === id)).filter(Boolean)
           setFavProps(ordered)
         }
       } else {
+        if (!isMountedRef.current) return
         setFavProps([])
       }
     } catch (err) {
+      if (!isMountedRef.current) return
       console.error('Error loading saved properties:', err)
       setFavProps(MOCK_PROPERTIES.filter(p => favorites.includes(p.id)))
     } finally {
-      setLoading(false)
+      if (isMountedRef.current) setLoading(false)
     }
   }
 
